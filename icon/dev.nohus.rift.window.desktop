@@ -1,0 +1,12 @@
+[Desktop Entry]
+NoDisplay=true
+Categories=Game
+Comment=Intel tool for EVE Online
+Exec=/usr/lib/nohus/rift/bin/rift
+Icon=
+Name=RIFT Intel Fusion Tool
+StartupWMClass=dev-nohus-rift-MainKt
+Terminal=false
+Type=Application
+# Version of the .desktop spec this file conforms with.
+Version=1.4

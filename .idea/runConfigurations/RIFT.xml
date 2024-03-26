@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="RIFT" type="JetRunConfigurationType">
+    <option name="MAIN_CLASS_NAME" value="dev.nohus.rift.MainKt" />
+    <module name="rift.main" />
+    <shortenClasspath name="NONE" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
