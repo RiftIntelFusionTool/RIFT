@@ -16,7 +16,7 @@ private val logger = KotlinLogging.logger {}
 @Single
 class OpenAlPlayer {
 
-    private lateinit var openAl: AL
+    private var openAl: AL? = null
 
     init {
         try {
@@ -35,6 +35,8 @@ class OpenAlPlayer {
         inputStream: InputStream,
         gain: Float,
     ) {
+        val openAl = openAl ?: return
+
         val buffer = IntArray(1) // Buffer holds sound data
         val source = IntArray(1) // Source is the point emitting sound
 
@@ -65,6 +67,8 @@ class OpenAlPlayer {
         buffer: IntArray,
         inputStream: InputStream,
     ) {
+        val openAl = openAl ?: return
+
         val format = IntArray(1)
         val size = IntArray(1)
         val data = arrayOfNulls<ByteBuffer>(1)
@@ -85,6 +89,8 @@ class OpenAlPlayer {
         source: IntArray,
         gain: Float,
     ) {
+        val openAl = openAl ?: return
+
         openAl.alSourcei(source[0], AL.AL_BUFFER, buffer[0])
         openAl.alSourcef(source[0], AL.AL_PITCH, 1.0f)
         openAl.alSourcef(source[0], AL.AL_GAIN, gain)
@@ -95,6 +101,8 @@ class OpenAlPlayer {
         buffer: IntArray,
         source: IntArray,
     ) {
+        val openAl = openAl ?: return
+
         openAl.alDeleteSources(1, source, 0)
         openAl.alDeleteBuffers(1, buffer, 0)
     }

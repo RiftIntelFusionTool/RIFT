@@ -17,7 +17,7 @@ class WindowsSendNotificationUseCase : SendNotificationUseCase {
     override fun invoke(appName: String, iconPath: String, summary: String, body: String, timeout: Int) {
         scope.launch {
             val tray = SystemTray.getSystemTray()
-            val image = ImageIO.read(Res.readBytes("drawable/tray_tray_16.png").inputStream())
+            val image = ImageIO.read(Res.readBytes("drawable/tray_tray-16.png").inputStream())
             val trayIcon = TrayIcon(image, "RIFT Notification")
             trayIcon.isImageAutoSize = true
             tray.add(trayIcon)
