@@ -1,6 +1,7 @@
 package dev.nohus.rift.sso.authentication
 
 import androidx.compose.ui.res.useResource
+import dev.nohus.rift.generated.resources.Res
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
@@ -52,9 +53,7 @@ class CallbackServer {
                 get("/callback") {
                     val code = call.parameters["code"] ?: return@get
                     val state = call.parameters["state"] ?: return@get
-                    val html = useResource("sso-callback.html") {
-                        it.bufferedReader().readText()
-                    }
+                    val html = Res.readBytes("files/sso-callback.html").inputStream().bufferedReader().readText()
                     call.respondText(html, ContentType.Text.Html, HttpStatusCode.OK)
                     callback?.invoke(code, state)
                 }
