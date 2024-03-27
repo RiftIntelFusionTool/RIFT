@@ -29,6 +29,7 @@ repositories {
     mavenCentral()
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
     maven("https://oss.sonatype.org/content/repositories/snapshots")
+    maven("https://jogamp.org/deployment/maven")
     google()
 }
 
@@ -64,8 +65,8 @@ dependencies {
     implementation("org.nibor.autolink:autolink:0.11.0")
 
     // OpenAL Audio
-    implementation("org.jogamp.joal:joal-main:2.3.2")
-    implementation("org.jogamp.gluegen:gluegen-rt-main:2.3.2")
+    implementation("org.jogamp.joal:joal-main:2.5.0")
+    implementation("org.jogamp.gluegen:gluegen-rt-main:2.5.0")
 
     // Smack (XMPP)
     implementation("org.igniterealtime.smack:smack-java8:4.4.0")
