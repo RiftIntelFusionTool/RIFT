@@ -6,6 +6,7 @@ import dev.nohus.rift.alerts.ChatMessageChannel
 import dev.nohus.rift.alerts.GameActionType
 import dev.nohus.rift.alerts.IntelChannel
 import dev.nohus.rift.alerts.IntelReportLocation
+import dev.nohus.rift.alerts.JabberMessageChannel
 import dev.nohus.rift.alerts.JabberPingType
 
 val AlertsComparator = compareBy<Alert>(
@@ -37,13 +38,14 @@ val AlertsComparator = compareBy<Alert>(
                 is JabberPingType.Message2 -> 12
             }
             is AlertTrigger.JabberMessage -> when (it.trigger.channel) {
-                is ChatMessageChannel.Any -> 13
-                else -> 14
+                JabberMessageChannel.Any -> 13
+                is JabberMessageChannel.Channel -> 14
+                JabberMessageChannel.DirectMessage -> 15
             }
             is AlertTrigger.NoChannelActivity -> when (it.trigger.channel) {
-                IntelChannel.All -> 15
-                IntelChannel.Any -> 16
-                is IntelChannel.Channel -> 17
+                IntelChannel.All -> 16
+                IntelChannel.Any -> 17
+                is IntelChannel.Channel -> 18
             }
         }
     },

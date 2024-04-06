@@ -302,25 +302,27 @@ private fun TokenWithUrl(settings: IntelReportsSettings, text: String) {
 @Composable
 private fun TokenWithShip(settings: IntelReportsSettings, ship: TokenType.Ship) {
     val repository: ShipTypesRepository by koin.inject()
-    BorderedToken(settings) {
-        val shipTypeId = repository.getShipTypeId(ship.name)
-        AsyncTypeIcon(
-            typeId = shipTypeId,
-            modifier = Modifier.size(settings.rowHeight),
-        )
-        VerticalDivider(color = RiftTheme.colors.borderGreyLight, modifier = Modifier.height(settings.rowHeight))
-        val text = if (ship.count > 1) {
-            "${ship.count}x ${ship.name}"
-        } else if (ship.isPlural) {
-            "${ship.name}s"
-        } else {
-            ship.name
+    val shipTypeId = repository.getShipTypeId(ship.name)
+    ClickableShip(ship.name, shipTypeId) {
+        BorderedToken(settings) {
+            AsyncTypeIcon(
+                typeId = shipTypeId,
+                modifier = Modifier.size(settings.rowHeight),
+            )
+            VerticalDivider(color = RiftTheme.colors.borderGreyLight, modifier = Modifier.height(settings.rowHeight))
+            val text = if (ship.count > 1) {
+                "${ship.count}x ${ship.name}"
+            } else if (ship.isPlural) {
+                "${ship.name}s"
+            } else {
+                ship.name
+            }
+            Text(
+                text = text,
+                style = RiftTheme.typography.bodyHighlighted,
+                modifier = Modifier.padding(4.dp),
+            )
         }
-        Text(
-            text = text,
-            style = RiftTheme.typography.bodyHighlighted,
-            modifier = Modifier.padding(4.dp),
-        )
     }
 }
 

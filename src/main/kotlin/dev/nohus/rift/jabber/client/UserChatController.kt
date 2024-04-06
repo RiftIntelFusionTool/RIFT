@@ -18,6 +18,7 @@ import org.jivesoftware.smack.chat2.Chat
 import org.jivesoftware.smack.chat2.ChatManager
 import org.jivesoftware.smack.packet.Message
 import org.jivesoftware.smack.packet.MessageBuilder
+import org.jivesoftware.smackx.delay.DelayInformationManager
 import org.jxmpp.jid.EntityBareJid
 import org.koin.core.annotation.Factory
 import java.time.Instant
@@ -116,10 +117,11 @@ class UserChatController(
             message = message.body,
         )
 
+        val timestamp = DelayInformationManager.getDelayTimestamp(message)?.toInstant() ?: Instant.now()
         val userMessage = UserMessage(
             text = message.body,
             isOutgoing = false,
-            timestamp = Instant.now(),
+            timestamp = timestamp,
         )
         val messages = (_state.value.messages[chat] ?: emptyList()) + userMessage
         _state.update { it.copy(messages = it.messages + (chat to messages)) }

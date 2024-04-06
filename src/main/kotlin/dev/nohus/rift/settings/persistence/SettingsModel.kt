@@ -35,6 +35,7 @@ data class SettingsModel(
     val soundsVolume: Int = 100,
     val alertGroups: Set<String> = emptySet(),
     val configurationPack: ConfigurationPack? = null,
+    val hiddenCharacterIds: List<Int> = emptyList(),
 )
 
 @Serializable

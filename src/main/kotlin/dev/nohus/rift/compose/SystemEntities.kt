@@ -71,29 +71,31 @@ fun ColumnScope.SystemEntities(
         }
     }
     entities.filterIsInstance<SystemEntity.Ship>().forEach { ship ->
-        SystemEntityInfoRow {
-            val repository: ShipTypesRepository by koin.inject()
-            val shipTypeId = repository.getShipTypeId(ship.name)
-            AsyncTypeIcon(
-                typeId = shipTypeId,
-                modifier = Modifier.size(32.dp),
-            )
+        val repository: ShipTypesRepository by koin.inject()
+        val shipTypeId = repository.getShipTypeId(ship.name)
+        ClickableShip(ship.name, shipTypeId) {
+            SystemEntityInfoRow {
+                AsyncTypeIcon(
+                    typeId = shipTypeId,
+                    modifier = Modifier.size(32.dp),
+                )
 
-            var nameStyle = RiftTheme.typography.bodyHighlighted.copy(fontWeight = FontWeight.Bold)
-            if (ship.isFriendly == true) {
-                nameStyle = nameStyle.copy(color = RiftTheme.colors.standingBlue)
-            }
+                var nameStyle = RiftTheme.typography.bodyHighlighted.copy(fontWeight = FontWeight.Bold)
+                if (ship.isFriendly == true) {
+                    nameStyle = nameStyle.copy(color = RiftTheme.colors.standingBlue)
+                }
 
-            val text = if (ship.count > 1) {
-                "${ship.count}x ${ship.name}"
-            } else {
-                ship.name
+                val text = if (ship.count > 1) {
+                    "${ship.count}x ${ship.name}"
+                } else {
+                    ship.name
+                }
+                Text(
+                    text = text,
+                    style = nameStyle,
+                    modifier = Modifier.padding(4.dp),
+                )
             }
-            Text(
-                text = text,
-                style = nameStyle,
-                modifier = Modifier.padding(4.dp),
-            )
         }
     }
     entities.filterIsInstance<SystemEntity.Character>()

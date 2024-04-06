@@ -15,12 +15,14 @@ import org.jivesoftware.smack.XMPPException
 import org.jivesoftware.smack.packet.Message
 import org.jivesoftware.smack.packet.Message.Subject
 import org.jivesoftware.smackx.bookmarks.BookmarkManager
+import org.jivesoftware.smackx.delay.DelayInformationManager
 import org.jivesoftware.smackx.muc.MultiUserChat
 import org.jivesoftware.smackx.muc.MultiUserChatManager
 import org.jxmpp.jid.EntityBareJid
 import org.jxmpp.jid.impl.JidCreate
 import org.jxmpp.jid.parts.Resourcepart
 import org.koin.core.annotation.Factory
+import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.Executors
 
@@ -145,18 +147,21 @@ class MultiUserChatController(
 
         val sender = message.from.resourceOrNull ?: return
         val body = message.body ?: return
+        val timestamp = DelayInformationManager.getDelayTimestamp(message)?.toInstant() ?: Instant.now()
 
-        alertsTriggerController.onNewJabberMessage(
-            chat = chat.room.localpartOrNull?.toString() ?: "",
-            sender = sender.toString(),
-            message = body,
-        )
+        if (Duration.between(timestamp, Instant.now()) < Duration.ofMinutes(1)) {
+            alertsTriggerController.onNewJabberMessage(
+                chat = chat.room.localpartOrNull?.toString() ?: "",
+                sender = sender.toString(),
+                message = body,
+            )
+        }
 
         val messages = _state.value.messages[chat] ?: emptyList()
         val newMessages = messages + MultiUserMessage(
             text = body,
             sender = sender.toString(),
-            timestamp = Instant.now(),
+            timestamp = timestamp,
         )
         _state.update { it.copy(messages = it.messages + (chat to newMessages)) }
     }

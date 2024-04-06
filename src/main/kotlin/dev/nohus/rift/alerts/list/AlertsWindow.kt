@@ -39,6 +39,7 @@ import dev.nohus.rift.alerts.GameActionType
 import dev.nohus.rift.alerts.IntelChannel
 import dev.nohus.rift.alerts.IntelReportLocation
 import dev.nohus.rift.alerts.IntelReportType
+import dev.nohus.rift.alerts.JabberMessageChannel
 import dev.nohus.rift.alerts.JabberPingType
 import dev.nohus.rift.alerts.JumpRange
 import dev.nohus.rift.alerts.PapType
@@ -697,8 +698,9 @@ private fun getAlertText(
                     }
                     append(" in ")
                     val channel = when (val channel = trigger.channel) {
-                        ChatMessageChannel.Any -> "any chat"
-                        is ChatMessageChannel.Channel -> channel.name
+                        JabberMessageChannel.Any -> "any chat"
+                        is JabberMessageChannel.Channel -> channel.name
+                        JabberMessageChannel.DirectMessage -> "a direct message"
                     }
                     withStyle(primary) {
                         append(channel)

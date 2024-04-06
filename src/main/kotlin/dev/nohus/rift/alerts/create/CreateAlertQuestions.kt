@@ -228,11 +228,13 @@ class CreateAlertQuestions(
     // Jabber message, channel type
     val JABBER_MESSAGE_CHANNEL_ANY = FormChoiceItem(id = id++, text = "Any chat")
     val JABBER_MESSAGE_CHANNEL_SPECIFIC = FormChoiceItem(id = id++, text = "A chosen chat")
+    val JABBER_MESSAGE_CHANNEL_DIRECT_MESSAGE = FormChoiceItem(id = id++, text = "A direct message")
     val JABBER_MESSAGE_CHANNEL_TYPE_QUESTION = SingleChoiceQuestion(
         title = "In:",
         items = listOf(
             JABBER_MESSAGE_CHANNEL_ANY,
             JABBER_MESSAGE_CHANNEL_SPECIFIC,
+            JABBER_MESSAGE_CHANNEL_DIRECT_MESSAGE,
         ),
     )
 

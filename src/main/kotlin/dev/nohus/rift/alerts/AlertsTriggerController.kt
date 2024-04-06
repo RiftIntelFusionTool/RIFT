@@ -171,8 +171,9 @@ class AlertsTriggerController(
         enabledAlerts.forEach { alert ->
             if (alert.trigger is JabberMessage) {
                 val isChannelMatching = when (val channel = alert.trigger.channel) {
-                    ChatMessageChannel.Any -> true
-                    is ChatMessageChannel.Channel -> channel.name == chat
+                    JabberMessageChannel.Any -> true
+                    is JabberMessageChannel.Channel -> channel.name == chat
+                    JabberMessageChannel.DirectMessage -> chat == sender
                 }
                 if (isChannelMatching) {
                     val triggerSender = alert.trigger.sender

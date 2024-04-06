@@ -73,6 +73,7 @@ import org.jetbrains.compose.resources.painterResource
 import org.jivesoftware.smack.chat2.Chat
 import org.jivesoftware.smackx.muc.MultiUserChat
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -843,8 +844,12 @@ private fun ChatMessage(
     sender: String,
     message: String,
 ) {
-    val time = ZonedDateTime.ofInstant(timestamp, ZoneId.systemDefault()).toLocalTime()
-    val formatter = DateTimeFormatter.ofPattern("HH:mm:ss")
+    val time: ZonedDateTime = ZonedDateTime.ofInstant(timestamp, ZoneId.systemDefault())
+    val formatter = if (time.isBefore(ZonedDateTime.of(LocalDate.now().atTime(0, 0), ZoneId.systemDefault()))) {
+        DateTimeFormatter.ofPattern("MMM dd, HH:mm:ss")
+    } else {
+        DateTimeFormatter.ofPattern("HH:mm:ss")
+    }
     val formattedTime = formatter.format(time)
     val linkStyle = SpanStyle(color = RiftTheme.colors.textLink, fontWeight = FontWeight.Bold)
     val linkifiedMessage = remember(message) { annotateLinks(message, linkStyle) }

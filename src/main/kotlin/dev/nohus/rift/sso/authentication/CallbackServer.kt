@@ -1,6 +1,5 @@
 package dev.nohus.rift.sso.authentication
 
-import androidx.compose.ui.res.useResource
 import dev.nohus.rift.generated.resources.Res
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.ContentType

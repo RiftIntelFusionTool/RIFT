@@ -11,6 +11,7 @@ import dev.nohus.rift.alerts.GameActionType
 import dev.nohus.rift.alerts.IntelChannel
 import dev.nohus.rift.alerts.IntelReportLocation
 import dev.nohus.rift.alerts.IntelReportType
+import dev.nohus.rift.alerts.JabberMessageChannel
 import dev.nohus.rift.alerts.JabberPingType
 import dev.nohus.rift.alerts.JumpRange
 import dev.nohus.rift.alerts.PapType
@@ -415,11 +416,12 @@ class CreateAlertViewModel(
 
                 ALERT_TRIGGER_JABBER_MESSAGE.id -> {
                     val channel = when (JABBER_MESSAGE_CHANNEL_TYPE_QUESTION.answer?.id ?: return null) {
-                        JABBER_MESSAGE_CHANNEL_ANY.id -> ChatMessageChannel.Any
+                        JABBER_MESSAGE_CHANNEL_ANY.id -> JabberMessageChannel.Any
                         JABBER_MESSAGE_CHANNEL_SPECIFIC.id -> {
                             val name = JABBER_MESSAGE_SPECIFIC_CHANNEL_QUESTION.answer?.text ?: return null
-                            ChatMessageChannel.Channel(name)
+                            JabberMessageChannel.Channel(name)
                         }
+                        JABBER_MESSAGE_CHANNEL_DIRECT_MESSAGE.id -> JabberMessageChannel.DirectMessage
                         else -> throw IllegalStateException()
                     }
                     val sender = JABBER_MESSAGE_SENDER_QUESTION.answer?.text ?: return null

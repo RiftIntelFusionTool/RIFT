@@ -37,7 +37,7 @@ class LogbackAppender : AppenderBase<ILoggingEvent>() {
         """character [0-9]{8,10}""".toRegex() to "character 000000000",
         """/structures/[0-9]{12,14}/""".toRegex() to "/structures/0000000000000/",
         """/corporations/[0-9]{7,10}""".toRegex() to "/corporations/000000000",
-        """/alliances/[0-9]{9,11}""".toRegex() to "/alliances/0000000000",
+        """/alliances/[0-9]{8,11}""".toRegex() to "/alliances/0000000000",
     )
 
     private fun anonymizeLogMessage(message: String): String {

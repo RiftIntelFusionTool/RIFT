@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.onClick
@@ -36,7 +35,6 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -62,7 +60,6 @@ import dev.nohus.rift.intel.state.SystemEntity
 import dev.nohus.rift.location.GetOnlineCharactersLocationUseCase.OnlineCharacterLocation
 import dev.nohus.rift.map.HostileOrbitPainter.EntityIcon
 import dev.nohus.rift.map.MapViewModel.MapType
-import dev.nohus.rift.map.MapViewModel.MapType.ClusterSystemsMap
 import dev.nohus.rift.map.MapViewModel.MapType.RegionMap
 import dev.nohus.rift.map.systemcolor.SolarSystemColorStrategy
 import dev.nohus.rift.repositories.ShipTypesRepository
@@ -90,27 +87,18 @@ data class NodeSizes(
 @Composable
 fun SolarSystemNode(
     system: MapSolarSystem,
-    regionName: String?,
     mapType: MapType,
     mapScale: Float,
     intel: List<Dated<SystemEntity>>?,
-    hasIntelPopup: Boolean,
     onlineCharacters: List<OnlineCharacterLocation>,
     solarSystemColorStrategy: SolarSystemColorStrategy,
     systemRadialGradients: MutableMap<Color, Brush>,
-    isHighlightedOrHovered: Boolean,
-    onRegionClick: () -> Unit,
+    nodeSizes: NodeSizes,
     modifier: Modifier,
 ) {
     Box(
         modifier = modifier,
     ) {
-        val nodeSizes = NodeSizes(
-            margin = 16.dp,
-            marginPx = LocalDensity.current.run { 12.dp.toPx() },
-            radius = 8.dp,
-            radiusPx = LocalDensity.current.run { 8.dp.toPx() },
-        )
         val systemColor = solarSystemColorStrategy.getActiveColor(system)
         val brush = systemRadialGradients.getOrPut(systemColor) {
             Brush.radialGradient(
@@ -141,19 +129,6 @@ fun SolarSystemNode(
             drawCircle(brush, radius = nodeSizes.radiusPx, center = Offset.Zero)
             hostileOrbitPainter.draw(this, nodeSizes, hostileCount, entityIcons)
             characterLocationPainter.draw(this, nodeSizes, hasOnlineCharacter)
-        }
-
-        if ((mapType is RegionMap && mapScale <= 0.61f) || (mapType is ClusterSystemsMap) || isHighlightedOrHovered) {
-            SystemInfoBox(
-                system = system,
-                regionName = regionName,
-                isHighlightedOrHovered = isHighlightedOrHovered,
-                intel = intel,
-                hasIntelPopup = hasIntelPopup,
-                onlineCharacters = onlineCharacters,
-                onRegionClick = onRegionClick,
-                modifier = Modifier.offset(x = nodeSizes.radiusWithMargin, y = nodeSizes.radius),
-            )
         }
     }
 }
@@ -336,7 +311,7 @@ class HostileOrbitPainter {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun SystemInfoBox(
+fun SystemInfoBox(
     system: MapSolarSystem,
     regionName: String?,
     isHighlightedOrHovered: Boolean,
@@ -392,23 +367,25 @@ private fun SystemInfoBox(
                 )
             }
 
-            Column(
-                verticalArrangement = Arrangement.spacedBy(1.dp),
-                modifier = Modifier.modifyIf(intelGroups != null) { padding(bottom = 1.dp) },
-            ) {
-                onlineCharacters.forEach { onlineCharacterLocation ->
-                    ClickablePlayer(onlineCharacterLocation.id) {
-                        SystemEntityInfoRow {
-                            AsyncPlayerPortrait(
-                                characterId = onlineCharacterLocation.id,
-                                size = 32,
-                                modifier = Modifier.size(32.dp),
-                            )
-                            Text(
-                                text = onlineCharacterLocation.name,
-                                style = RiftTheme.typography.bodyPrimary.copy(color = RiftTheme.colors.onlineGreen),
-                                modifier = Modifier.padding(4.dp),
-                            )
+            if (hasIntelPopup || isHighlightedOrHovered) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(1.dp),
+                    modifier = Modifier.modifyIf(intelGroups != null) { padding(bottom = 1.dp) },
+                ) {
+                    onlineCharacters.forEach { onlineCharacterLocation ->
+                        ClickablePlayer(onlineCharacterLocation.id) {
+                            SystemEntityInfoRow {
+                                AsyncPlayerPortrait(
+                                    characterId = onlineCharacterLocation.id,
+                                    size = 32,
+                                    modifier = Modifier.size(32.dp),
+                                )
+                                Text(
+                                    text = onlineCharacterLocation.name,
+                                    style = RiftTheme.typography.bodyPrimary.copy(color = RiftTheme.colors.onlineGreen),
+                                    modifier = Modifier.padding(4.dp),
+                                )
+                            }
                         }
                     }
                 }

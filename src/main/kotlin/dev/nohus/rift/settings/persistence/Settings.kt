@@ -138,4 +138,8 @@ class Settings(
     var configurationPack: ConfigurationPack?
         get() = model.configurationPack
         set(value) = update { copy(configurationPack = value) }
+
+    var hiddenCharacterIds: List<Int>
+        get() = model.hiddenCharacterIds
+        set(value) = update { copy(hiddenCharacterIds = value) }
 }

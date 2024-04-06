@@ -6,6 +6,7 @@ import dev.nohus.rift.compose.MessageDialogType
 import dev.nohus.rift.location.CharacterLocationRepository
 import dev.nohus.rift.location.CharacterLocationRepository.Location
 import dev.nohus.rift.network.AsyncResource
+import dev.nohus.rift.settings.persistence.Settings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
@@ -22,6 +23,7 @@ class CharactersViewModel(
     private val localCharactersRepository: LocalCharactersRepository,
     private val characterLocationRepository: CharacterLocationRepository,
     private val characterWalletRepository: CharacterWalletRepository,
+    private val settings: Settings,
 ) : ViewModel() {
 
     data class CharacterItem(
@@ -69,16 +71,19 @@ class CharactersViewModel(
                 localCharactersRepository.characters,
                 onlineCharactersRepository.onlineCharacters,
                 characterWalletRepository.balances,
-            ) { characters, onlineCharacters, balances ->
-                val items = characters.map { localCharacter ->
-                    CharacterItem(
-                        characterId = localCharacter.characterId,
-                        settingsFile = localCharacter.settingsFile,
-                        isAuthenticated = localCharacter.isAuthenticated,
-                        info = localCharacter.info,
-                        walletBalance = balances[localCharacter.characterId],
-                    )
-                }
+                settings.updateFlow,
+            ) { characters, onlineCharacters, balances, _ ->
+                val items = characters
+                    .filter { it.characterId !in settings.hiddenCharacterIds }
+                    .map { localCharacter ->
+                        CharacterItem(
+                            characterId = localCharacter.characterId,
+                            settingsFile = localCharacter.settingsFile,
+                            isAuthenticated = localCharacter.isAuthenticated,
+                            info = localCharacter.info,
+                            walletBalance = balances[localCharacter.characterId],
+                        )
+                    }
                 val sortedItems = items.sortedByDescending { it.characterId in onlineCharacters }
                 _state.update { it.copy(characters = sortedItems) }
             }.collect()
@@ -166,6 +171,14 @@ class CharactersViewModel(
 
     fun onCloseDialogMessage() {
         _state.update { it.copy(dialogMessage = null) }
+    }
+
+    fun onHideCharacterClick(characterId: Int) {
+        settings.hiddenCharacterIds += characterId
+    }
+
+    fun onClearHiddenCharactersClick() {
+        settings.hiddenCharacterIds = emptyList()
     }
 
     private fun observeOnlineCharacters() = viewModelScope.launch {

@@ -80,6 +80,7 @@ import dev.nohus.rift.map.painter.SystemsMapPainter
 import dev.nohus.rift.map.systemcolor.ActualSolarSystemColorStrategy
 import dev.nohus.rift.map.systemcolor.SecuritySolarSystemColorStrategy
 import dev.nohus.rift.map.systemcolor.SolarSystemColorStrategy
+import dev.nohus.rift.repositories.SolarSystemsRepository
 import dev.nohus.rift.settings.persistence.MapStarColor
 import dev.nohus.rift.utils.viewModel
 import dev.nohus.rift.windowing.WindowManager.RiftWindowState
@@ -308,7 +309,7 @@ private fun Map(
                         val zoomRange = when (state.mapType) {
                             ClusterRegionsMap -> 1.0..2.0
                             ClusterSystemsMap -> 0.2..8.0
-                            is RegionMap -> 0.5..2.0
+                            is RegionMap -> 0.3..2.0
                         }
                         zoom = (zoom * zoomPercentDelta).coerceIn(zoomRange)
                     }
@@ -361,7 +362,14 @@ private fun Map(
                     RegionsLayer(state, animatedCenter, mapScale, canvasSize, onRegionPointerEnter, onRegionPointerExit, onClick = { onMapClick(1) })
                 }
                 ClusterSystemsMap, is RegionMap -> {
-                    SolarSystemsLayer(state, solarSystemColorStrategy, animatedCenter, mapScale, canvasSize, onRegionClick)
+                    val nodeSizes = NodeSizes(
+                        margin = 16.dp,
+                        marginPx = LocalDensity.current.run { 12.dp.toPx() },
+                        radius = 8.dp,
+                        radiusPx = LocalDensity.current.run { 8.dp.toPx() },
+                    )
+                    SolarSystemsLayer(state, solarSystemColorStrategy, animatedCenter, mapScale, canvasSize, nodeSizes)
+                    SystemInfoBoxesLayer(state, animatedCenter, mapScale, canvasSize, nodeSizes, onRegionClick)
                     SystemContextMenu(state, animatedCenter, mapScale, canvasSize, onContextMenuDismiss)
                 }
             }
@@ -376,9 +384,78 @@ private fun SolarSystemsLayer(
     animatedCenter: Offset,
     mapScale: Float,
     canvasSize: Size,
-    onRegionClick: (regionId: Int, systemId: Int) -> Unit,
+    nodeSizes: NodeSizes,
 ) {
     val systemRadialGradients = mutableMapOf<Color, Brush>()
+    ForEachSystem(state, animatedCenter, mapScale, canvasSize) { systemId, isHighlightedOrHovered, dpCoordinates, system ->
+        val hasIntelPopup = systemId in state.mapState.intelPopupSystems
+        val zIndex = if (hasIntelPopup || isHighlightedOrHovered) 1f else 0f
+
+        SolarSystemNode(
+            system = system,
+            mapType = state.mapType,
+            mapScale = mapScale,
+            intel = state.mapState.intel[system.id],
+            onlineCharacters = state.mapState.onlineCharacterLocations[system.id] ?: emptyList(),
+            solarSystemColorStrategy = solarSystemColorStrategy,
+            systemRadialGradients = systemRadialGradients,
+            nodeSizes = nodeSizes,
+            modifier = Modifier
+                .offset(dpCoordinates.first, dpCoordinates.second)
+                .zIndex(zIndex),
+        )
+    }
+}
+
+@Composable
+private fun SystemInfoBoxesLayer(
+    state: UiState,
+    animatedCenter: Offset,
+    mapScale: Float,
+    canvasSize: Size,
+    nodeSizes: NodeSizes,
+    onRegionClick: (regionId: Int, systemId: Int) -> Unit,
+) {
+    ForEachSystem(state, animatedCenter, mapScale, canvasSize) { systemId, isHighlightedOrHovered, dpCoordinates, system ->
+        val hasIntelPopup = systemId in state.mapState.intelPopupSystems
+        val zIndex = if (hasIntelPopup || isHighlightedOrHovered) 1f else 0f
+        val regionName = if (state.mapType is RegionMap && state.mapType.regionId != system.regionId) {
+            state.cluster.regions.first { it.id == system.regionId }.name
+        } else {
+            null
+        }
+
+        if ((state.mapType is RegionMap && mapScale <= 0.9f) || (state.mapType is ClusterSystemsMap) || isHighlightedOrHovered) {
+            SystemInfoBox(
+                system = system,
+                regionName = regionName,
+                isHighlightedOrHovered = isHighlightedOrHovered,
+                intel = state.mapState.intel[system.id],
+                hasIntelPopup = hasIntelPopup,
+                onlineCharacters = state.mapState.onlineCharacterLocations[system.id] ?: emptyList(),
+                onRegionClick = { onRegionClick(system.regionId, system.id) },
+                modifier = Modifier
+                    .offset(dpCoordinates.first, dpCoordinates.second)
+                    .zIndex(zIndex)
+                    .offset(x = nodeSizes.radiusWithMargin, y = nodeSizes.radius),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ForEachSystem(
+    state: UiState,
+    animatedCenter: Offset,
+    mapScale: Float,
+    canvasSize: Size,
+    content: @Composable (
+        systemId: Int,
+        isHighlightedOrHovered: Boolean,
+        dpCoordinates: Pair<Dp, Dp>,
+        system: SolarSystemsRepository.MapSolarSystem,
+    ) -> Unit,
+) {
     state.layout.forEach { (systemId, layoutPosition) ->
         val isHighlightedOrHovered = systemId == state.mapState.hoveredSystem ||
             systemId == state.mapState.selectedSystem ||
@@ -387,31 +464,9 @@ private fun SolarSystemsLayer(
             val coordinates = getCanvasCoordinates(layoutPosition.x, layoutPosition.y, animatedCenter, mapScale, canvasSize)
             if (!isOnCanvas(coordinates, canvasSize, 100)) return@forEach
             val dpCoordinates = with(LocalDensity.current) { coordinates.x.toDp() to coordinates.y.toDp() }
+            val system = state.cluster.systems.firstOrNull { it.id == systemId } ?: return@forEach
             key(systemId) {
-                val system = state.cluster.systems.firstOrNull { it.id == systemId } ?: return@forEach
-                val regionName = if (state.mapType is RegionMap && state.mapType.regionId != system.regionId) {
-                    state.cluster.regions.first { it.id == system.regionId }.name
-                } else {
-                    null
-                }
-                val hasIntelPopup = systemId in state.mapState.intelPopupSystems
-                val zIndex = if (hasIntelPopup || isHighlightedOrHovered) 1f else 0f
-                SolarSystemNode(
-                    system = system,
-                    regionName = regionName,
-                    mapType = state.mapType,
-                    mapScale = mapScale,
-                    intel = state.mapState.intel[system.id],
-                    hasIntelPopup = hasIntelPopup,
-                    onlineCharacters = state.mapState.onlineCharacterLocations[system.id] ?: emptyList(),
-                    solarSystemColorStrategy = solarSystemColorStrategy,
-                    systemRadialGradients = systemRadialGradients,
-                    isHighlightedOrHovered = isHighlightedOrHovered,
-                    onRegionClick = { onRegionClick(system.regionId, system.id) },
-                    modifier = Modifier
-                        .offset(dpCoordinates.first, dpCoordinates.second)
-                        .zIndex(zIndex),
-                )
+                content(systemId, isHighlightedOrHovered, dpCoordinates, system)
             }
         }
     }

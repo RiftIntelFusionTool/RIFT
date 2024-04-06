@@ -39,7 +39,7 @@ sealed interface AlertTrigger {
     @Serializable
     @SerialName("JabberMessage")
     data class JabberMessage(
-        val channel: ChatMessageChannel,
+        val channel: JabberMessageChannel,
         val sender: String?,
         val messageContaining: String?,
     ) : AlertTrigger
@@ -175,6 +175,21 @@ sealed interface ChatMessageChannel {
     @Serializable
     @SerialName("Channel")
     data class Channel(val name: String) : ChatMessageChannel
+}
+
+@Serializable
+sealed interface JabberMessageChannel {
+    @Serializable
+    @SerialName("Any")
+    data object Any : JabberMessageChannel
+
+    @Serializable
+    @SerialName("Channel")
+    data class Channel(val name: String) : JabberMessageChannel
+
+    @Serializable
+    @SerialName("DirectMessage")
+    data object DirectMessage : JabberMessageChannel
 }
 
 @Serializable

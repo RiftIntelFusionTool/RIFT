@@ -13,8 +13,10 @@ import dev.nohus.rift.compose.theme.Cursors
 import dev.nohus.rift.di.koin
 import dev.nohus.rift.generated.resources.Res
 import dev.nohus.rift.generated.resources.menu_dotlan
+import dev.nohus.rift.generated.resources.menu_everef
 import dev.nohus.rift.generated.resources.menu_evewho
 import dev.nohus.rift.generated.resources.menu_set_destination
+import dev.nohus.rift.generated.resources.menu_uniwiki
 import dev.nohus.rift.generated.resources.menu_zkillboard
 import dev.nohus.rift.map.MapExternalControl
 import dev.nohus.rift.map.MapViewModel.MapType
@@ -159,16 +161,41 @@ fun ClickablePlayer(
     }
 
     val evewhoUrl = "https://evewho.com/character/$characterId"
-    val zkillboardUrl = "https://zkillboard.com/character/$characterId/"
+    val zKillboardUrl = "https://zkillboard.com/character/$characterId/"
     RiftContextMenuArea(
         listOf(
-            ContextMenuItem.TextItem("zKillboard", Res.drawable.menu_zkillboard, onClick = { zkillboardUrl.toURIOrNull()?.openBrowser() }),
+            ContextMenuItem.TextItem("zKillboard", Res.drawable.menu_zkillboard, onClick = { zKillboardUrl.toURIOrNull()?.openBrowser() }),
             ContextMenuItem.TextItem("EveWho", Res.drawable.menu_evewho, onClick = { evewhoUrl.toURIOrNull()?.openBrowser() }),
         ),
     ) {
         ClickableEntity(
             onClick = {
-                zkillboardUrl.toURIOrNull()?.openBrowser()
+                zKillboardUrl.toURIOrNull()?.openBrowser()
+            },
+            content = content,
+        )
+    }
+}
+
+@Composable
+fun ClickableShip(
+    name: String,
+    typeId: Int,
+    content: @Composable () -> Unit,
+) {
+    val uniWikiUrl = "https://wiki.eveuniversity.org/$name"
+    val eveRefUrl = "https://everef.net/type/$typeId"
+    val zKillboard = "https://zkillboard.com/ship/$typeId/"
+    RiftContextMenuArea(
+        listOf(
+            ContextMenuItem.TextItem("UniWiki", Res.drawable.menu_uniwiki, onClick = { uniWikiUrl.toURIOrNull()?.openBrowser() }),
+            ContextMenuItem.TextItem("EVE Ref", Res.drawable.menu_everef, onClick = { eveRefUrl.toURIOrNull()?.openBrowser() }),
+            ContextMenuItem.TextItem("zKillboard", Res.drawable.menu_zkillboard, onClick = { zKillboard.toURIOrNull()?.openBrowser() }),
+        ),
+    ) {
+        ClickableEntity(
+            onClick = {
+                uniWikiUrl.toURIOrNull()?.openBrowser()
             },
             content = content,
         )
