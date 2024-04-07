@@ -36,6 +36,7 @@ import dev.nohus.rift.alerts.create.FormQuestion.SystemQuestion
 import dev.nohus.rift.characters.LocalCharactersRepository
 import dev.nohus.rift.characters.LocalCharactersRepository.LocalCharacter
 import dev.nohus.rift.logs.parse.CharacterNameValidator
+import dev.nohus.rift.repositories.ConfigurationPackRepository
 import dev.nohus.rift.repositories.ShipTypesRepository
 import dev.nohus.rift.repositories.SolarSystemsRepository
 import dev.nohus.rift.settings.persistence.Settings
@@ -60,6 +61,7 @@ class CreateAlertViewModel(
     soundsRepository: SoundsRepository,
     private val characterNameValidator: CharacterNameValidator,
     shipTypesRepository: ShipTypesRepository,
+    configurationPackRepository: ConfigurationPackRepository,
 ) : ViewModel() {
 
     data class UiState(
@@ -77,6 +79,7 @@ class CreateAlertViewModel(
 
     private val questions = CreateAlertQuestions(
         shipTypesRepository = shipTypesRepository,
+        configurationPackRepository = configurationPackRepository,
     )
     private val answers = mutableListOf<Pair<FormQuestion, FormAnswer>>()
 

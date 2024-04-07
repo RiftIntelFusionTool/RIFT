@@ -1,6 +1,7 @@
 package dev.nohus.rift.singleinstance
 
 import dev.nohus.rift.utils.directories.AppDirectories
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import org.koin.core.annotation.Single
@@ -8,6 +9,8 @@ import java.io.File
 import java.io.IOException
 import java.time.Duration
 import java.time.Instant
+
+private val logger = KotlinLogging.logger {}
 
 @Single
 class SingleInstanceController(
@@ -20,7 +23,11 @@ class SingleInstanceController(
     suspend fun start() = coroutineScope {
         while (true) {
             val text = Instant.now().toEpochMilli().toString()
-            lockFile.writeText(text)
+            try {
+                lockFile.writeText(text)
+            } catch (ignored: IOException) {
+                logger.error(ignored) { "Could not write to lock file" }
+            }
             delay(keepAliveDuration.toMillis())
         }
     }

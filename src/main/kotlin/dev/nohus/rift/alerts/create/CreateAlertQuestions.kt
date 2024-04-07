@@ -9,11 +9,13 @@ import dev.nohus.rift.alerts.create.FormQuestion.SingleChoiceQuestion
 import dev.nohus.rift.alerts.create.FormQuestion.SoundQuestion
 import dev.nohus.rift.alerts.create.FormQuestion.SpecificCharactersQuestion
 import dev.nohus.rift.alerts.create.FormQuestion.SystemQuestion
+import dev.nohus.rift.repositories.ConfigurationPackRepository
 import dev.nohus.rift.repositories.ShipTypesRepository
 
 @Suppress("PropertyName")
 class CreateAlertQuestions(
     shipTypesRepository: ShipTypesRepository,
+    configurationPackRepository: ConfigurationPackRepository,
 ) {
     private var id = 0
 
@@ -26,14 +28,16 @@ class CreateAlertQuestions(
     val ALERT_TRIGGER_NO_MESSAGE = FormChoiceItem(id = id++, text = "No reports are being received")
     val ALERT_TRIGGER_QUESTION = SingleChoiceQuestion(
         title = "Trigger the alert when:",
-        items = listOf(
-            ALERT_TRIGGER_INTEL_REPORTED,
-            ALERT_TRIGGER_GAME_ACTION,
-            ALERT_TRIGGER_CHAT_MESSAGE,
-            ALERT_TRIGGER_JABBER_PING,
-            ALERT_TRIGGER_JABBER_MESSAGE,
-            ALERT_TRIGGER_NO_MESSAGE,
-        ),
+        items = buildList {
+            add(ALERT_TRIGGER_INTEL_REPORTED)
+            add(ALERT_TRIGGER_GAME_ACTION)
+            add(ALERT_TRIGGER_CHAT_MESSAGE)
+            if (configurationPackRepository.isJabberEnabled()) {
+                add(ALERT_TRIGGER_JABBER_PING)
+                add(ALERT_TRIGGER_JABBER_MESSAGE)
+            }
+            add(ALERT_TRIGGER_NO_MESSAGE)
+        },
     )
 
     // Intel report type

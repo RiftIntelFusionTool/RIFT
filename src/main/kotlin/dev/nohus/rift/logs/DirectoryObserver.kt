@@ -48,7 +48,7 @@ class DirectoryObserver(
 
     private var watchJob: Job? = null
 
-    suspend fun observe(directory: File, onUpdate: (DirectoryObserverEvent) -> Unit) = coroutineScope {
+    suspend fun observe(directory: File, onUpdate: suspend (DirectoryObserverEvent) -> Unit) = coroutineScope {
         stop()
 
         val path = directory.toPath()
@@ -100,7 +100,7 @@ class DirectoryObserver(
         watchJob?.cancel()
     }
 
-    private fun handleWatchEvent(directory: File, watchEvent: WatchEvent<*>, onUpdate: (DirectoryObserverEvent) -> Unit) {
+    private suspend fun handleWatchEvent(directory: File, watchEvent: WatchEvent<*>, onUpdate: suspend (DirectoryObserverEvent) -> Unit) {
         when (watchEvent.kind()) {
             ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE -> {
                 val context = watchEvent.context() as Path

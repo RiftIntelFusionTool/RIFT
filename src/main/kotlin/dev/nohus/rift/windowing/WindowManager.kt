@@ -30,7 +30,10 @@ import dev.nohus.rift.settings.persistence.WindowPlacement
 import dev.nohus.rift.utils.Pos
 import dev.nohus.rift.utils.Size
 import dev.nohus.rift.windowing.WindowManager.RiftWindowState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
+import org.jetbrains.skiko.MainUIDispatcher
 import org.koin.core.annotation.Single
 import java.time.Instant
 
@@ -80,7 +83,7 @@ class WindowManager(
         }
     }
 
-    fun saveWindowPlacements() {
+    suspend fun saveWindowPlacements() = withContext(MainUIDispatcher) {
         rememberWindowPlacements()
     }
 

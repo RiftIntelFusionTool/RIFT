@@ -27,7 +27,7 @@ class GetOperatingSystemDetailsUseCase(
     private fun getWindowsVersion(): String? {
         val result = CommandRunner().run("cmd.exe", "/c", "ver", ignoreFailure = true, timeout = 500)
         return if (result.exitStatus == 0) {
-            result.output.trim().substringAfter("[").substringBefore("]").substringAfter("Version ")
+            result.output.trim().substringAfter("[").substringBefore("]").substringAfter(" ")
         } else {
             null
         }

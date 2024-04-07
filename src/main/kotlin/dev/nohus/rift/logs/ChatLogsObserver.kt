@@ -10,6 +10,8 @@ import dev.nohus.rift.logs.parse.ChatLogFileMetadata
 import dev.nohus.rift.logs.parse.ChatLogFileParser
 import dev.nohus.rift.logs.parse.ChatMessage
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.koin.core.annotation.Single
 import java.io.File
 import java.io.IOException
@@ -29,6 +31,7 @@ class ChatLogsObserver(
     private var onMessageCallback: ((ChannelChatMessage) -> Unit)? = null
     private val handledMessagesSet = mutableSetOf<ChatMessage>()
     private val handledMessagesList = mutableSetOf<ChatMessage>()
+    private val handlingNewMessageMutex = Mutex()
 
     suspend fun observe(
         directory: File,
@@ -73,7 +76,7 @@ class ChatLogsObserver(
         directoryObserver.stop()
     }
 
-    private fun reloadLogFiles(directory: File) {
+    private suspend fun reloadLogFiles(directory: File) {
         val logFiles = directory.listFiles()?.mapNotNull { file ->
             matchChatLogFilenameUseCase(file)
         } ?: emptyList()
@@ -82,7 +85,7 @@ class ChatLogsObserver(
         updateActiveLogFiles()
     }
 
-    private fun updateActiveLogFiles() {
+    private suspend fun updateActiveLogFiles() {
         try {
             val currentActiveLogFiles = logFiles
                 .filter { it.file.exists() }
@@ -115,7 +118,7 @@ class ChatLogsObserver(
         }
     }
 
-    private fun readLogFile(logFile: ChatLogFile, metadata: ChatLogFileMetadata) {
+    private suspend fun readLogFile(logFile: ChatLogFile, metadata: ChatLogFileMetadata) {
         try {
             val newMessages = logFileParser.parse(logFile.file)
                 .filter { it !in handledMessagesSet }
@@ -126,17 +129,19 @@ class ChatLogsObserver(
         }
     }
 
-    private fun handleNewMessage(message: ChatMessage, metadata: ChatLogFileMetadata) {
-        val now = Instant.now()
-        val recentMessages = handledMessagesList.reversed().takeWhile { handledMessage ->
-            val age = Duration.between(handledMessage.timestamp, now)
-            age < Duration.ofSeconds(2)
-        }
-        val isDuplicated = recentMessages.any { it.author == message.author && it.message == message.message }
-        handledMessagesSet += message
-        handledMessagesList += message
-        if (!isDuplicated) {
-            onMessageCallback?.invoke(ChannelChatMessage(message, metadata))
+    private suspend fun handleNewMessage(message: ChatMessage, metadata: ChatLogFileMetadata) {
+        handlingNewMessageMutex.withLock {
+            val now = Instant.now()
+            val recentMessages = handledMessagesList.reversed().takeWhile { handledMessage ->
+                val age = Duration.between(handledMessage.timestamp, now)
+                age < Duration.ofSeconds(2)
+            }
+            val isDuplicated = recentMessages.any { it.author == message.author && it.message == message.message }
+            handledMessagesSet += message
+            handledMessagesList += message
+            if (!isDuplicated) {
+                onMessageCallback?.invoke(ChannelChatMessage(message, metadata))
+            }
         }
     }
 }

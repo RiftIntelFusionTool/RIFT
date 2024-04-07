@@ -84,7 +84,9 @@ class ApplicationViewModel(
     }
 
     fun onQuit() {
-        windowManager.saveWindowPlacements()
-        _state.update { it.copy(isApplicationRunning = false) }
+        viewModelScope.launch {
+            windowManager.saveWindowPlacements()
+            _state.update { it.copy(isApplicationRunning = false) }
+        }
     }
 }

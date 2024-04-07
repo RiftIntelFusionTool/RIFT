@@ -36,6 +36,7 @@ class LogbackAppender : AppenderBase<ILoggingEvent>() {
         """/characters/[0-9]{8,10}""".toRegex() to "/characters/000000000",
         """character [0-9]{8,10}""".toRegex() to "character 000000000",
         """/structures/[0-9]{12,14}/""".toRegex() to "/structures/0000000000000/",
+        """/stations/[0-9]{8}/""".toRegex() to "/stations/00000000/",
         """/corporations/[0-9]{7,10}""".toRegex() to "/corporations/000000000",
         """/alliances/[0-9]{8,11}""".toRegex() to "/alliances/0000000000",
     )

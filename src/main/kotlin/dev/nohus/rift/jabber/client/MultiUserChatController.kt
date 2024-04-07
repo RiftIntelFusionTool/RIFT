@@ -21,6 +21,7 @@ import org.jivesoftware.smackx.muc.MultiUserChatManager
 import org.jxmpp.jid.EntityBareJid
 import org.jxmpp.jid.impl.JidCreate
 import org.jxmpp.jid.parts.Resourcepart
+import org.jxmpp.stringprep.XmppStringprepException
 import org.koin.core.annotation.Factory
 import java.time.Duration
 import java.time.Instant
@@ -82,9 +83,9 @@ class MultiUserChatController(
      * Adds to server-side bookmarked chats
      */
     fun addChatRoom(jidLocalPart: String) {
-        val entityBareJid = JidCreate.entityBareFrom("$jidLocalPart@conference.goonfleet.com")
-        val name = entityBareJid.localpart.toString()
         try {
+            val entityBareJid = JidCreate.entityBareFrom("$jidLocalPart@conference.goonfleet.com")
+            val name = entityBareJid.localpart.toString()
             bookmarkManager?.addBookmarkedConference(name, entityBareJid, true, Resourcepart.from(nickname), null)
             multiUserChatManager?.let { multiUserChatManager ->
                 joinChat(multiUserChatManager, entityBareJid)
@@ -93,6 +94,8 @@ class MultiUserChatController(
             logger.error { "Could not add chat room: $e" }
         } catch (e: XMPPException) {
             logger.error { "Could not add chat room: $e" }
+        } catch (e: XmppStringprepException) {
+            logger.error { "Could not add chat room, invalid JID: $e" }
         }
     }
 
