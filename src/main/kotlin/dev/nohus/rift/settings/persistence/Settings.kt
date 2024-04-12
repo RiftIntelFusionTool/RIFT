@@ -3,9 +3,8 @@ package dev.nohus.rift.settings.persistence
 import dev.nohus.rift.alerts.Alert
 import dev.nohus.rift.utils.Pos
 import dev.nohus.rift.windowing.WindowManager.RiftWindow
-import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import org.koin.core.annotation.Single
 import java.io.File
 import java.time.ZoneId
@@ -15,11 +14,8 @@ class Settings(
     private val persistence: SettingsPersistence,
 ) {
     private var model = persistence.load()
-    private val _updateFlow = MutableSharedFlow<SettingsModel>(
-        extraBufferCapacity = 1,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST,
-    )
-    val updateFlow = _updateFlow.asSharedFlow()
+    private val _updateFlow = MutableStateFlow(model)
+    val updateFlow = _updateFlow.asStateFlow()
 
     private fun update(update: SettingsModel.() -> SettingsModel) {
         val newModel = model.update()

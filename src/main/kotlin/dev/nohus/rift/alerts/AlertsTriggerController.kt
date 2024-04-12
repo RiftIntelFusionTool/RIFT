@@ -121,11 +121,11 @@ class AlertsTriggerController(
                         is GameActionType.InCombat -> {
                             action is GameLogAction.UnderAttack && action.target.containsNonNull(trigger.nameContaining) ||
                                 action is GameLogAction.Attacking && action.target.containsNonNull(trigger.nameContaining) ||
-                                action is GameLogAction.BeingWarpScrambled
+                                action is GameLogAction.BeingWarpScrambled && action.target.containsNonNull(trigger.nameContaining)
                         }
                         is GameActionType.UnderAttack -> {
                             action is GameLogAction.UnderAttack && action.target.containsNonNull(trigger.nameContaining) ||
-                                action is GameLogAction.BeingWarpScrambled
+                                action is GameLogAction.BeingWarpScrambled && action.target.containsNonNull(trigger.nameContaining)
                         }
                         is GameActionType.Attacking -> {
                             action is GameLogAction.Attacking && action.target.containsNonNull(trigger.nameContaining)

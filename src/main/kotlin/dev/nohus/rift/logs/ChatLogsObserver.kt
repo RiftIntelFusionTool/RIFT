@@ -87,7 +87,7 @@ class ChatLogsObserver(
 
     private suspend fun updateActiveLogFiles() {
         try {
-            val currentActiveLogFiles = logFiles
+            val currentActiveLogFiles = logFiles.toList()
                 .filter { it.file.exists() }
                 .groupBy { it.characterId }
                 .flatMap { (characterId, playerLogFiles) ->

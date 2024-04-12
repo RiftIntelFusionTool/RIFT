@@ -5,6 +5,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.toAwtImage
+import androidx.compose.ui.window.ApplicationScope
+import androidx.compose.ui.window.Tray
+import androidx.compose.ui.window.rememberTrayState
 import com.formdev.flatlaf.FlatDarkLaf
 import dev.nohus.rift.ApplicationViewModel
 import dev.nohus.rift.di.koin
@@ -31,20 +34,25 @@ import dev.nohus.rift.generated.resources.window_settings
 import dev.nohus.rift.generated.resources.window_sovereignty
 import dev.nohus.rift.repositories.ConfigurationPackRepository
 import dev.nohus.rift.settings.persistence.Settings
+import dev.nohus.rift.tray.TrayMenuItem.Separator
+import dev.nohus.rift.tray.TrayMenuItem.TrayMenuTextItem
 import dev.nohus.rift.utils.OperatingSystem
 import dev.nohus.rift.windowing.WindowManager
 import dorkbox.systemTray.MenuItem
 import dorkbox.systemTray.SystemTray
 import dorkbox.systemTray.util.SizeAndScaling
-import io.sentry.Sentry
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.imageResource
+import org.jetbrains.compose.resources.painterResource
 import java.awt.Image
 import java.awt.image.BufferedImage
 import javax.swing.JSeparator
 
+private val logger = KotlinLogging.logger {}
+
 @Composable
-fun RiftTray(
+fun ApplicationScope.RiftTray(
     viewModel: ApplicationViewModel,
     windowManager: WindowManager,
     isVisible: Boolean,
@@ -53,27 +61,76 @@ fun RiftTray(
     val settings = remember { koin.get<Settings>() }
     val configurationPackRepository = remember { koin.get<ConfigurationPackRepository>() }
     if (isVisible) {
-        initialize(
+        val items = getTrayMenuItems(
             operatingSystem = operatingSystem,
-            isUsingDarkTrayIcon = settings.isUsingDarkTrayIcon,
             windowManager = windowManager,
             isJabberEnabled = configurationPackRepository.isJabberEnabled(),
             onQuitClick = viewModel::onQuit,
         )
+        val didInitialize = initialize(
+            items = items,
+            operatingSystem = operatingSystem,
+            isUsingDarkTrayIcon = settings.isUsingDarkTrayIcon,
+        )
+        if (!didInitialize) {
+            logger.info { "Falling back to AWT tray icon" }
+            AwtTrayIcon(
+                items = items,
+                isUsingDarkTrayIcon = settings.isUsingDarkTrayIcon,
+                windowManager = windowManager,
+            )
+        }
     }
 }
 
 private var currentSystemTray: SystemTray? = null
 
-@Composable
-private fun initialize(
+sealed interface TrayMenuItem {
+    data class TrayMenuTextItem(
+        val text: String,
+        val drawable: DrawableResource?,
+        val action: () -> Unit,
+    ) : TrayMenuItem
+
+    data object Separator : TrayMenuItem
+}
+
+private fun getTrayMenuItems(
     operatingSystem: OperatingSystem,
-    isUsingDarkTrayIcon: Boolean,
     windowManager: WindowManager,
     isJabberEnabled: Boolean,
     onQuitClick: () -> Unit,
-) {
-    if (currentSystemTray == null) {
+): List<TrayMenuItem> {
+    return buildList {
+        if (operatingSystem == OperatingSystem.Windows) {
+            // On Windows we want an icon
+            add(TrayMenuTextItem("RIFT", Res.drawable.window_rift_64) { windowManager.onWindowOpen(WindowManager.RiftWindow.Neocom) })
+        } else {
+            add(TrayMenuTextItem("RIFT", null) { windowManager.onWindowOpen(WindowManager.RiftWindow.Neocom) })
+        }
+        add(Separator)
+        add(TrayMenuTextItem("Alerts", Res.drawable.window_loudspeaker_icon) { windowManager.onWindowOpen(WindowManager.RiftWindow.Alerts) })
+        add(TrayMenuTextItem("Intel Reports", Res.drawable.window_satellite) { windowManager.onWindowOpen(WindowManager.RiftWindow.Intel) })
+        add(TrayMenuTextItem("Intel Map", Res.drawable.window_map) { windowManager.onWindowOpen(WindowManager.RiftWindow.Map) })
+        add(TrayMenuTextItem("Characters", Res.drawable.window_characters) { windowManager.onWindowOpen(WindowManager.RiftWindow.Characters) })
+        if (isJabberEnabled) {
+            add(TrayMenuTextItem("Pings", Res.drawable.window_sovereignty) { windowManager.onWindowOpen(WindowManager.RiftWindow.Pings) })
+            add(TrayMenuTextItem("Jabber", Res.drawable.window_chatchannels) { windowManager.onWindowOpen(WindowManager.RiftWindow.Jabber) })
+        }
+        add(TrayMenuTextItem("Settings", Res.drawable.window_settings) { windowManager.onWindowOpen(WindowManager.RiftWindow.Settings) })
+        add(TrayMenuTextItem("About", Res.drawable.window_evemailtag) { windowManager.onWindowOpen(WindowManager.RiftWindow.About) })
+        add(Separator)
+        add(TrayMenuTextItem("Quit", Res.drawable.window_quitgame) { onQuitClick() })
+    }
+}
+
+@Composable
+private fun initialize(
+    items: List<TrayMenuItem>,
+    operatingSystem: OperatingSystem,
+    isUsingDarkTrayIcon: Boolean,
+): Boolean {
+    return if (currentSystemTray == null) {
         if (operatingSystem == OperatingSystem.Windows) {
             // On Windows the tray menu uses Swing
             FlatDarkLaf.setup() // Dark theme for Swing
@@ -83,35 +140,65 @@ private fun initialize(
         SystemTray.APP_NAME = "RIFT"
         val systemTray: SystemTray? = SystemTray.get()
         if (systemTray == null) {
-            Sentry.captureMessage("System tray failed to initialize")
+            logger.error { "System tray failed to initialize" }
+            false
         } else {
             systemTray.setImage(getBestTrayIcon(systemTray, isUsingDarkTrayIcon))
-
             if (operatingSystem == OperatingSystem.Windows) {
                 // On Windows the tooltip shows on hover
-                systemTray.setTooltip("RIFT")
-                // On Windows we want an icon
-                systemTray.menu.add(MenuItem("RIFT", getImage(Res.drawable.window_rift_64)) { windowManager.onWindowOpen(WindowManager.RiftWindow.Neocom) })
-            } else {
-                systemTray.menu.add(MenuItem("RIFT") { windowManager.onWindowOpen(WindowManager.RiftWindow.Neocom) })
+                try {
+                    systemTray.setTooltip("RIFT")
+                } catch (error: Error) {
+                    logger.error { "Failed to set tray tooltip" }
+                }
             }
-            systemTray.menu.add(JSeparator())
-            systemTray.menu.add(MenuItem("Alerts", getImage(Res.drawable.window_loudspeaker_icon)) { windowManager.onWindowOpen(WindowManager.RiftWindow.Alerts) })
-            systemTray.menu.add(MenuItem("Intel Reports", getImage(Res.drawable.window_satellite)) { windowManager.onWindowOpen(WindowManager.RiftWindow.Intel) })
-            systemTray.menu.add(MenuItem("Intel Map", getImage(Res.drawable.window_map)) { windowManager.onWindowOpen(WindowManager.RiftWindow.Map) })
-            systemTray.menu.add(MenuItem("Characters", getImage(Res.drawable.window_characters)) { windowManager.onWindowOpen(WindowManager.RiftWindow.Characters) })
-            if (isJabberEnabled) {
-                systemTray.menu.add(MenuItem("Pings", getImage(Res.drawable.window_sovereignty)) { windowManager.onWindowOpen(WindowManager.RiftWindow.Pings) })
-                systemTray.menu.add(MenuItem("Jabber", getImage(Res.drawable.window_chatchannels)) { windowManager.onWindowOpen(WindowManager.RiftWindow.Jabber) })
+            for (item in items) {
+                when (item) {
+                    is TrayMenuTextItem -> {
+                        systemTray.menu.add(MenuItem(item.text, item.drawable?.let { getImage(it) }) { item.action() })
+                    }
+                    Separator -> {
+                        systemTray.menu.add(JSeparator())
+                    }
+                }
             }
-            systemTray.menu.add(MenuItem("Settings", getImage(Res.drawable.window_settings)) { windowManager.onWindowOpen(WindowManager.RiftWindow.Settings) })
-            systemTray.menu.add(MenuItem("About", getImage(Res.drawable.window_evemailtag)) { windowManager.onWindowOpen(WindowManager.RiftWindow.About) })
-            systemTray.menu.add(JSeparator())
-            systemTray.menu.add(MenuItem("Quit", getImage(Res.drawable.window_quitgame)) { onQuitClick() })
-
             currentSystemTray = systemTray
+            true
         }
+    } else {
+        true
     }
+}
+
+@Composable
+private fun ApplicationScope.AwtTrayIcon(
+    items: List<TrayMenuItem>,
+    isUsingDarkTrayIcon: Boolean,
+    windowManager: WindowManager,
+) {
+    val icon = if (isUsingDarkTrayIcon) {
+        Res.drawable.tray_tray_dark_128
+    } else {
+        Res.drawable.tray_tray_128
+    }
+    Tray(
+        icon = painterResource(icon),
+        state = rememberTrayState(),
+        tooltip = "RIFT",
+        onAction = { windowManager.onWindowOpen(WindowManager.RiftWindow.Neocom) },
+        menu = {
+            for (item in items) {
+                when (item) {
+                    is TrayMenuTextItem -> {
+                        Item(item.text, onClick = item.action)
+                    }
+                    Separator -> {
+                        Separator()
+                    }
+                }
+            }
+        },
+    )
 }
 
 @Composable

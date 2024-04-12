@@ -6,14 +6,11 @@ import com.jogamp.openal.ALFactory
 import com.jogamp.openal.util.ALut
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
-import org.koin.core.annotation.Single
 import java.io.InputStream
 import java.nio.ByteBuffer
-import kotlin.concurrent.thread
 
 private val logger = KotlinLogging.logger {}
 
-@Single
 class OpenAlPlayer {
 
     private var openAl: AL? = null
@@ -21,14 +18,13 @@ class OpenAlPlayer {
     init {
         try {
             openAl = initializeOpenAl()
-            Runtime.getRuntime().addShutdownHook(
-                thread(false) {
-                    ALut.alutExit()
-                },
-            )
         } catch (e: ALException) {
             logger.error(e) { "Could not initialize OpenAL, sound playback won't work" }
         }
+    }
+
+    fun shutdown() {
+        ALut.alutExit()
     }
 
     suspend fun play(

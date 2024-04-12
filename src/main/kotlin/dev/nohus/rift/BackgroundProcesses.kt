@@ -14,6 +14,7 @@ import dev.nohus.rift.pings.PingsRepository
 import dev.nohus.rift.settings.persistence.Settings
 import dev.nohus.rift.singleinstance.SingleInstanceController
 import dev.nohus.rift.utils.ResetSparkleUpdateCheckUseCase
+import dev.nohus.rift.utils.sound.SoundPlayer
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import org.koin.core.annotation.Single
@@ -33,6 +34,7 @@ class BackgroundProcesses(
     private val pingsRepository: PingsRepository,
     private val singleInstanceController: SingleInstanceController,
     private val killboardObserver: KillboardObserver,
+    private val soundPlayer: SoundPlayer,
     private val settings: Settings,
 ) {
 
@@ -77,6 +79,9 @@ class BackgroundProcesses(
             }
             launch {
                 killboardObserver.start()
+            }
+            launch {
+                soundPlayer.start()
             }
         }
     }

@@ -4,7 +4,10 @@ import dev.nohus.rift.generated.resources.Res
 import dev.nohus.rift.settings.persistence.Settings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.Single
 import java.io.File
@@ -13,12 +16,38 @@ import java.util.concurrent.Executors
 
 @Single
 class SoundPlayer(
-    private val openAlPlayer: OpenAlPlayer,
     private val settings: Settings,
 ) {
 
     private val dispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher()
-    private val scope = CoroutineScope(Job() + dispatcher)
+    private val scope = CoroutineScope(SupervisorJob() + dispatcher)
+    private val playSubmission = Channel<InputStream>()
+
+    suspend fun start() = scope.launch {
+        while (true) {
+            val inputStream = playSubmission.receive()
+            val gain = settings.soundsVolume / 100f
+            val player = OpenAlPlayer()
+
+            val playingJobs = mutableListOf<Job>()
+            playingJobs += launch {
+                player.play(inputStream, gain)
+            }
+            val concurrentJobsListener = launch {
+                while (true) {
+                    val inputStream = playSubmission.receive()
+                    playingJobs += launch {
+                        player.play(inputStream, gain)
+                    }
+                }
+            }
+            while (playingJobs.any { it.isActive }) {
+                playingJobs.filter { it.isActive }.forEach { it.join() }
+            }
+            concurrentJobsListener.cancelAndJoin()
+            player.shutdown()
+        }
+    }
 
     fun play(soundResource: String) = scope.launch {
         val inputStream = Res.readBytes("files/sounds/$soundResource").inputStream()
@@ -32,7 +61,6 @@ class SoundPlayer(
     }
 
     private suspend fun play(inputStream: InputStream) {
-        val gain = settings.soundsVolume / 100f
-        openAlPlayer.play(inputStream, gain)
+        playSubmission.send(inputStream)
     }
 }
