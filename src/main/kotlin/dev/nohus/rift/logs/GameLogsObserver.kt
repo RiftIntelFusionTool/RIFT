@@ -14,6 +14,8 @@ import org.koin.core.annotation.Single
 import java.io.IOException
 import java.nio.file.NoSuchFileException
 import java.nio.file.Path
+import java.time.Duration
+import java.time.Instant
 import kotlin.io.path.exists
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
@@ -99,8 +101,9 @@ class GameLogsObserver(
 
     private suspend fun updateActiveLogFiles() {
         try {
+            val minTime = Instant.now() - Duration.ofDays(60)
             val currentActiveLogFiles = logFilesMutex.withLock { logFiles.toList() }
-                .filter { it.file.exists() }
+                .filter { it.file.exists() && it.lastModified > minTime }
                 .groupBy { it.characterId }
                 .mapNotNull { (characterId, playerLogFiles) ->
                     // Take the latest file for this player

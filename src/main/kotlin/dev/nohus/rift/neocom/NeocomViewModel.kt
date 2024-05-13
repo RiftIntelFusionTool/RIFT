@@ -43,6 +43,10 @@ class NeocomViewModel(
         windowManager.onWindowOpen(RiftWindow.Characters)
     }
 
+    fun onAssetsClick() {
+        windowManager.onWindowOpen(RiftWindow.Assets)
+    }
+
     fun onPingsClick() {
         windowManager.onWindowOpen(RiftWindow.Pings)
     }

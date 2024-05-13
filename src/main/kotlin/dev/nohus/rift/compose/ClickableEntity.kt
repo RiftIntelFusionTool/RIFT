@@ -35,7 +35,7 @@ fun ClickableLocation(
     val system = repository.getSystemName(systemId) ?: return
     val dotlanUrl = "https://evemaps.dotlan.net/system/$system"
     RiftContextMenuArea(
-        items = GetSystemContextMenuItems(system, systemId, locationId),
+        items = GetSystemContextMenuItems(systemId, locationId),
     ) {
         ClickableEntity(
             onClick = {
@@ -55,7 +55,7 @@ fun ClickableSystem(
     val systemId = repository.getSystemId(system) ?: return
     val dotlanUrl = "https://evemaps.dotlan.net/system/$system"
     RiftContextMenuArea(
-        items = GetSystemContextMenuItems(system, systemId),
+        items = GetSystemContextMenuItems(systemId),
     ) {
         ClickableEntity(
             onClick = {
@@ -68,13 +68,16 @@ fun ClickableSystem(
 
 @Composable
 fun GetSystemContextMenuItems(
-    system: String,
-    systemId: Int,
+    systemId: Int?,
     locationId: Long? = null,
     mapType: MapType? = null,
 ): List<ContextMenuItem> {
+    if (systemId == null) return emptyList()
+
     val autopilotController: AutopilotController = remember { koin.get() }
     val mapExternalControl: MapExternalControl = remember { koin.get() }
+    val solarSystemsRepository: SolarSystemsRepository = remember { koin.get() }
+    val system = solarSystemsRepository.getSystemName(systemId) ?: return emptyList()
     val dotlanUrl = "https://evemaps.dotlan.net/system/$system"
     val zkillboardUrl = "https://zkillboard.com/system/$systemId/"
     return buildList {

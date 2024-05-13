@@ -31,6 +31,7 @@ import dev.nohus.rift.compose.pointerInteraction
 import dev.nohus.rift.compose.theme.RiftTheme
 import dev.nohus.rift.compose.theme.Spacing
 import dev.nohus.rift.generated.resources.Res
+import dev.nohus.rift.generated.resources.window_assets
 import dev.nohus.rift.generated.resources.window_characters
 import dev.nohus.rift.generated.resources.window_chatchannels
 import dev.nohus.rift.generated.resources.window_evemailtag
@@ -68,6 +69,7 @@ fun NeocomWindow(
             NeocomButton(icon = Res.drawable.window_satellite, name = "Intel Reports", viewModel::onIntelClick)
             NeocomButton(icon = Res.drawable.window_map, name = "Intel Map", viewModel::onMapClick)
             NeocomButton(icon = Res.drawable.window_characters, name = "Characters", viewModel::onCharactersClick)
+            NeocomButton(icon = Res.drawable.window_assets, name = "Assets", viewModel::onAssetsClick)
             if (state.isJabberEnabled) {
                 NeocomButton(icon = Res.drawable.window_sovereignty, name = "Pings", viewModel::onPingsClick)
                 NeocomButton(icon = Res.drawable.window_chatchannels, name = "Jabber", viewModel::onJabberClick)

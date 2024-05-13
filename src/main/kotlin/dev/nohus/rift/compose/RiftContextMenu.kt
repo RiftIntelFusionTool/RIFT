@@ -59,6 +59,13 @@ fun RiftContextMenuArea(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
+    if (items.isEmpty()) {
+        Box(modifier = modifier) {
+            content()
+        }
+        return
+    }
+
     val contextMenuId = remember { UUID.randomUUID().toString() }
     var isMenuShown by remember { mutableStateOf(false) }
     LaunchedEffect(openContextMenuId) { if (openContextMenuId != contextMenuId) isMenuShown = false }

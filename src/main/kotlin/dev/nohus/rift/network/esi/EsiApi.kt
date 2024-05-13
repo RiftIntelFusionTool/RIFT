@@ -8,6 +8,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import org.koin.core.annotation.Named
 import org.koin.core.annotation.Single
+import retrofit2.Response
 import retrofit2.Retrofit
 
 @Single
@@ -27,6 +28,10 @@ class EsiApi(
 
     suspend fun postUniverseIds(names: List<String>): Result<UniverseIdsResponse> {
         return execute { service.postUniverseIds(names) }
+    }
+
+    suspend fun postUniverseNames(ids: List<Int>): Result<List<UniverseName>> {
+        return execute { service.postUniverseNames(ids) }
     }
 
     suspend fun getCharactersId(characterId: Int): Result<CharactersIdCharacter> {
@@ -87,6 +92,18 @@ class EsiApi(
                 destinationId = destinationId,
                 authorization = authorization,
             )
+        }
+    }
+
+    suspend fun getCharactersIdAssets(page: Int, characterId: Int): Result<Response<List<CharactersIdAsset>>> {
+        return executeEveAuthorized(characterId) { authentication ->
+            service.getCharactersIdAssets(characterId, page, authentication)
+        }
+    }
+
+    suspend fun getCharactersIdAssetsNames(characterId: Int, assets: List<Long>): Result<List<CharactersIdAssetsName>> {
+        return executeEveAuthorized(characterId) { authentication ->
+            service.getCharactersIdAssetsNames(characterId, assets, authentication)
         }
     }
 }

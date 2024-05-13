@@ -21,6 +21,7 @@ import dev.nohus.rift.generated.resources.tray_tray_dark_16
 import dev.nohus.rift.generated.resources.tray_tray_dark_24
 import dev.nohus.rift.generated.resources.tray_tray_dark_32
 import dev.nohus.rift.generated.resources.tray_tray_dark_64
+import dev.nohus.rift.generated.resources.window_assets
 import dev.nohus.rift.generated.resources.window_characters
 import dev.nohus.rift.generated.resources.window_chatchannels
 import dev.nohus.rift.generated.resources.window_evemailtag
@@ -111,6 +112,7 @@ private fun getTrayMenuItems(
         add(TrayMenuTextItem("Intel Reports", Res.drawable.window_satellite) { windowManager.onWindowOpen(WindowManager.RiftWindow.Intel) })
         add(TrayMenuTextItem("Intel Map", Res.drawable.window_map) { windowManager.onWindowOpen(WindowManager.RiftWindow.Map) })
         add(TrayMenuTextItem("Characters", Res.drawable.window_characters) { windowManager.onWindowOpen(WindowManager.RiftWindow.Characters) })
+        add(TrayMenuTextItem("Assets", Res.drawable.window_assets) { windowManager.onWindowOpen(WindowManager.RiftWindow.Assets) })
         if (isJabberEnabled) {
             add(TrayMenuTextItem("Pings", Res.drawable.window_sovereignty) { windowManager.onWindowOpen(WindowManager.RiftWindow.Pings) })
             add(TrayMenuTextItem("Jabber", Res.drawable.window_chatchannels) { windowManager.onWindowOpen(WindowManager.RiftWindow.Jabber) })

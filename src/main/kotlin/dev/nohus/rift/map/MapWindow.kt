@@ -550,10 +550,9 @@ private fun SystemContextMenu(
     state.mapState.contextMenuSystem?.let { systemId ->
         val position = state.layout[systemId] ?: return
         val coordinates = getCanvasCoordinates(position.x, position.y, animatedCenter, mapScale, canvasSize)
-        val system = state.cluster.systems.first { it.id == systemId }
         key(systemId) {
             RiftContextMenuPopup(
-                items = GetSystemContextMenuItems(system.name, systemId, mapType = state.mapType),
+                items = GetSystemContextMenuItems(systemId, mapType = state.mapType),
                 offset = IntOffset(coordinates.x.toInt(), coordinates.y.toInt()),
                 onDismissRequest = onDismissRequest,
             )

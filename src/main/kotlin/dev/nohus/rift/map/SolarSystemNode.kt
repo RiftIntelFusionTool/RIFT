@@ -60,7 +60,6 @@ import dev.nohus.rift.generated.resources.brackets_fightersquad_16
 import dev.nohus.rift.intel.state.IntelStateController.Dated
 import dev.nohus.rift.intel.state.SystemEntity
 import dev.nohus.rift.location.GetOnlineCharactersLocationUseCase.OnlineCharacterLocation
-import dev.nohus.rift.map.HostileOrbitPainter.EntityIcon
 import dev.nohus.rift.map.MapViewModel.MapType
 import dev.nohus.rift.map.MapViewModel.MapType.RegionMap
 import dev.nohus.rift.map.systemcolor.SolarSystemColorStrategy

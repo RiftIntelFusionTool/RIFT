@@ -2,12 +2,15 @@ package dev.nohus.rift.database
 
 import dev.nohus.rift.database.static.StaticDatabase
 import dev.nohus.rift.repositories.SolarSystemsRepository
+import dev.nohus.rift.utils.OperatingSystem
+import dev.nohus.rift.utils.directories.AppDirectories
+import dev.nohus.rift.utils.osdirectories.LinuxDirectories
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 
 class SolarSystemsRepositoryTest : FreeSpec({
 
-    val target = SolarSystemsRepository(StaticDatabase())
+    val target = SolarSystemsRepository(StaticDatabase(SqliteInitializer(OperatingSystem.Linux, AppDirectories(LinuxDirectories()))))
 
     listOf(
         Triple("Jita", null, "Jita"),

@@ -177,6 +177,10 @@ class SolarSystemsRepository(
         return systemsById[id]
     }
 
+    fun getSystem(id: Int): MapSolarSystem? {
+        return systemsById[id]
+    }
+
     fun getSystemSecurity(id: Int): Double? {
         return mapSolarSystems.firstOrNull { it.id == id }?.security
     }

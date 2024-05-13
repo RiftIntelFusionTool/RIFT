@@ -86,6 +86,16 @@ class AutopilotController(
                 }
                 delay(100)
             }
+            if (route.appended.systems.lastOrNull()?.toLong() != destinationId) {
+                val result = esiApi.postUiAutopilotWaypoint(
+                    destinationId = destinationId,
+                    clearOtherWaypoints = false,
+                    characterId = activeCharacterId,
+                )
+                if (result.isFailure) {
+                    logger.error { "Setting autopilot waypoint failed: $result" }
+                }
+            }
         } else {
             val result = esiApi.postUiAutopilotWaypoint(
                 destinationId = destinationId,

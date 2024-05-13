@@ -19,6 +19,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -133,6 +137,7 @@ private fun FiltersRow(
         )
         Spacer(Modifier.weight(1f))
         var search by remember { mutableStateOf(state.search ?: "") }
+        val focusManager = LocalFocusManager.current
         RiftTextField(
             text = search,
             placeholder = "Search",
@@ -141,9 +146,22 @@ private fun FiltersRow(
                 onSearchChange(it)
             },
             height = if (state.settings.isUsingCompactMode) 24.dp else 32.dp,
+            onDeleteClick = {
+                search = ""
+                onSearchChange("")
+            },
             modifier = Modifier
                 .width(150.dp)
-                .padding(start = Spacing.medium),
+                .padding(start = Spacing.medium)
+                .onKeyEvent {
+                    when (it.key) {
+                        Key.Escape -> {
+                            focusManager.clearFocus()
+                            true
+                        }
+                        else -> false
+                    }
+                },
         )
     }
 }

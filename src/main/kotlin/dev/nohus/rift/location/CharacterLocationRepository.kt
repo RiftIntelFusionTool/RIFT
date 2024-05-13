@@ -51,7 +51,7 @@ class CharacterLocationRepository(
     data class Structure(
         val structureId: Long,
         val name: String,
-        val typeId: Int,
+        val typeId: Int?,
     )
 
     suspend fun start() = coroutineScope {

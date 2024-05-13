@@ -24,8 +24,8 @@ class MatchGameLogFilenameUseCase {
         val dateTime = LocalDateTime.parse("$date$time", dateFormatter)
         val playerId = match.groups["playerid"]!!.value
         try {
-            val lastModifier = file.getLastModifiedTime().toInstant()
-            return GameLogFile(file, dateTime, playerId, lastModifier)
+            val lastModified = file.getLastModifiedTime().toInstant()
+            return GameLogFile(file, dateTime, playerId, lastModified)
         } catch (e: IOException) {
             logger.error(e) { "Game log file not found" }
             return null

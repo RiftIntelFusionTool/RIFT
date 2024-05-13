@@ -1,6 +1,7 @@
 package dev.nohus.rift
 
 import dev.nohus.rift.alerts.AlertsTriggerController
+import dev.nohus.rift.assets.AssetsRepository
 import dev.nohus.rift.autopilot.AutopilotController
 import dev.nohus.rift.characters.repositories.ActiveCharacterRepository
 import dev.nohus.rift.characters.repositories.CharacterWalletRepository
@@ -37,6 +38,7 @@ class BackgroundProcesses(
     private val soundPlayer: SoundPlayer,
     private val clipboard: Clipboard,
     private val autopilotController: AutopilotController,
+    private val assetsRepository: AssetsRepository,
     private val settings: Settings,
 ) {
 
@@ -87,6 +89,9 @@ class BackgroundProcesses(
             }
             launch {
                 autopilotController.start()
+            }
+            launch {
+                assetsRepository.start()
             }
         }
     }

@@ -56,6 +56,8 @@ object Ships : Table() {
 object Types : Table() {
     val typeId = integer("typeId")
     val typeName = varchar("typeName", 100)
+    val volume = float("volume")
+    val iconId = integer("iconID").nullable()
     override val primaryKey = PrimaryKey(typeId)
 }
 

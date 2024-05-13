@@ -4,6 +4,7 @@ import dev.nohus.rift.configurationpack.ShouldShowConfigurationPackReminderUseCa
 import dev.nohus.rift.settings.persistence.Settings
 import dev.nohus.rift.singleinstance.SingleInstanceController
 import dev.nohus.rift.utils.directories.DetectDirectoriesUseCase
+import dev.nohus.rift.whatsnew.WhatsNewController
 import dev.nohus.rift.windowing.WindowManager
 import dev.nohus.rift.windowing.WindowManager.RiftWindow
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -25,6 +26,7 @@ class ApplicationViewModel(
     private val windowManager: WindowManager,
     private val singleInstanceController: SingleInstanceController,
     private val shouldShowConfigurationPackReminderUseCase: ShouldShowConfigurationPackReminderUseCase,
+    private val whatsNewController: WhatsNewController,
     private val settings: Settings,
 ) : ViewModel() {
 
@@ -78,6 +80,11 @@ class ApplicationViewModel(
         viewModelScope.launch {
             val showReminder = shouldShowConfigurationPackReminderUseCase()
             if (showReminder) windowManager.onWindowOpen(RiftWindow.ConfigurationPackReminder)
+        }
+        if (settings.isSetupWizardFinished) {
+            whatsNewController.showIfRequired()
+        } else {
+            whatsNewController.resetWhatsNewVersion()
         }
     }
 

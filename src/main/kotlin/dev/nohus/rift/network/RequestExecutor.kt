@@ -8,6 +8,7 @@ import dev.nohus.rift.sso.authentication.NoAuthenticationException
 import dev.nohus.rift.sso.authentication.SsoAuthenticator
 import dev.nohus.rift.sso.authentication.SsoException
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
@@ -70,11 +71,13 @@ class RequestExecutorImpl(
                             logger.error { "Character $characterId has been deleted from the game, removing" }
                             eveSsoRepository.removeAuthentication(characterId)
                         }
+                    } else if ("Forbidden" == errorResponse.error) {
+                        logger.debug { "Forbidden API response" }
                     } else {
                         logger.error { "Unknown API error response: $errorResponse" }
                     }
-                } catch (e: SerializationException) {
-                    logger.error(e) { "Unknown API error body: \"$body\"" }
+                } catch (ignored: SerializationException) {
+                    logger.error { "API HTTP error: ${e.code()} (with unknown body)" }
                 }
             } else {
                 logger.error { "API HTTP error: ${e.code()}" }
@@ -83,6 +86,8 @@ class RequestExecutorImpl(
             logger.error { "Could not execute request: $e" }
         } else if (e is SerializationException) {
             logger.error(e) { "Unexpected API response" }
+        } else if (e is CancellationException) {
+            // Normal behavior, operation cancelled
         } else {
             logger.error(e) { "Unknown API Error" }
         }

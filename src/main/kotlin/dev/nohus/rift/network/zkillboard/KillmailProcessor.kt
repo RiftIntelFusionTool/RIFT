@@ -82,7 +82,7 @@ class KillmailProcessor(
                 timestamp = message.killmailTime,
             )
 
-            logger.info { "Kill: ${killmail.ship} in ${processedKillmail.system}, ${ago.toSeconds()}s ago" }
+            logger.debug { "Kill: ${killmail.ship} in ${processedKillmail.system}, ${ago.toSeconds()}s ago" }
             intelStateController.submitKillmail(processedKillmail)
         }
     }

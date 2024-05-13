@@ -8,6 +8,10 @@ sealed class Result<out T : Any?> {
     val failure get() = (this as? Failure)?.cause
     val isSuccess get() = this is Success
     val isFailure get() = this is Failure
+    val successOrThrow get() = when (this) {
+        is Success -> this.data
+        is Failure -> throw this.cause ?: Exception("Unknown failure")
+    }
 
     inline fun <R : Any?> map(transform: (T) -> R): Result<R> {
         return when (this) {

@@ -4,6 +4,7 @@ import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.Transition
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
@@ -82,15 +83,23 @@ fun <T> getStandardTransitionSpec(): @Composable Transition.Segment<PointerInter
 fun Modifier.hoverBackground(): Modifier = composed {
     val pointerInteractionStateHolder = remember { PointerInteractionStateHolder() }
     val colorTransitionSpec = getStandardTransitionSpec<Color>()
+    val floatTransitionSpec = getStandardTransitionSpec<Float>()
     val transition = updateTransition(pointerInteractionStateHolder.current)
     val highlightColor by transition.animateColor(colorTransitionSpec) {
         when (it) {
-            PointerInteractionState.Normal -> Color.Transparent
+            PointerInteractionState.Normal -> RiftTheme.colors.backgroundHovered
             PointerInteractionState.Hover -> RiftTheme.colors.backgroundHovered
             PointerInteractionState.Press -> RiftTheme.colors.backgroundSelected
         }
     }
+    val highlightAlpha by transition.animateFloat(floatTransitionSpec) {
+        when (it) {
+            PointerInteractionState.Normal -> 0f
+            PointerInteractionState.Hover -> 1f
+            PointerInteractionState.Press -> 1f
+        }
+    }
     return@composed this
         .pointerInteraction(pointerInteractionStateHolder)
-        .background(highlightColor)
+        .background(highlightColor.copy(alpha = highlightAlpha.coerceIn(0f..1f)))
 }

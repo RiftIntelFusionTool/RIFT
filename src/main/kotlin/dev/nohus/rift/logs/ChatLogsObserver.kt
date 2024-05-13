@@ -19,6 +19,7 @@ import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
 import kotlin.io.path.exists
+import kotlin.io.path.getLastModifiedTime
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
 
@@ -102,8 +103,9 @@ class ChatLogsObserver(
 
     private suspend fun updateActiveLogFiles() {
         try {
+            val minTime = Instant.now() - Duration.ofDays(60)
             val currentActiveLogFiles = logFilesMutex.withLock { logFiles.toList() }
-                .filter { it.file.exists() }
+                .filter { it.file.exists() && it.file.getLastModifiedTime().toInstant() > minTime }
                 .groupBy { it.characterId }
                 .flatMap { (characterId, playerLogFiles) ->
                     playerLogFiles

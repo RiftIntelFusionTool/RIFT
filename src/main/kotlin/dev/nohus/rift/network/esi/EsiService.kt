@@ -15,6 +15,11 @@ interface EsiService {
         @Body names: List<String>,
     ): UniverseIdsResponse
 
+    @POST("/v3/universe/names/")
+    suspend fun postUniverseNames(
+        @Body ids: List<Int>,
+    ): List<UniverseName>
+
     @GET("/v5/characters/{id}")
     suspend fun getCharactersId(
         @Path("id") characterId: Int,
@@ -75,4 +80,18 @@ interface EsiService {
         @Query("destination_id") destinationId: Long,
         @Header("Authorization") authorization: String,
     ): Response<Unit>
+
+    @GET("/v5/characters/{id}/assets/")
+    suspend fun getCharactersIdAssets(
+        @Path("id") characterId: Int,
+        @Query("page") page: Int,
+        @Header("Authorization") authorization: String,
+    ): Response<List<CharactersIdAsset>>
+
+    @POST("/v1/characters/{id}/assets/names/")
+    suspend fun getCharactersIdAssetsNames(
+        @Path("id") characterId: Int,
+        @Body assets: List<Long>,
+        @Header("Authorization") authorization: String,
+    ): List<CharactersIdAssetsName>
 }

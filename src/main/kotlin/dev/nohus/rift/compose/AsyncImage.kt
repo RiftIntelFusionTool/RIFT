@@ -9,12 +9,15 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import dev.nohus.rift.generated.resources.Res
 import dev.nohus.rift.generated.resources.missing
+import dev.nohus.rift.generated.resources.missing_blueprint
+import dev.nohus.rift.generated.resources.missing_skin
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kamel.core.utils.cacheControl
 import io.kamel.image.KamelImage
 import io.kamel.image.asyncPainterResource
 import io.ktor.client.request.header
 import io.ktor.client.utils.CacheControl
+import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
 private val logger = KotlinLogging.logger {}
@@ -27,6 +30,7 @@ fun AsyncImage(
     url: String,
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Fit,
+    fallbackIcon: @Composable () -> Unit = { FallbackIcon() },
 ) {
     val painter = asyncPainterResource(url) {
         requestBuilder {
@@ -39,8 +43,8 @@ fun AsyncImage(
         contentDescription = null,
         contentScale = contentScale,
         onFailure = {
-            logger.error(it) { "Failed to load AsyncImage: $url" }
-            FallbackIcon()
+            logger.error { "Failed to load AsyncImage: $url" }
+            fallbackIcon()
         },
         animationSpec = tween(),
         modifier = modifier,
@@ -49,21 +53,46 @@ fun AsyncImage(
 
 /**
  * Shows an icon of an Eve Online type ID
+ * nameHint is used to choose the fallback icon
  */
 @Composable
 fun AsyncTypeIcon(
     typeId: Int?,
+    fallbackIconId: Int? = null,
+    nameHint: String? = null,
     modifier: Modifier = Modifier,
 ) {
+    val staticFallbackIcon = @Composable {
+        val resource = if (nameHint != null) {
+            when {
+                "Blueprint" in nameHint -> Res.drawable.missing_blueprint
+                "SKIN" in nameHint -> Res.drawable.missing_skin
+                else -> Res.drawable.missing
+            }
+        } else {
+            Res.drawable.missing
+        }
+        FallbackIcon(
+            resource = resource,
+            modifier = modifier,
+        )
+    }
+    val fallbackIcon = @Composable {
+        AsyncImage(
+            url = "https://images.evetech.net/types/$fallbackIconId/icon",
+            modifier = modifier,
+            fallbackIcon = staticFallbackIcon,
+        )
+    }
+    val primaryFallbackIcon = if (fallbackIconId != null) fallbackIcon else staticFallbackIcon
     if (typeId != null) {
         AsyncImage(
             url = "https://images.evetech.net/types/$typeId/icon",
             modifier = modifier,
+            fallbackIcon = primaryFallbackIcon,
         )
     } else {
-        FallbackIcon(
-            modifier = modifier,
-        )
+        primaryFallbackIcon()
     }
 }
 
@@ -116,9 +145,12 @@ fun AsyncAllianceLogo(
 }
 
 @Composable
-private fun FallbackIcon(modifier: Modifier = Modifier) {
+private fun FallbackIcon(
+    resource: DrawableResource = Res.drawable.missing,
+    modifier: Modifier = Modifier,
+) {
     Image(
-        painter = painterResource(Res.drawable.missing),
+        painter = painterResource(resource),
         contentDescription = null,
         modifier = modifier,
     )

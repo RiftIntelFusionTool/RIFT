@@ -21,8 +21,12 @@ import dev.nohus.rift.generated.resources.loading_track_overlay
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
-fun LoadingSpinner() {
-    Box {
+fun LoadingSpinner(
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier,
+    ) {
         Image(
             painter = painterResource(Res.drawable.loading_track),
             contentDescription = null,

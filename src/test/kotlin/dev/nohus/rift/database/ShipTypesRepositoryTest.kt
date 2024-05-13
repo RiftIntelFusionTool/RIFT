@@ -2,12 +2,15 @@ package dev.nohus.rift.database
 
 import dev.nohus.rift.database.static.StaticDatabase
 import dev.nohus.rift.repositories.ShipTypesRepository
+import dev.nohus.rift.utils.OperatingSystem
+import dev.nohus.rift.utils.directories.AppDirectories
+import dev.nohus.rift.utils.osdirectories.LinuxDirectories
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 
 class ShipTypesRepositoryTest : FreeSpec({
 
-    val target = ShipTypesRepository(StaticDatabase())
+    val target = ShipTypesRepository(StaticDatabase(SqliteInitializer(OperatingSystem.Linux, AppDirectories(LinuxDirectories()))))
 
     listOf(
         "Buzzard" to "Buzzard",

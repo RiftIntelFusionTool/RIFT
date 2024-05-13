@@ -9,6 +9,8 @@ import dev.nohus.rift.network.AsyncResource.Ready
 import dev.nohus.rift.utils.OperatingSystem
 import dev.nohus.rift.utils.directories.AppDirectories
 import dev.nohus.rift.utils.openFileManager
+import dev.nohus.rift.windowing.WindowManager
+import dev.nohus.rift.windowing.WindowManager.RiftWindow
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,6 +36,7 @@ class AboutViewModel(
     private val okHttpClient: OkHttpClient,
     operatingSystem: OperatingSystem,
     private val appDirectories: AppDirectories,
+    private val windowManager: WindowManager,
 ) : ViewModel() {
 
     data class UiState(
@@ -85,6 +88,10 @@ class AboutViewModel(
 
     fun onCreditsClick() {
         _state.update { it.copy(isCreditsDialogShown = true) }
+    }
+
+    fun onWhatsNewClick() {
+        windowManager.onWindowOpen(RiftWindow.WhatsNew)
     }
 
     fun onDialogDismissed() {

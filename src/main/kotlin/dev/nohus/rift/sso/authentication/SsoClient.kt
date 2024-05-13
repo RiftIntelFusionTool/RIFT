@@ -77,6 +77,7 @@ class SsoClient(
                 "esi-ui.write_waypoint.v1",
                 "esi-wallet.read_character_wallet.v1",
                 "esi-search.search_structures.v1",
+                "esi-assets.read_assets.v1",
             ).joinToString(" "),
         )
     }
