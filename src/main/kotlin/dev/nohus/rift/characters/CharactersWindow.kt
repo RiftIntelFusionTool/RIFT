@@ -407,6 +407,8 @@ private fun CharacterRow(
                                             icon = Res.drawable.copy_16px,
                                             onClick = onCopySourceClick,
                                         )
+                                    } else {
+                                        NoSettingsFileIcon()
                                     }
                                 }
 
@@ -425,6 +427,8 @@ private fun CharacterRow(
                                                 onClick = onCopyDestinationClick,
                                             )
                                         }
+                                    } else {
+                                        NoSettingsFileIcon()
                                     }
                                 }
 
@@ -450,6 +454,8 @@ private fun CharacterRow(
                                                 onClick = onCopyDestinationClick,
                                             )
                                         }
+                                    } else {
+                                        NoSettingsFileIcon()
                                     }
                                 }
                             }
@@ -475,6 +481,17 @@ private fun CharacterRow(
             }
         }
     }
+}
+
+@Composable
+private fun NoSettingsFileIcon() {
+    RequirementIcon(
+        isFulfilled = false,
+        fulfilledTooltip = "",
+        notFulfilledTooltip = "EVE settings file for this character is missing.\nMake sure you have logged in to the game\nat least once.",
+        tooltipAnchor = TooltipAnchor.BottomEnd,
+        modifier = Modifier.padding(start = Spacing.small),
+    )
 }
 
 private fun formatIsk(number: Double): String {

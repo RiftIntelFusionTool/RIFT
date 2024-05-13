@@ -3,9 +3,13 @@ package dev.nohus.rift.map
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateOffsetAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -291,6 +295,7 @@ private fun Map(
         state.mapType,
         state.isJumpBridgeNetworkShown,
         state.jumpBridgeNetworkOpacity,
+        state.mapState.autopilotConnections,
     ) {
         if (state.mapType is ClusterRegionsMap) {
             RegionsMapPainter(state.cluster, state.layout)
@@ -303,6 +308,7 @@ private fun Map(
                 mapType = state.mapType,
                 isJumpBridgeNetworkShown = state.isJumpBridgeNetworkShown,
                 jumpBridgeNetworkOpacity = state.jumpBridgeNetworkOpacity,
+                autopilotConnections = state.mapState.autopilotConnections,
             )
         }
     }.apply { initializeComposed() }
@@ -311,6 +317,13 @@ private fun Map(
         val selectedPosition = state.layout[state.mapState.selectedSystem] ?: return@LaunchedEffect
         center = Offset(selectedPosition.x.toFloat(), selectedPosition.y.toFloat())
     }
+
+    val transition = rememberInfiniteTransition()
+    val animationPercentage by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(10_000, easing = LinearEasing)),
+    )
 
     Box(modifier = Modifier.clipToBounds()) {
         Canvas(
@@ -362,14 +375,16 @@ private fun Map(
                 ClusterSystemsMap -> 2.0f
                 is RegionMap -> 0.6f
             }
-            val scale = baseScale / animatedZoom
+            val scale = baseScale / animatedZoom / density
             mapScale = scale
             canvasSize = size
+
             mapPainter.draw(
                 scope = this,
                 center = DoubleOffset(animatedCenter.x.toDouble(), animatedCenter.y.toDouble()),
                 scale = scale,
                 zoom = animatedZoom,
+                animationPercentage = animationPercentage,
             )
         }
         if (mapScale != 0.0f && canvasSize != Size.Zero) {

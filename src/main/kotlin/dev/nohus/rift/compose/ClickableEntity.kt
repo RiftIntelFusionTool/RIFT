@@ -83,7 +83,7 @@ fun GetSystemContextMenuItems(
                 text = "Set Destination",
                 iconResource = Res.drawable.menu_set_destination,
                 onClick = {
-                    autopilotController.setDestination(locationId ?: systemId.toLong())
+                    autopilotController.setDestination(locationId ?: systemId.toLong(), systemId)
                 },
             ),
         )
@@ -91,7 +91,7 @@ fun GetSystemContextMenuItems(
             ContextMenuItem.TextItem(
                 text = "Add Waypoint",
                 onClick = {
-                    autopilotController.addWaypoint(locationId ?: systemId.toLong())
+                    autopilotController.addWaypoint(locationId ?: systemId.toLong(), systemId)
                 },
             ),
         )

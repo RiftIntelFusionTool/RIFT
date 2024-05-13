@@ -48,6 +48,7 @@ class RegionsMapPainter(
         center: DoubleOffset,
         scale: Float,
         zoom: Float,
+        animationPercentage: Float,
     ) = with(scope) {
         connectionsInLayout.forEach { connection ->
             drawRegionConnection(connection, center, scale)
@@ -70,7 +71,7 @@ class RegionsMapPainter(
         val brush = Brush.linearGradient(listOf(fromColor, toColor), start = Offset.Zero, end = deltaOffset)
 
         translate(from.x, from.y) {
-            val width = (1f / scale).coerceAtMost(2f)
+            val width = (1f / scale).coerceAtMost(2f) * density
             drawLine(brush, start = Offset.Zero, end = deltaOffset, strokeWidth = width)
         }
     }

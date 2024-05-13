@@ -92,7 +92,7 @@ class GameLogsObserver(
 
     private suspend fun updateActiveLogFiles() {
         try {
-            val currentActiveLogFiles = logFilesMutex.withLock { logFiles.toList()  }
+            val currentActiveLogFiles = logFilesMutex.withLock { logFiles.toList() }
                 .filter { it.file.exists() }
                 .groupBy { it.characterId }
                 .mapNotNull { (characterId, playerLogFiles) ->

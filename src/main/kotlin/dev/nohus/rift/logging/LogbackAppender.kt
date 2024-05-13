@@ -17,9 +17,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import okio.IOException
 import org.jetbrains.skiko.MainUIDispatcher
 import java.io.File
+
+private const val MAX_DIAGNOSTICS_LINES = 20_000
 
 class LogbackAppender : AppenderBase<ILoggingEvent>() {
 
@@ -34,7 +38,9 @@ class LogbackAppender : AppenderBase<ILoggingEvent>() {
             OperatingSystem.MacOs -> MacDirectories()
         },
     )
-    private val diagnosticsFile = File(appDirectories.getAppDataDirectory(), "diagnostics").also { it.delete() }
+    private val diagnosticsFile = File(appDirectories.getAppDataDirectory(), "diagnostics")
+    private var diagnosticsLines: Int = 0
+    private val diagnosticsMutex = Mutex()
 
     override fun start() {
         encoder = PatternLayoutEncoder().apply {
@@ -42,6 +48,9 @@ class LogbackAppender : AppenderBase<ILoggingEvent>() {
             context = this@LogbackAppender.context
             start()
         }
+        try {
+            diagnosticsFile.delete()
+        } catch (ignore: IOException) {}
         super.start()
     }
 
@@ -66,11 +75,7 @@ class LogbackAppender : AppenderBase<ILoggingEvent>() {
         scope.launch(MainUIDispatcher) {
             Sentry.addBreadcrumb(breadcrumb)
         }
-        scope.launch(Dispatchers.IO) {
-            try {
-                diagnosticsFile.appendText(formatted)
-            } catch (ignored: IOException) {}
-        }
+        writeDiagnostics(formatted)
     }
 
     private val anonymizationReplacements = listOf(
@@ -85,6 +90,21 @@ class LogbackAppender : AppenderBase<ILoggingEvent>() {
     private fun anonymizeLogMessage(message: String): String {
         return anonymizationReplacements.fold(message) { acc, (from, to) ->
             acc.replace(from, to)
+        }
+    }
+
+    private fun writeDiagnostics(formatted: String) {
+        scope.launch(Dispatchers.IO) {
+            diagnosticsMutex.withLock {
+                try {
+                    diagnosticsFile.appendText(formatted)
+                    diagnosticsLines++
+                    if (diagnosticsLines >= 2 * MAX_DIAGNOSTICS_LINES) {
+                        diagnosticsLines = MAX_DIAGNOSTICS_LINES
+                        diagnosticsFile.writeText(diagnosticsFile.readLines().takeLast(MAX_DIAGNOSTICS_LINES).joinToString("\n") + "\n")
+                    }
+                } catch (ignored: IOException) {}
+            }
         }
     }
 }

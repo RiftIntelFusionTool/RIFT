@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.text.TextMeasurer
@@ -41,6 +42,7 @@ class SystemsMapPainter(
     private val mapType: MapType,
     private val isJumpBridgeNetworkShown: Boolean,
     private val jumpBridgeNetworkOpacity: Int,
+    private val autopilotConnections: List<Pair<Int, Int>>,
 ) : MapPainter {
 
     private lateinit var textMeasurer: TextMeasurer
@@ -75,13 +77,14 @@ class SystemsMapPainter(
         center: DoubleOffset,
         scale: Float,
         zoom: Float,
+        animationPercentage: Float,
     ) = with(scope) {
         connectionsInLayout.forEach { connection ->
-            drawSystemConnection(connection, mapType, center, scale, zoom)
+            drawSystemConnection(connection, mapType, center, scale, zoom, animationPercentage)
         }
         if (isJumpBridgeNetworkShown) {
             jumpBridgeConnectionLines.forEach { connection ->
-                drawJumpBridgeConnection(connection, mapType, center, scale, zoom)
+                drawJumpBridgeConnection(connection, mapType, center, scale, zoom, animationPercentage)
             }
         }
         if (mapType is MapType.ClusterSystemsMap) {
@@ -118,7 +121,7 @@ class SystemsMapPainter(
         val offset = getCanvasCoordinates(position.x, position.y, center, scale)
         if (isOnCanvas(offset, 100)) {
             val systemColor = solarSystemColorStrategy.getActiveColor(system)
-            val radius = 4f
+            val radius = 4f * density
             val brush = systemRadialGradients.getOrPut(systemColor) {
                 Brush.radialGradient(
                     listOf(systemColor.copy(alpha = 0.7f), systemColor.copy(alpha = 0f)),
@@ -128,7 +131,7 @@ class SystemsMapPainter(
             }
             translate(offset.x, offset.y) {
                 drawCircle(brush, radius = radius, center = Offset.Zero)
-                drawCircle(systemColor, radius = (0.2f * zoom / 2), center = Offset.Zero)
+                drawCircle(systemColor, radius = (0.2f * density * zoom / 2), center = Offset.Zero)
             }
         }
     }
@@ -139,30 +142,57 @@ class SystemsMapPainter(
         center: DoubleOffset,
         scale: Float,
         zoom: Float,
+        animation: Float,
     ) {
         val fromLayoutPosition = layout[connection.from.id]!!
         val toLayoutPosition = layout[connection.to.id]!!
         val from = getCanvasCoordinates(fromLayoutPosition.x, fromLayoutPosition.y, center, scale)
         val to = getCanvasCoordinates(toLayoutPosition.x, toLayoutPosition.y, center, scale)
         val deltaOffset = to - from
-        val brush = if (mapType is RegionMap || scale < 0.5) {
-            val fromColor = solarSystemColorStrategy.getActiveColor(connection.from)
-            val toColor = solarSystemColorStrategy.getActiveColor(connection.to)
-            Brush.linearGradient(listOf(fromColor, toColor), start = Offset.Zero, end = deltaOffset)
-        } else {
-            val fromColor = solarSystemColorStrategy.getInactiveColor(connection.from)
-            val toColor = solarSystemColorStrategy.getInactiveColor(connection.to)
-            Brush.linearGradient(listOf(fromColor, toColor), start = Offset.Zero, end = deltaOffset)
-        }
-        val effect = when (connection.type) {
-            MapGateConnectionsRepository.ConnectionType.System -> null
-            MapGateConnectionsRepository.ConnectionType.Constellation -> PathEffect.dashPathEffect(floatArrayOf(6.0f * zoom, 2.0f * zoom))
-            MapGateConnectionsRepository.ConnectionType.Region -> PathEffect.dashPathEffect(floatArrayOf(15.0f * zoom, 5.0f * zoom))
-        }
+
+        val autopilotPathEffect = getAutopilotPathEffect(connection.from.id, connection.to.id, animation, zoom)
         if (connection.type == MapGateConnectionsRepository.ConnectionType.Region || scale < 4) {
             translate(from.x, from.y) {
-                val width = (1f / scale).coerceAtMost(2f)
-                drawLine(brush, start = Offset.Zero, end = deltaOffset, strokeWidth = width, pathEffect = effect)
+                val width = (1f / scale).coerceAtMost(2f) * density
+                if (autopilotPathEffect != null) {
+                    val fromColor = solarSystemColorStrategy.getActiveColor(connection.from)
+                    val toColor = solarSystemColorStrategy.getActiveColor(connection.to)
+                    drawLine(
+                        brush = Brush.linearGradient(listOf(fromColor.copy(alpha = 0.25f), toColor.copy(alpha = 0.25f)), start = Offset.Zero, end = deltaOffset),
+                        start = Offset.Zero,
+                        end = deltaOffset,
+                        strokeWidth = width * 2,
+                    )
+                    drawLine(
+                        brush = Brush.linearGradient(listOf(fromColor, toColor), start = Offset.Zero, end = deltaOffset),
+                        start = Offset.Zero,
+                        end = deltaOffset,
+                        strokeWidth = width * 2,
+                        pathEffect = autopilotPathEffect,
+                    )
+                } else {
+                    val brush = if (mapType is RegionMap || scale < 0.5) {
+                        val fromColor = solarSystemColorStrategy.getActiveColor(connection.from)
+                        val toColor = solarSystemColorStrategy.getActiveColor(connection.to)
+                        Brush.linearGradient(listOf(fromColor, toColor), start = Offset.Zero, end = deltaOffset)
+                    } else {
+                        val fromColor = solarSystemColorStrategy.getInactiveColor(connection.from)
+                        val toColor = solarSystemColorStrategy.getInactiveColor(connection.to)
+                        Brush.linearGradient(listOf(fromColor, toColor), start = Offset.Zero, end = deltaOffset)
+                    }
+                    val effect = when (connection.type) {
+                        MapGateConnectionsRepository.ConnectionType.System -> null
+                        MapGateConnectionsRepository.ConnectionType.Constellation -> PathEffect.dashPathEffect(floatArrayOf(6.0f * zoom * density, 2.0f * zoom * density))
+                        MapGateConnectionsRepository.ConnectionType.Region -> PathEffect.dashPathEffect(floatArrayOf(15.0f * zoom * density, 5.0f * zoom * density))
+                    }
+                    drawLine(
+                        brush = brush,
+                        start = Offset.Zero,
+                        end = deltaOffset,
+                        strokeWidth = width,
+                        pathEffect = effect,
+                    )
+                }
             }
         }
     }
@@ -173,6 +203,7 @@ class SystemsMapPainter(
         center: DoubleOffset,
         scale: Float,
         zoom: Float,
+        animation: Float,
     ) {
         val fromLayoutPosition = layout[connection.from.id] ?: return
         val toLayoutPosition = layout[connection.to.id] ?: return
@@ -182,25 +213,58 @@ class SystemsMapPainter(
         val (p1, p2) = listOf(from, to).sortedWith(compareBy({ it.x }, { it.y }))
         val isReversed = from == p2
 
-        val alphaModifier = jumpBridgeNetworkOpacity / 100f
-        val toColorFilter: Color.(isBidirectional: Boolean) -> Color = { if (it) this else this.copy(alpha = 0.1f) }
-        val colors = if (mapType is RegionMap || scale < 0.5) {
+        val width = (1f / scale).coerceAtMost(2f) * density
+        val (autopilotFrom, autopilotTo) = listOf(connection.from.id, connection.to.id).let { if (isReversed) it.reversed() else it }
+        val autopilotPathEffect = getAutopilotPathEffect(autopilotFrom, autopilotTo, animation, zoom)
+        if (autopilotPathEffect != null) {
             val fromColor = solarSystemColorStrategy.getActiveColor(connection.from)
             val toColor = solarSystemColorStrategy.getActiveColor(connection.to)
             val bridgeColor = Color(0xFF75D25A)
-            listOf(fromColor, bridgeColor, bridgeColor.toColorFilter(connection.bidirectional), toColor.toColorFilter(connection.bidirectional))
+            val colors = listOf(fromColor, bridgeColor, toColor)
+            val brush1 = Brush.linearGradient(
+                colors = colors.map { it.copy(alpha = 0.25f) },
+                start = if (isReversed) p2 else p1,
+                end = if (isReversed) p1 else p2,
+            )
+            val brush2 = Brush.linearGradient(
+                colors = colors,
+                start = if (isReversed) p2 else p1,
+                end = if (isReversed) p1 else p2,
+            )
+            drawArcBetweenTwoPoints(p1, p2, distance * 0.75f, brush1, Stroke(width * 2 * density))
+            drawArcBetweenTwoPoints(p1, p2, distance * 0.75f, brush2, Stroke(width * 2 * density, pathEffect = autopilotPathEffect))
         } else {
-            val fromColor = solarSystemColorStrategy.getInactiveColor(connection.from)
-            val toColor = solarSystemColorStrategy.getInactiveColor(connection.to)
-            val bridgeColor = Color(0xFF75D25A).copy(alpha = 0.1f)
-            listOf(fromColor, bridgeColor, bridgeColor.toColorFilter(connection.bidirectional), toColor.toColorFilter(connection.bidirectional))
-        }.map { it.copy(alpha = it.alpha * alphaModifier) }
-        val brush = Brush.linearGradient(
-            colors = colors,
-            start = if (isReversed) p2 else p1,
-            end = if (isReversed) p1 else p2,
-        )
-        drawArcBetweenTwoPoints(p1, p2, distance * 0.75f, brush, scale, zoom)
+            val alphaModifier = jumpBridgeNetworkOpacity / 100f
+            val toColorFilter: Color.(isBidirectional: Boolean) -> Color = { if (it) this else this.copy(alpha = 0.1f) }
+            val colors = if (mapType is RegionMap || scale < 0.5) {
+                val fromColor = solarSystemColorStrategy.getActiveColor(connection.from)
+                val toColor = solarSystemColorStrategy.getActiveColor(connection.to)
+                val bridgeColor = Color(0xFF75D25A)
+                listOf(fromColor, bridgeColor, bridgeColor.toColorFilter(connection.bidirectional), toColor.toColorFilter(connection.bidirectional))
+            } else {
+                val fromColor = solarSystemColorStrategy.getInactiveColor(connection.from)
+                val toColor = solarSystemColorStrategy.getInactiveColor(connection.to)
+                val bridgeColor = Color(0xFF75D25A).copy(alpha = 0.1f)
+                listOf(fromColor, bridgeColor, bridgeColor.toColorFilter(connection.bidirectional), toColor.toColorFilter(connection.bidirectional))
+            }.map { it.copy(alpha = it.alpha * alphaModifier) }
+            val brush = Brush.linearGradient(
+                colors = colors,
+                start = if (isReversed) p2 else p1,
+                end = if (isReversed) p1 else p2,
+            )
+            val style = Stroke(width, pathEffect = PathEffect.dashPathEffect(floatArrayOf(40f * zoom * density, 5f * zoom * density)))
+            drawArcBetweenTwoPoints(p1, p2, distance * 0.75f, brush, style)
+        }
+    }
+
+    private fun DrawScope.getAutopilotPathEffect(from: Int, to: Int, animation: Float, zoom: Float): PathEffect? {
+        val factor = animation * 96f * density
+        val phase = when {
+            autopilotConnections.any { it.first == from && it.second == to } -> (1f - factor) * zoom
+            autopilotConnections.any { it.first == to && it.second == from } -> factor * zoom
+            else -> return null
+        }
+        return PathEffect.dashPathEffect(floatArrayOf(16f * zoom * density, 8f * zoom * density), phase * density)
     }
 
     private fun DrawScope.drawArcBetweenTwoPoints(
@@ -208,8 +272,7 @@ class SystemsMapPainter(
         b: Offset,
         radius: Float,
         brush: Brush,
-        scale: Float,
-        zoom: Float,
+        style: DrawStyle,
     ) {
         val x = b.x - a.x
         val y = b.y - a.y
@@ -222,7 +285,6 @@ class SystemsMapPainter(
                 x = (a.x + x / 2 - h * (y / l)),
                 y = (a.y + y / 2 + h * (x / l)),
             )
-            val width = (1f / scale).coerceAtMost(2f)
             val sweepAngle = Math.toDegrees((2 * sweep).toDouble()).toFloat()
             drawArc(
                 brush = brush,
@@ -231,7 +293,7 @@ class SystemsMapPainter(
                 startAngle = (Math.toDegrees((angle - sweep).toDouble()) - 90).toFloat(),
                 sweepAngle = sweepAngle,
                 useCenter = false,
-                style = Stroke(width, pathEffect = PathEffect.dashPathEffect(floatArrayOf(40f * zoom, 5f * zoom))),
+                style = style,
             )
         }
     }

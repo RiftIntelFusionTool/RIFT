@@ -39,10 +39,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.times
+import androidx.compose.ui.unit.*
 import dev.nohus.rift.compose.AsyncPlayerPortrait
 import dev.nohus.rift.compose.ClickablePlayer
 import dev.nohus.rift.compose.ScrollbarColumn
@@ -142,8 +139,8 @@ class CharacterLocationPainter {
     ) = with(scope) {
         if (!hasOnlineCharacter) return@with
 
-        val startRadius = nodeSizes.radiusPx - 2
-        val endRadius = nodeSizes.radiusPx + 2
+        val startRadius = nodeSizes.radiusPx - 2 * density
+        val endRadius = nodeSizes.radiusPx + 2 * density
         val centerRadius = nodeSizes.radiusPx
         val color = Color.Green
         val brush = Brush.radialGradient(
@@ -224,7 +221,11 @@ class HostileOrbitPainter {
             translate(left = center.x.roundToInt().toFloat(), top = center.y.roundToInt().toFloat()) {
                 if (icon.isFriendly) drawCircle(friendlyEntityBrush, radius = friendlyEntityRadius, center = Offset(-1f, -1f))
                 translate(left = -bitmapOffset.x, top = -bitmapOffset.y) {
-                    drawImage(icon.bitmap)
+                    drawImage(
+                        image = icon.bitmap,
+                        dstSize = IntSize(icon.bitmap.width, icon.bitmap.height) * scope.density.toInt(),
+                        dstOffset = IntOffset(icon.bitmap.width * (1 - scope.density.toInt()) / 2, icon.bitmap.height * (1 - scope.density.toInt()) / 2)
+                    )
                 }
             }
         }

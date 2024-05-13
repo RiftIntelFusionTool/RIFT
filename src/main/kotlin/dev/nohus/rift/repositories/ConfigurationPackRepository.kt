@@ -62,6 +62,8 @@ class ConfigurationPackRepository(
                     IntelChannel("paragon.imperium", "Paragon Soul"),
                     IntelChannel("esoteria.imperium", "Esoteria"),
                     IntelChannel("triangle.imperium", "Pochven"),
+                    IntelChannel("khanid.imperium", "Khanid"),
+                    IntelChannel("aridia.imperium", "Aridia"),
                 ),
             )
             null -> null

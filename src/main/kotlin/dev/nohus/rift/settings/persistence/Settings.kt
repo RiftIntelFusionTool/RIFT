@@ -142,4 +142,8 @@ class Settings(
     var jumpBridgeNetwork: Map<String, String>?
         get() = model.jumpBridgeNetwork
         set(value) = update { copy(jumpBridgeNetwork = value) }
+
+    var isUsingRiftAutopilotRoute: Boolean
+        get() = model.isUsingRiftAutopilotRoute
+        set(value) = update { copy(isUsingRiftAutopilotRoute = value) }
 }

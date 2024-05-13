@@ -37,6 +37,7 @@ data class SettingsModel(
     val configurationPack: ConfigurationPack? = null,
     val hiddenCharacterIds: List<Int> = emptyList(),
     val jumpBridgeNetwork: Map<String, String>? = null,
+    val isUsingRiftAutopilotRoute: Boolean = true,
 )
 
 @Serializable

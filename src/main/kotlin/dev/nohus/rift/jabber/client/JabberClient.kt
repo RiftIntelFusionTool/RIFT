@@ -103,7 +103,7 @@ class JabberClient(
                     val reconnectionManager = ReconnectionManager.getInstanceFor(this)
                     reconnectionManager.enableAutomaticReconnection()
                     setParsingExceptionCallback {
-                        logger.error { "Parsing exception: $it" }
+                        logger.error { "Parsing exception. Content: \"${it.content}\", Exception: ${it.parsingException}" }
                     }
                     addConnectionListener(object : ConnectionListener {
                         override fun connectionClosedOnError(e: Exception) {

@@ -56,8 +56,8 @@ class JumpBridgesParser(
             val fromSystem = solarSystemsRepository.getSystem(it[0]) ?: return@mapNotNull null
             val toSystem = solarSystemsRepository.getSystem(it[1]) ?: return@mapNotNull null
             JumpBridgeConnection(fromSystem, toSystem)
-        }
-        return if (connections.isNotEmpty()) {
+        }.distinct()
+        return if (connections.size >= 2) {
             JumpBridgeNetwork(connections)
         } else {
             null

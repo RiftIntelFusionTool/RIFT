@@ -30,10 +30,12 @@ class MapSettingsViewModel(
 
     data class UiState(
         val intelMap: IntelMap,
+        val isUsingRiftAutopilotRoute: Boolean,
         val jumpBridgeNetworkState: JumpBridgeNetworkState,
         val jumpBridgeCopyState: JumpBridgeCopyState,
         val jumpBridgeNetworkUrl: String?,
         val jumpBridgeSearchState: JumpBridgeSearchState,
+        val isJumpBridgeSearchDialogShown: Boolean,
     )
 
     sealed interface JumpBridgeNetworkState {
@@ -56,12 +58,14 @@ class MapSettingsViewModel(
     private val _state = MutableStateFlow(
         UiState(
             intelMap = settings.intelMap,
+            isUsingRiftAutopilotRoute = settings.isUsingRiftAutopilotRoute,
             jumpBridgeNetworkState = jumpBridgesRepository.getConnections()?.let {
                 JumpBridgeNetworkState.Loaded(JumpBridgeNetwork(it))
             } ?: JumpBridgeNetworkState.Empty,
             jumpBridgeCopyState = JumpBridgeCopyState.NotCopied,
             jumpBridgeNetworkUrl = configurationPackRepository.getJumpBridgeNetworkUrl(),
             jumpBridgeSearchState = JumpBridgeSearchState.NotSearched,
+            isJumpBridgeSearchDialogShown = false,
         ),
     )
     val state = _state.asStateFlow()
@@ -70,7 +74,10 @@ class MapSettingsViewModel(
         viewModelScope.launch {
             settings.updateFlow.collect {
                 _state.update {
-                    it.copy(intelMap = settings.intelMap)
+                    it.copy(
+                        intelMap = settings.intelMap,
+                        isUsingRiftAutopilotRoute = settings.isUsingRiftAutopilotRoute,
+                    )
                 }
             }
         }
@@ -111,6 +118,10 @@ class MapSettingsViewModel(
         settings.intelMap = settings.intelMap.copy(isInvertZoom = enabled)
     }
 
+    fun onIsUsingRiftAutopilotRouteChange(enabled: Boolean) {
+        settings.isUsingRiftAutopilotRoute = enabled
+    }
+
     fun onJumpBridgeForgetClick() {
         jumpBridgesRepository.setConnections(emptyList())
         _state.update { it.copy(jumpBridgeNetworkState = JumpBridgeNetworkState.Empty) }
@@ -138,6 +149,23 @@ class MapSettingsViewModel(
     }
 
     fun onJumpBridgeSearchClick() {
+        _state.update { it.copy(isJumpBridgeSearchDialogShown = true) }
+    }
+
+    fun onIsJumpBridgeNetworkShownChange(enabled: Boolean) {
+        settings.intelMap = settings.intelMap.copy(isJumpBridgeNetworkShown = enabled)
+    }
+
+    fun onJumpBridgeNetworkOpacityChange(percent: Int) {
+        settings.intelMap = settings.intelMap.copy(jumpBridgeNetworkOpacity = percent)
+    }
+
+    fun onDialogDismissed() {
+        _state.update { it.copy(isJumpBridgeSearchDialogShown = false) }
+    }
+
+    fun onJumpBridgeSearchDialogConfirmClick() {
+        onDialogDismissed()
         if (_state.value.jumpBridgeSearchState !is JumpBridgeSearchState.NotSearched) return
         viewModelScope.launch {
             _state.update { it.copy(jumpBridgeSearchState = JumpBridgeSearchState.Searching(0f, 0)) }
@@ -158,13 +186,5 @@ class MapSettingsViewModel(
                 }
             }
         }
-    }
-
-    fun onIsJumpBridgeNetworkShownChange(enabled: Boolean) {
-        settings.intelMap = settings.intelMap.copy(isJumpBridgeNetworkShown = enabled)
-    }
-
-    fun onJumpBridgeNetworkOpacityChange(percent: Int) {
-        settings.intelMap = settings.intelMap.copy(jumpBridgeNetworkOpacity = percent)
     }
 }

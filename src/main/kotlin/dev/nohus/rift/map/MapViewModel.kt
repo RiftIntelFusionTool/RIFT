@@ -2,6 +2,7 @@ package dev.nohus.rift.map
 
 import androidx.compose.ui.geometry.Offset
 import dev.nohus.rift.ViewModel
+import dev.nohus.rift.autopilot.AutopilotController
 import dev.nohus.rift.compose.Tab
 import dev.nohus.rift.generated.resources.Res
 import dev.nohus.rift.generated.resources.region
@@ -29,6 +30,8 @@ import dev.nohus.rift.settings.persistence.Settings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.Single
@@ -48,6 +51,7 @@ class MapViewModel(
     private val intelStateController: IntelStateController,
     private val mapExternalControl: MapExternalControl,
     private val jumpBridgesRepository: JumpBridgesRepository,
+    private val autopilotController: AutopilotController,
     private val settings: Settings,
 ) : ViewModel() {
 
@@ -68,6 +72,7 @@ class MapViewModel(
         val onlineCharacterLocations: Map<Int, List<OnlineCharacterLocation>> = emptyMap(),
         val contextMenuSystem: Int? = null,
         val initialTransform: Transform? = null,
+        val autopilotConnections: List<Pair<Int, Int>> = emptyList(),
     )
 
     sealed interface MapType {
@@ -140,6 +145,15 @@ class MapViewModel(
                         cluster = it.cluster.copy(jumpBridgeConnections = jumpBridgesRepository.getConnections()),
                     )
                 }
+            }
+        }
+        viewModelScope.launch {
+            autopilotController.activeRoutes.map { map ->
+                map.flatMap { (characterId, route) ->
+                    route.systems.windowed(2).map { (from, to) -> from to to }
+                }
+            }.collect {
+                updateMapState { copy(autopilotConnections = it) }
             }
         }
         viewModelScope.launch {
@@ -296,8 +310,7 @@ class MapViewModel(
      */
     private fun getJumpBridgeDestinationsLayout(originsLayout: Map<Int, Position>): Map<Int, Position> {
         val outgoingJumpBridgeConnectionsInLayout = jumpBridgesRepository.getConnections()?.filter {
-            // TODO: Try xor
-            (it.from.id in originsLayout.keys || it.to.id in originsLayout.keys) && !(it.from.id in originsLayout.keys && it.to.id in originsLayout.keys)
+            (it.from.id in originsLayout.keys) xor (it.to.id in originsLayout.keys)
         } ?: emptyList()
         return outgoingJumpBridgeConnectionsInLayout.fold(emptyMap()) { layout, connection ->
             val (origin, destination) = if (connection.from.id in originsLayout.keys) connection.from to connection.to else connection.to to connection.from

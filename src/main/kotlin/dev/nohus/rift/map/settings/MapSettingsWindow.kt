@@ -14,10 +14,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.rememberWindowState
+import dev.nohus.rift.compose.ButtonCornerCut
 import dev.nohus.rift.compose.ButtonType
 import dev.nohus.rift.compose.LinkText
 import dev.nohus.rift.compose.RiftButton
 import dev.nohus.rift.compose.RiftCheckboxWithLabel
+import dev.nohus.rift.compose.RiftDialog
 import dev.nohus.rift.compose.RiftDropdownWithLabel
 import dev.nohus.rift.compose.RiftRadioButtonWithLabel
 import dev.nohus.rift.compose.RiftTooltipArea
@@ -29,6 +35,7 @@ import dev.nohus.rift.compose.theme.RiftTheme
 import dev.nohus.rift.compose.theme.Spacing
 import dev.nohus.rift.generated.resources.Res
 import dev.nohus.rift.generated.resources.window_settings
+import dev.nohus.rift.generated.resources.window_warning
 import dev.nohus.rift.map.settings.MapSettingsViewModel.JumpBridgeNetworkState
 import dev.nohus.rift.map.settings.MapSettingsViewModel.UiState
 import dev.nohus.rift.settings.persistence.MapStarColor
@@ -61,6 +68,7 @@ fun MapSettingsWindow(
             onIsUsingCompactModeChange = viewModel::onIsUsingCompactModeChange,
             onIsCharacterFollowingChange = viewModel::onIsCharacterFollowingChange,
             onIsScrollZoomInvertedChange = viewModel::onIsScrollZoomInvertedChange,
+            onIsUsingRiftAutopilotRouteChange = viewModel::onIsUsingRiftAutopilotRouteChange,
             onIsJumpBridgeNetworkShownChange = viewModel::onIsJumpBridgeNetworkShownChange,
             onJumpBridgeNetworkOpacityChange = viewModel::onJumpBridgeNetworkOpacityChange,
             onJumpBridgeForgetClick = viewModel::onJumpBridgeForgetClick,
@@ -68,6 +76,49 @@ fun MapSettingsWindow(
             onJumpBridgeSearchClick = viewModel::onJumpBridgeSearchClick,
             onJumpBridgeSearchImportClick = viewModel::onJumpBridgeSearchImportClick,
         )
+
+        if (state.isJumpBridgeSearchDialogShown) {
+            RiftDialog(
+                title = "Jump Bridge Search",
+                icon = Res.drawable.window_warning,
+                parentState = windowState,
+                state = rememberWindowState(width = 350.dp, height = Dp.Unspecified),
+                onCloseClick = viewModel::onDialogDismissed,
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(Spacing.medium),
+                ) {
+                    Text(
+                        text = "This feature is not unique to RIFT, and no problems were reported with it, but some " +
+                            "concerns were raised that it might trip ESI's hidden rate limits and block your IP address.",
+                        style = RiftTheme.typography.bodyPrimary,
+                    )
+                    Text(
+                        text = "Use at your own risk!",
+                        textAlign = TextAlign.Center,
+                        style = RiftTheme.typography.titlePrimary,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
+                    ) {
+                        RiftButton(
+                            text = "Cancel",
+                            cornerCut = ButtonCornerCut.BottomLeft,
+                            type = ButtonType.Secondary,
+                            onClick = viewModel::onDialogDismissed,
+                            modifier = Modifier.weight(1f),
+                        )
+                        RiftButton(
+                            text = "Confirm",
+                            type = ButtonType.Secondary,
+                            onClick = viewModel::onJumpBridgeSearchDialogConfirmClick,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -80,6 +131,7 @@ private fun MapSettingsWindowContent(
     onIsUsingCompactModeChange: (Boolean) -> Unit,
     onIsCharacterFollowingChange: (Boolean) -> Unit,
     onIsScrollZoomInvertedChange: (Boolean) -> Unit,
+    onIsUsingRiftAutopilotRouteChange: (Boolean) -> Unit,
     onIsJumpBridgeNetworkShownChange: (Boolean) -> Unit,
     onJumpBridgeNetworkOpacityChange: (Int) -> Unit,
     onJumpBridgeForgetClick: () -> Unit,
@@ -107,6 +159,26 @@ private fun MapSettingsWindowContent(
                 tooltip = "Zoom direction will be reversed",
                 isChecked = intelMap.isInvertZoom,
                 onCheckedChange = { onIsScrollZoomInvertedChange(it) },
+            )
+        }
+
+        SectionTitle("Autopilot", Modifier.padding(vertical = Spacing.medium))
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
+            Text(
+                text = "When setting autopilot destination, use:",
+                style = RiftTheme.typography.bodySecondary,
+            )
+            RiftRadioButtonWithLabel(
+                label = "RIFT calculated route",
+                tooltip = "Shortest route as shown on the RIFT map.\nIgnores your EVE autopilot settings.",
+                isChecked = state.isUsingRiftAutopilotRoute,
+                onChecked = { onIsUsingRiftAutopilotRouteChange(true) },
+            )
+            RiftRadioButtonWithLabel(
+                label = "EVE calculated route",
+                tooltip = "Route as set by EVE.\nMay not match the route on the RIFT map.",
+                isChecked = !state.isUsingRiftAutopilotRoute,
+                onChecked = { onIsUsingRiftAutopilotRouteChange(false) },
             )
         }
 
@@ -159,16 +231,31 @@ private fun MapSettingsWindowContent(
                         }
                     }
                     is MapSettingsViewModel.JumpBridgeCopyState.Copied -> {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.padding(top = Spacing.medium, end = Spacing.medium).fillMaxWidth(),
+                        val tooltip = buildString {
+                            val connections = copyState.network.connections.take(5).joinToString("\n") {
+                                "${it.from.name} → ${it.to.name}"
+                            }
+                            append(connections)
+                            if (copyState.network.connections.size > 5) {
+                                appendLine()
+                                append("And more…")
+                            }
+                        }
+                        RiftTooltipArea(
+                            tooltip = tooltip,
+                            anchor = TooltipAnchor.BottomCenter,
                         ) {
-                            Text("Copied network with ${copyState.network.connections.size} connections")
-                            RiftButton(
-                                text = "Import",
-                                onClick = onJumpBridgeImportClick,
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier.padding(top = Spacing.medium, end = Spacing.medium).fillMaxWidth(),
+                            ) {
+                                Text("Copied network with ${copyState.network.connections.size} connections")
+                                RiftButton(
+                                    text = "Import",
+                                    onClick = onJumpBridgeImportClick,
+                                )
+                            }
                         }
                     }
                 }
@@ -189,13 +276,7 @@ private fun MapSettingsWindowContent(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     modifier = Modifier.padding(end = Spacing.medium).fillMaxWidth(),
                                 ) {
-                                    Column {
-                                        Text("Search automatically?")
-                                        Text(
-                                            text = "Not guaranteed to find all connections",
-                                            style = RiftTheme.typography.bodySecondary,
-                                        )
-                                    }
+                                    Text("Search automatically?")
                                     RiftButton(
                                         text = "Search",
                                         onClick = onJumpBridgeSearchClick,

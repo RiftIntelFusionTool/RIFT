@@ -9,5 +9,11 @@ interface MapPainter {
     @Composable
     fun initializeComposed()
 
-    fun draw(scope: DrawScope, center: DoubleOffset, scale: Float, zoom: Float)
+    fun draw(
+        scope: DrawScope,
+        center: DoubleOffset,
+        scale: Float,
+        zoom: Float,
+        animationPercentage: Float,
+    )
 }
