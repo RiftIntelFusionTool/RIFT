@@ -72,7 +72,8 @@ import dev.nohus.rift.generated.resources.window_loudspeaker_icon
 import dev.nohus.rift.utils.sound.Sound
 import dev.nohus.rift.utils.viewModel
 import dev.nohus.rift.windowing.WindowManager.RiftWindowState
-import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.nameWithoutExtension
 
 @Composable
 fun AlertsWindow(
@@ -354,6 +355,7 @@ private fun LazyItemScope.AlertItem(
                 getSpecificCharactersDetailText(alert),
                 getSpecificShipClassesDetailText(alert),
                 getSpecificFleetCommandersDetailText(alert),
+                getDecloakIgnoredKeywordsDetailText(alert),
             ).forEach {
                 Row(
                     modifier = Modifier
@@ -463,6 +465,31 @@ private fun getSpecificFleetCommandersDetailText(alert: Alert): AnnotatedString?
             }
         } else {
             null
+        }
+    } else {
+        null
+    }
+}
+
+@Composable
+private fun getDecloakIgnoredKeywordsDetailText(alert: Alert): AnnotatedString? {
+    val decloakedTrigger = (alert.trigger as? AlertTrigger.GameAction)?.actionTypes
+        ?.filterIsInstance<GameActionType.Decloaked>()?.firstOrNull() ?: return null
+    return if (decloakedTrigger.ignoredKeywords.isNotEmpty()) {
+        val secondary = SpanStyle(color = RiftTheme.colors.textSecondary)
+        val primary = SpanStyle(color = RiftTheme.colors.textPrimary)
+        buildAnnotatedString {
+            withStyle(secondary) {
+                append("Ignore decloaking objects containing: ")
+                decloakedTrigger.ignoredKeywords.forEach { keyword ->
+                    withStyle(primary) {
+                        append(keyword)
+                    }
+                    if (keyword != decloakedTrigger.ignoredKeywords.last()) {
+                        append(", ")
+                    }
+                }
+            }
         }
     } else {
         null
@@ -586,9 +613,12 @@ private fun getAlertText(
                                 append("you are ")
                                 withStyle(primary) { append("being warp scrambled") }
                             }
-                            GameActionType.Decloaked -> {
+                            is GameActionType.Decloaked -> {
                                 append("you are ")
                                 withStyle(primary) { append("decloaked") }
+                                if (type.ignoredKeywords.isNotEmpty()) {
+                                    append(" with exceptions")
+                                }
                             }
                         }
                     }
@@ -735,7 +765,7 @@ private fun getAlertText(
                     AlertAction.RiftNotification -> "send a RIFT notification"
                     AlertAction.SystemNotification -> "send a system notification"
                     is AlertAction.Sound -> "play sound \"${sounds.firstOrNull { it.id == action.id }?.name ?: "?"}\""
-                    is AlertAction.CustomSound -> "play sound ${File(action.path).nameWithoutExtension}"
+                    is AlertAction.CustomSound -> "play sound ${Path.of(action.path).nameWithoutExtension}"
                     AlertAction.ShowPing -> "show the ping"
                 }
             }

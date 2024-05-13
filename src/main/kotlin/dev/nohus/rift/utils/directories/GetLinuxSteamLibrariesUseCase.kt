@@ -2,7 +2,8 @@ package dev.nohus.rift.utils.directories
 
 import org.apache.commons.lang3.SystemUtils
 import org.koin.core.annotation.Single
-import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.exists
 
 @Single
 class GetLinuxSteamLibrariesUseCase(
@@ -15,12 +16,12 @@ class GetLinuxSteamLibrariesUseCase(
     /**
      * Returns a list of Steam library directories
      */
-    operator fun invoke(): List<File> {
+    operator fun invoke(): List<Path> {
         val partitions = getLinuxPartitionsUseCase()
-        val homeDirectory = SystemUtils.getUserHome()
-        val homeLibrary = File(homeDirectory, homeLibraryPath)
+        val homeDirectory = SystemUtils.getUserHome().toPath()
+        val homeLibrary = homeDirectory.resolve(homeLibraryPath)
         val additionalLibraries = partitions.map { partition ->
-            File(partition, libraryDirectoryName)
+            partition.resolve(libraryDirectoryName)
         }
         val libraries = additionalLibraries + listOf(homeLibrary)
         return libraries.filter { it.exists() }

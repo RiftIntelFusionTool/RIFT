@@ -148,7 +148,9 @@ sealed interface GameActionType {
 
     @Serializable
     @SerialName("Decloaked")
-    data object Decloaked : GameActionType
+    data class Decloaked(
+        val ignoredKeywords: List<String> = emptyList(),
+    ) : GameActionType
 }
 
 @Serializable

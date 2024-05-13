@@ -70,7 +70,9 @@ import dev.nohus.rift.utils.sound.Sound
 import dev.nohus.rift.utils.sound.SoundPlayer
 import dev.nohus.rift.utils.viewModel
 import dev.nohus.rift.windowing.WindowManager
-import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.nameWithoutExtension
 
 @Composable
 fun WindowScope.CreateAlertDialog(
@@ -425,8 +427,8 @@ private fun FormQuestion(
                                 typesDescription = "WAV audio files",
                                 extensions = listOf("wav"),
                                 onFileChosen = {
-                                    text = it.absolutePath
-                                    onFormAnswer(SoundAnswer.CustomSound(it.absolutePath))
+                                    text = it.absolutePathString()
+                                    onFormAnswer(SoundAnswer.CustomSound(it.absolutePathString()))
                                 },
                             )
                             RiftImageButton(
@@ -612,7 +614,7 @@ private fun Pair<FormQuestion, FormAnswer>.toAnswerString(
         is FormQuestion.SoundQuestion -> {
             when (val soundAnswer = answer as SoundAnswer) {
                 is SoundAnswer.BuiltInSound -> soundAnswer.item.name
-                is SoundAnswer.CustomSound -> File(soundAnswer.path).nameWithoutExtension
+                is SoundAnswer.CustomSound -> Path.of(soundAnswer.path).nameWithoutExtension
             }
         }
 

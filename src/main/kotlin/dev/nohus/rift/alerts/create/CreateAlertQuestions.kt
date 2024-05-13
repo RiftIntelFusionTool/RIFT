@@ -147,6 +147,13 @@ class CreateAlertQuestions(
         allowEmpty = false,
     )
 
+    // Game action type, decloak exceptions
+    val GAME_ACTION_TYPE_DECLOAKED_EXCEPTIONS_QUESTION = FreeformTextQuestion(
+        title = "Ignore being decloaked by objects containing:",
+        placeholder = "Comma-separated list of keywords, e.g. gate",
+        allowEmpty = true,
+    )
+
     // Chat message, channel type
     val CHAT_MESSAGE_CHANNEL_ANY = FormChoiceItem(id = id++, text = "Any channel")
     val CHAT_MESSAGE_CHANNEL_SPECIFIC = FormChoiceItem(id = id++, text = "A chosen channel")

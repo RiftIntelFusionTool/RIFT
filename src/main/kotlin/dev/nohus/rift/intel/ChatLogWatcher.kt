@@ -20,8 +20,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.koin.core.annotation.Single
-import java.io.File
 import java.io.IOException
+import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
 
@@ -43,7 +43,7 @@ class ChatLogWatcher(
     private val _channelChatMessages = MutableStateFlow<List<ParsedChannelChatMessage>>(emptyList())
     val channelChatMessages = _channelChatMessages.asStateFlow()
 
-    private var watchedDirectory: File? = null
+    private var watchedDirectory: Path? = null
     private val mutexByChannel = mutableMapOf<String, Mutex>()
 
     suspend fun start() = coroutineScope {
@@ -75,7 +75,7 @@ class ChatLogWatcher(
         }
     }
 
-    private suspend fun observeChatLogs(directory: File) = coroutineScope {
+    private suspend fun observeChatLogs(directory: Path) = coroutineScope {
         chatLogsObserver.observe(directory) { channelChatMessage ->
             launch {
                 getMutex(channelChatMessage.metadata.channelName).withLock {

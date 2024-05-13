@@ -1,10 +1,12 @@
 package dev.nohus.rift.logs.parse
 
 import org.koin.core.annotation.Single
-import java.io.File
+import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import kotlin.io.path.bufferedReader
+import kotlin.io.path.readText
 
 @Single
 class GameLogFileParser {
@@ -13,12 +15,12 @@ class GameLogFileParser {
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm:ss")
     private val charset = Charsets.UTF_8
 
-    fun parse(file: File): List<GameLogMessage> {
+    fun parse(file: Path): List<GameLogMessage> {
         val text = file.readText(charset)
         return parseText(text)
     }
 
-    fun parseHeader(characterId: String, file: File): GameLogFileMetadata? {
+    fun parseHeader(characterId: String, file: Path): GameLogFileMetadata? {
         val metadata = mutableMapOf<String, String>()
 
         file.bufferedReader(charset).useLines { lines ->

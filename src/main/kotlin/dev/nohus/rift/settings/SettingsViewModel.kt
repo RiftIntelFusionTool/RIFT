@@ -20,8 +20,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.time.delay
 import org.koin.core.annotation.Single
-import java.io.File
+import java.nio.file.Path
 import java.time.Duration
+import kotlin.io.path.pathString
 
 @Single
 class SettingsViewModel(
@@ -60,9 +61,9 @@ class SettingsViewModel(
             intelChannels = settings.intelChannels,
             suggestedIntelChannels = configurationPackRepository.getSuggestedIntelChannels(),
             regions = solarSystemsRepository.getKnownSpaceRegions().sorted(),
-            logsDirectory = settings.eveLogsDirectory?.path ?: "",
+            logsDirectory = settings.eveLogsDirectory?.pathString ?: "",
             isLogsDirectoryValid = getChatLogsDirectoryUseCase(settings.eveLogsDirectory) != null,
-            settingsDirectory = settings.eveSettingsDirectory?.path ?: "",
+            settingsDirectory = settings.eveSettingsDirectory?.pathString ?: "",
             isSettingsDirectoryValid = getEveCharactersSettingsUseCase(settings.eveSettingsDirectory).isNotEmpty(),
             isLoadOldMessagesEnabled = settings.isLoadOldMessagesEnabled,
             isDisplayEveTime = settings.isDisplayEveTime,
@@ -96,19 +97,19 @@ class SettingsViewModel(
                     )
                 }
                 val logsDirectory = settings.eveLogsDirectory
-                if (logsDirectory?.path != _state.value.logsDirectory) {
+                if (logsDirectory?.pathString != _state.value.logsDirectory) {
                     _state.update {
                         it.copy(
-                            logsDirectory = logsDirectory?.path ?: "",
+                            logsDirectory = logsDirectory?.pathString ?: "",
                             isLogsDirectoryValid = getChatLogsDirectoryUseCase(logsDirectory) != null,
                         )
                     }
                 }
                 val settingsDirectory = settings.eveSettingsDirectory
-                if (settingsDirectory?.path != _state.value.settingsDirectory) {
+                if (settingsDirectory?.pathString != _state.value.settingsDirectory) {
                     _state.update {
                         it.copy(
-                            settingsDirectory = settingsDirectory?.path ?: "",
+                            settingsDirectory = settingsDirectory?.pathString ?: "",
                             isSettingsDirectoryValid = getEveCharactersSettingsUseCase(settingsDirectory).isNotEmpty(),
                         )
                     }
@@ -133,7 +134,7 @@ class SettingsViewModel(
     }
 
     fun onLogsDirectoryChanged(text: String) {
-        val directory = File(text)
+        val directory = Path.of(text)
         settings.eveLogsDirectory = directory
         _state.update {
             it.copy(
@@ -154,7 +155,7 @@ class SettingsViewModel(
     }
 
     fun onSettingsDirectoryChanged(text: String) {
-        val directory = File(text)
+        val directory = Path.of(text)
         settings.eveSettingsDirectory = directory
         _state.update {
             it.copy(

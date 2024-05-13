@@ -13,7 +13,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.skiko.MainUIDispatcher
 import org.koin.core.annotation.Single
-import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.getLastModifiedTime
+import kotlin.io.path.nameWithoutExtension
 
 @Single
 class LocalCharactersRepository(
@@ -24,7 +26,7 @@ class LocalCharactersRepository(
 
     data class LocalCharacter(
         val characterId: Int,
-        val settingsFile: File?,
+        val settingsFile: Path?,
         val isAuthenticated: Boolean,
         val info: AsyncResource<CharacterInfo>,
     )
@@ -97,7 +99,7 @@ class LocalCharactersRepository(
             .sortedWith(
                 compareBy(
                     { !it.isAuthenticated },
-                    { it.settingsFile?.lastModified()?.let { -it } ?: 0L },
+                    { it.settingsFile?.getLastModifiedTime()?.toMillis()?.let { -it } ?: 0L },
                 ),
             )
     }

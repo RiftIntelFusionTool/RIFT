@@ -4,7 +4,11 @@ import dev.nohus.rift.utils.OperatingSystem
 import dev.nohus.rift.utils.directories.GetLinuxSteamLibrariesUseCase
 import dev.nohus.rift.utils.osdirectories.OperatingSystemDirectories
 import org.koin.core.annotation.Single
-import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.exists
+import kotlin.io.path.isDirectory
+import kotlin.io.path.listDirectoryEntries
+import kotlin.io.path.name
 
 @Single
 class GetEveSettingsDirectoryUseCase(
@@ -13,35 +17,35 @@ class GetEveSettingsDirectoryUseCase(
     private val getLinuxSteamLibrariesUseCase: GetLinuxSteamLibrariesUseCase,
 ) {
 
-    operator fun invoke(): File? {
+    operator fun invoke(): Path? {
         val eveDataDirectory = when (operatingSystem) {
             OperatingSystem.Linux -> getLinuxEveDataDirectory()
             OperatingSystem.Windows -> getWindowsEveDataDirectory()
             OperatingSystem.MacOs -> getMacEveDataDirectory()
         } ?: return null
 
-        val tranquilityDirectory = (eveDataDirectory.listFiles() ?: emptyArray())
+        val tranquilityDirectory = (eveDataDirectory.listDirectoryEntries())
             .firstOrNull { file ->
-                file.isDirectory && file.name.endsWith("_tranquility")
+                file.isDirectory() && file.name.endsWith("_tranquility")
             } ?: return null
 
         return tranquilityDirectory
     }
 
-    private fun getLinuxEveDataDirectory(): File? {
+    private fun getLinuxEveDataDirectory(): Path? {
         val libraries = getLinuxSteamLibrariesUseCase()
         return libraries.map { library ->
-            File(library, "steamapps/compatdata/8500/pfx/drive_c/users/steamuser/AppData/Local/CCP/EVE")
+            library.resolve("steamapps/compatdata/8500/pfx/drive_c/users/steamuser/AppData/Local/CCP/EVE")
         }.firstOrNull { it.exists() }
     }
 
-    private fun getWindowsEveDataDirectory(): File {
+    private fun getWindowsEveDataDirectory(): Path {
         val home = operatingSystemDirectories.getUserDirectory()
-        return File(home, "AppData/Local/CCP/EVE")
+        return home.resolve("AppData/Local/CCP/EVE")
     }
 
-    private fun getMacEveDataDirectory(): File {
+    private fun getMacEveDataDirectory(): Path {
         val home = operatingSystemDirectories.getUserDirectory()
-        return File(home, "Library/Application Support/CCP/EVE")
+        return home.resolve("Library/Application Support/CCP/EVE")
     }
 }

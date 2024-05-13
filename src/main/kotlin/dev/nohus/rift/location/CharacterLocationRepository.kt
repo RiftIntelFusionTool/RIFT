@@ -75,7 +75,7 @@ class CharacterLocationRepository(
                     structure = null,
                     timestamp = change.timestamp,
                 )
-                logger.info { "Location updated from logs for character ${change.characterId}" }
+                logger.debug { "Location updated from logs for character ${change.characterId}" }
             }
         }
     }

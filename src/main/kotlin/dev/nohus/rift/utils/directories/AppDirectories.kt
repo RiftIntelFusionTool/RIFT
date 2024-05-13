@@ -2,7 +2,7 @@ package dev.nohus.rift.utils.directories
 
 import dev.nohus.rift.utils.osdirectories.OperatingSystemDirectories
 import org.koin.core.annotation.Single
-import java.io.File
+import java.nio.file.Path
 
 @Single
 class AppDirectories(
@@ -11,11 +11,11 @@ class AppDirectories(
 
     private val applicationName = "RIFT"
 
-    fun getAppDataDirectory(): File {
+    fun getAppDataDirectory(): Path {
         return operatingSystemDirectories.getAppConfigDirectory(applicationName)
     }
 
-    fun getAppCacheDirectory(): File {
+    fun getAppCacheDirectory(): Path {
         return operatingSystemDirectories.getCacheDirectory(applicationName)
     }
 }

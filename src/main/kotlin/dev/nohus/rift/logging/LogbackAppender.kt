@@ -21,7 +21,10 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import okio.IOException
 import org.jetbrains.skiko.MainUIDispatcher
-import java.io.File
+import kotlin.io.path.appendText
+import kotlin.io.path.deleteIfExists
+import kotlin.io.path.readLines
+import kotlin.io.path.writeText
 
 private const val MAX_DIAGNOSTICS_LINES = 20_000
 
@@ -38,7 +41,7 @@ class LogbackAppender : AppenderBase<ILoggingEvent>() {
             OperatingSystem.MacOs -> MacDirectories()
         },
     )
-    private val diagnosticsFile = File(appDirectories.getAppDataDirectory(), "diagnostics")
+    private val diagnosticsFile = appDirectories.getAppDataDirectory().resolve("diagnostics")
     private var diagnosticsLines: Int = 0
     private val diagnosticsMutex = Mutex()
 
@@ -49,7 +52,7 @@ class LogbackAppender : AppenderBase<ILoggingEvent>() {
             start()
         }
         try {
-            diagnosticsFile.delete()
+            diagnosticsFile.deleteIfExists()
         } catch (ignore: IOException) {}
         super.start()
     }

@@ -39,7 +39,12 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.*
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.times
 import dev.nohus.rift.compose.AsyncPlayerPortrait
 import dev.nohus.rift.compose.ClickablePlayer
 import dev.nohus.rift.compose.ScrollbarColumn
@@ -224,7 +229,7 @@ class HostileOrbitPainter {
                     drawImage(
                         image = icon.bitmap,
                         dstSize = IntSize(icon.bitmap.width, icon.bitmap.height) * scope.density.toInt(),
-                        dstOffset = IntOffset(icon.bitmap.width * (1 - scope.density.toInt()) / 2, icon.bitmap.height * (1 - scope.density.toInt()) / 2)
+                        dstOffset = IntOffset(icon.bitmap.width * (1 - scope.density.toInt()) / 2, icon.bitmap.height * (1 - scope.density.toInt()) / 2),
                     )
                 }
             }

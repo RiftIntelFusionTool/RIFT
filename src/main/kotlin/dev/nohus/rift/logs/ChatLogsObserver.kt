@@ -13,10 +13,13 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.koin.core.annotation.Single
-import java.io.File
 import java.io.IOException
+import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
+import kotlin.io.path.exists
+import kotlin.io.path.listDirectoryEntries
+import kotlin.io.path.name
 
 private val logger = KotlinLogging.logger {}
 
@@ -35,7 +38,7 @@ class ChatLogsObserver(
     private val handlingNewMessageMutex = Mutex()
 
     suspend fun observe(
-        directory: File,
+        directory: Path,
         onMessage: (ChannelChatMessage) -> Unit,
     ) {
         logFilesMutex.withLock {
@@ -83,10 +86,10 @@ class ChatLogsObserver(
         directoryObserver.stop()
     }
 
-    private suspend fun reloadLogFiles(directory: File) {
-        val logFiles = directory.listFiles()?.mapNotNull { file ->
+    private suspend fun reloadLogFiles(directory: Path) {
+        val logFiles = directory.listDirectoryEntries().mapNotNull { file ->
             matchChatLogFilenameUseCase(file)
-        } ?: emptyList()
+        }
         logFilesMutex.withLock {
             this.logFiles.clear()
             this.logFiles.addAll(logFiles)

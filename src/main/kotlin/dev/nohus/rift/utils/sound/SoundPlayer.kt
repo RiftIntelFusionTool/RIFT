@@ -10,9 +10,12 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.Single
-import java.io.File
 import java.io.InputStream
+import java.nio.file.Path
 import java.util.concurrent.Executors
+import kotlin.io.path.exists
+import kotlin.io.path.inputStream
+import kotlin.io.path.isReadable
 
 @Single
 class SoundPlayer(
@@ -55,8 +58,8 @@ class SoundPlayer(
     }
 
     fun playFile(path: String) = scope.launch {
-        val file = File(path)
-        if (!file.exists() || !file.canRead()) return@launch
+        val file = Path.of(path)
+        if (!file.exists() || !file.isReadable()) return@launch
         play(file.inputStream())
     }
 

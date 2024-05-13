@@ -23,6 +23,7 @@ buildConfig {
     buildConfigField("String", "buildUuid", "\"${properties["rift.buildUuid"]}\"")
     buildConfigField("String", "sentryDsn", "${properties["rift.sentryDsn"]}")
     buildConfigField("String", "focusedLoggers", "${properties["rift.focusedLoggers"]}")
+    buildConfigField("String", "logLevel", "${properties["rift.logLevel"]}")
 }
 
 repositories {

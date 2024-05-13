@@ -2,7 +2,7 @@ package dev.nohus.rift.characters
 
 import dev.nohus.rift.settings.persistence.Settings
 import org.koin.core.annotation.Single
-import java.io.File
+import java.nio.file.Path
 
 @Single
 class DetectEveSettingsDirectoryUseCase(
@@ -13,7 +13,7 @@ class DetectEveSettingsDirectoryUseCase(
     /**
      * Detects EVE Online character settings directories and updates settings with it, overwriting any existing setting
      */
-    operator fun invoke(): File? {
+    operator fun invoke(): Path? {
         val directory = getEveSettingsDirectoryUseCase()
         if (directory != null) settings.eveSettingsDirectory = directory
         return directory

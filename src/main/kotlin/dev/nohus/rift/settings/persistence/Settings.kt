@@ -6,8 +6,9 @@ import dev.nohus.rift.windowing.WindowManager.RiftWindow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.koin.core.annotation.Single
-import java.io.File
+import java.nio.file.Path
 import java.time.ZoneId
+import kotlin.io.path.pathString
 
 @Single
 class Settings(
@@ -24,13 +25,13 @@ class Settings(
         persistence.save(newModel)
     }
 
-    var eveLogsDirectory: File?
-        get() = model.eveLogsDirectory?.let { File(it) }
-        set(value) = update { copy(eveLogsDirectory = value?.path) }
+    var eveLogsDirectory: Path?
+        get() = model.eveLogsDirectory?.let { Path.of(it) }
+        set(value) = update { copy(eveLogsDirectory = value?.pathString) }
 
-    var eveSettingsDirectory: File?
-        get() = model.eveSettingsDirectory?.let { File(it) }
-        set(value) = update { copy(eveSettingsDirectory = value?.path) }
+    var eveSettingsDirectory: Path?
+        get() = model.eveSettingsDirectory?.let { Path.of(it) }
+        set(value) = update { copy(eveSettingsDirectory = value?.pathString) }
 
     var isLoadOldMessagesEnabled: Boolean
         get() = model.isLoadOldMessagesEnabled

@@ -2,7 +2,7 @@ package dev.nohus.rift.compose
 
 import androidx.compose.runtime.Composable
 import dev.nohus.rift.windowing.LocalRiftWindow
-import java.io.File
+import java.nio.file.Path
 import javax.swing.JFileChooser
 import javax.swing.UIManager
 import javax.swing.filechooser.FileNameExtensionFilter
@@ -16,7 +16,7 @@ fun RiftFileChooserButton(
     currentPath: String? = null,
     type: ButtonType = ButtonType.Primary,
     cornerCut: ButtonCornerCut = ButtonCornerCut.BottomRight,
-    onFileChosen: (File) -> Unit,
+    onFileChosen: (Path) -> Unit,
 ) {
     val frame = LocalRiftWindow.current ?: return
     RiftButton(
@@ -32,7 +32,7 @@ fun RiftFileChooserButton(
             }
             val returnValue = chooser.showOpenDialog(frame)
             if (returnValue == JFileChooser.APPROVE_OPTION) {
-                onFileChosen(chooser.selectedFile)
+                onFileChosen(chooser.selectedFile.toPath())
             }
         },
     )

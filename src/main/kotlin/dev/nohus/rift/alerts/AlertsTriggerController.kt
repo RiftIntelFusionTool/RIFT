@@ -131,7 +131,9 @@ class AlertsTriggerController(
                             action is GameLogAction.Attacking && action.target.containsNonNull(trigger.nameContaining)
                         }
                         GameActionType.BeingWarpScrambled -> action is GameLogAction.BeingWarpScrambled
-                        GameActionType.Decloaked -> action is GameLogAction.Decloaked
+                        is GameActionType.Decloaked -> {
+                            action is GameLogAction.Decloaked && trigger.ignoredKeywords.none { it.lowercase() in action.by.lowercase() }
+                        }
                     }
                 }
                 if (hasTriggered) {

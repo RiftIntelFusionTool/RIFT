@@ -1,6 +1,7 @@
 package dev.nohus.rift
 
 import dev.nohus.rift.alerts.AlertsTriggerController
+import dev.nohus.rift.autopilot.AutopilotController
 import dev.nohus.rift.characters.ActiveCharacterRepository
 import dev.nohus.rift.characters.CharacterWalletRepository
 import dev.nohus.rift.characters.LocalCharactersRepository
@@ -13,7 +14,6 @@ import dev.nohus.rift.location.CharacterLocationRepository
 import dev.nohus.rift.network.zkillboard.KillboardObserver
 import dev.nohus.rift.pings.PingsRepository
 import dev.nohus.rift.settings.persistence.Settings
-import dev.nohus.rift.singleinstance.SingleInstanceController
 import dev.nohus.rift.utils.ResetSparkleUpdateCheckUseCase
 import dev.nohus.rift.utils.sound.SoundPlayer
 import kotlinx.coroutines.launch
@@ -33,19 +33,16 @@ class BackgroundProcesses(
     private val resetSparkleUpdateCheckUseCase: ResetSparkleUpdateCheckUseCase,
     private val startJabberUseCase: StartJabberUseCase,
     private val pingsRepository: PingsRepository,
-    private val singleInstanceController: SingleInstanceController,
     private val killboardObserver: KillboardObserver,
     private val soundPlayer: SoundPlayer,
     private val clipboard: Clipboard,
+    private val autopilotController: AutopilotController,
     private val settings: Settings,
 ) {
 
     suspend fun start() = supervisorScope {
         launch {
             resetSparkleUpdateCheckUseCase()
-        }
-        launch {
-            singleInstanceController.start()
         }
         if (!settings.isDemoMode) {
             launch {
@@ -87,6 +84,9 @@ class BackgroundProcesses(
             }
             launch {
                 clipboard.start()
+            }
+            launch {
+                autopilotController.start()
             }
         }
     }

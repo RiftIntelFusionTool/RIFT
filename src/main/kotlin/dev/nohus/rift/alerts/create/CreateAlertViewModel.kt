@@ -210,6 +210,9 @@ class CreateAlertViewModel(
                     ) {
                         GAME_ACTION_TYPE_COMBAT_TARGET_QUESTION.answer ?: return GAME_ACTION_TYPE_COMBAT_TARGET_QUESTION
                     }
+                    if (GAME_ACTION_TYPE_DECLOAKED.id in GAME_ACTION_TYPE_QUESTION.answer!!.ids) {
+                        GAME_ACTION_TYPE_DECLOAKED_EXCEPTIONS_QUESTION.answer ?: return GAME_ACTION_TYPE_DECLOAKED_EXCEPTIONS_QUESTION
+                    }
                 }
 
                 ALERT_TRIGGER_CHAT_MESSAGE.id -> {
@@ -353,7 +356,10 @@ class CreateAlertViewModel(
                                     GameActionType.BeingWarpScrambled
                                 }
                                 GAME_ACTION_TYPE_DECLOAKED.id -> {
-                                    GameActionType.Decloaked
+                                    val answer = GAME_ACTION_TYPE_DECLOAKED_EXCEPTIONS_QUESTION.answer ?: return null
+                                    val ignoredKeywords = answer.text.split(",")
+                                        .map(String::trim).filter(String::isNotBlank).distinct()
+                                    GameActionType.Decloaked(ignoredKeywords = ignoredKeywords)
                                 }
                                 else -> throw IllegalStateException()
                             }

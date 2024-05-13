@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.Single
-import java.io.File
+import java.nio.file.Path
 
 @Single
 class CharactersViewModel(
@@ -28,7 +28,7 @@ class CharactersViewModel(
 
     data class CharacterItem(
         val characterId: Int,
-        val settingsFile: File?,
+        val settingsFile: Path?,
         val isAuthenticated: Boolean,
         val info: AsyncResource<LocalCharactersRepository.CharacterInfo>,
         val walletBalance: Double?,

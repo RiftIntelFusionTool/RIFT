@@ -21,9 +21,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.Single
-import java.io.File
+import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
+import kotlin.io.path.absolutePathString
 
 @Single
 class AlertsActionController(
@@ -250,7 +251,7 @@ class AlertsActionController(
     private fun sendSystemNotification(title: String, message: String) {
         sendNotificationUseCase(
             appName = "RIFT Intel Fusion Tool",
-            iconPath = File("icon/icon-512.png").absolutePath,
+            iconPath = Path.of("icon/icon-512.png").absolutePathString(),
             summary = title,
             body = message,
             timeout = 8,

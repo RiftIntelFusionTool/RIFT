@@ -1,10 +1,12 @@
 package dev.nohus.rift.logs.parse
 
 import org.koin.core.annotation.Single
-import java.io.File
+import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import kotlin.io.path.bufferedReader
+import kotlin.io.path.readText
 
 @Single
 class ChatLogFileParser {
@@ -13,12 +15,12 @@ class ChatLogFileParser {
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm:ss")
     private val charset = Charsets.UTF_16LE
 
-    fun parse(file: File): List<ChatMessage> {
+    fun parse(file: Path): List<ChatMessage> {
         val text = file.readText(charset)
         return parseText(text)
     }
 
-    fun parseHeader(characterId: String, file: File): ChatLogFileMetadata? {
+    fun parseHeader(characterId: String, file: Path): ChatLogFileMetadata? {
         val metadata = mutableMapOf<String, String>()
         val systemMessages = mutableListOf<ChatMessage>()
 

@@ -38,7 +38,13 @@ fun initializeLogging() {
                     "org.jose4j.http.Get" to listOf(Level.WARN, Level.ERROR),
                     "[Koin]" to listOf(Level.WARN, Level.ERROR),
                 )
-                val levels = levelsByLogger[event.loggerName] ?: listOf(Level.DEBUG, Level.INFO, Level.WARN, Level.ERROR)
+                val defaultLogLevels = when (BuildConfig.logLevel) {
+                    "error" -> listOf(Level.ERROR)
+                    "warn" -> listOf(Level.WARN, Level.ERROR)
+                    "info" -> listOf(Level.INFO, Level.WARN, Level.ERROR)
+                    else -> listOf(Level.DEBUG, Level.INFO, Level.WARN, Level.ERROR)
+                }
+                val levels = levelsByLogger[event.loggerName] ?: defaultLogLevels
                 val isLevel = event.level in levels
 
                 return if (isLevel) FilterReply.NEUTRAL else FilterReply.DENY

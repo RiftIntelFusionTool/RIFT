@@ -58,6 +58,7 @@ import dev.nohus.rift.settings.persistence.IntelChannel
 import dev.nohus.rift.utils.viewModel
 import dev.nohus.rift.windowing.WindowManager.RiftWindowState
 import javax.swing.JFileChooser
+import kotlin.io.path.absolutePathString
 
 @Composable
 fun SettingsWindow(
@@ -433,8 +434,8 @@ private fun EveInstallationSection(
             type = ButtonType.Secondary,
             cornerCut = ButtonCornerCut.None,
             onFileChosen = {
-                text = it.absolutePath
-                onLogsDirectoryChanged(it.absolutePath)
+                text = it.absolutePathString()
+                onLogsDirectoryChanged(it.absolutePathString())
             },
         )
         RiftButton(
@@ -478,8 +479,8 @@ private fun EveInstallationSection(
             type = ButtonType.Secondary,
             cornerCut = ButtonCornerCut.None,
             onFileChosen = {
-                text = it.absolutePath
-                onSettingsDirectoryChanged(it.absolutePath)
+                text = it.absolutePathString()
+                onSettingsDirectoryChanged(it.absolutePathString())
             },
         )
         RiftButton(

@@ -14,12 +14,13 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.koin.core.annotation.Named
 import org.koin.core.annotation.Single
-import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.nio.file.Files
 import java.time.Instant
 import kotlin.io.path.createParentDirectories
+import kotlin.io.path.readText
+import kotlin.io.path.writeText
 
 private val logger = KotlinLogging.logger {}
 
@@ -29,12 +30,12 @@ class SettingsPersistence(
     @Named("settings") private val json: Json,
 ) {
 
-    private val configFile = File(appDirectories.getAppDataDirectory(), "settings.json")
+    private val configFile = appDirectories.getAppDataDirectory().resolve("settings.json")
     private val scope = CoroutineScope(Job())
     private val mutex = Mutex()
 
     init {
-        configFile.toPath().createParentDirectories()
+        configFile.createParentDirectories()
     }
 
     fun load(): SettingsModel {
@@ -66,8 +67,7 @@ class SettingsPersistence(
     }
 
     private fun backupSettingsFile() {
-        val source = configFile.toPath()
-        val target = File(configFile.parentFile, "settingsBackup-${Instant.now().toEpochMilli()}.json").toPath()
-        Files.move(source, target)
+        val target = configFile.parent.resolve("settingsBackup-${Instant.now().toEpochMilli()}.json")
+        Files.move(configFile, target)
     }
 }

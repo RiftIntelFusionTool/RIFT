@@ -11,8 +11,11 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.koin.core.annotation.Single
-import java.io.File
 import java.io.IOException
+import java.nio.file.Path
+import kotlin.io.path.exists
+import kotlin.io.path.listDirectoryEntries
+import kotlin.io.path.name
 
 private val logger = KotlinLogging.logger {}
 
@@ -30,7 +33,7 @@ class GameLogsObserver(
     private val handledMessages = mutableSetOf<GameLogMessage>()
 
     suspend fun observe(
-        directory: File,
+        directory: Path,
         onCharacterLogin: suspend (characterId: Int) -> Unit,
         onMessage: (GameLogMessageWithMetadata) -> Unit,
     ) {
@@ -79,10 +82,10 @@ class GameLogsObserver(
         directoryObserver.stop()
     }
 
-    private suspend fun reloadLogFiles(directory: File) {
-        val logFiles = directory.listFiles()?.mapNotNull { file ->
+    private suspend fun reloadLogFiles(directory: Path) {
+        val logFiles = directory.listDirectoryEntries().mapNotNull { file ->
             matchGameLogFilenameUseCase(file)
-        } ?: emptyList()
+        }
         logFilesMutex.withLock {
             this.logFiles.clear()
             this.logFiles.addAll(logFiles)

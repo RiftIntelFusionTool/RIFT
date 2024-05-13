@@ -13,10 +13,10 @@ class LoggingInterceptor : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response = runBlocking {
         val request = chain.request()
-        logger.info { "Request --> ${request.url}" }
+        logger.debug { "Request --> ${request.url}" }
         try {
             val response = chain.proceed(request)
-            logger.info { "Response <== [${response.code}] ${request.url}" }
+            logger.debug { "Response <== [${response.code}] ${request.url}" }
             return@runBlocking response
         } catch (e: Exception) {
             logger.info { "Failure <== ${request.url}" }

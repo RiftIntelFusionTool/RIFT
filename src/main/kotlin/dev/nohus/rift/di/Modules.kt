@@ -36,7 +36,6 @@ import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
-import java.io.File
 import java.time.Duration
 
 @Module
@@ -79,20 +78,20 @@ val platformModule = module {
 
 val factoryModule = module {
     single<OkHttpClient> {
-        val directory = File(get<AppDirectories>().getAppCacheDirectory(), "http-cache")
+        val directory = get<AppDirectories>().getAppCacheDirectory().resolve("http-cache")
         val size = 50L * 1024 * 1024 // 50MB
         OkHttpClient.Builder()
-            .cache(Cache(directory, size))
+            .cache(Cache(directory.toFile(), size))
             .addInterceptor(get<UserAgentInterceptor>())
             .addInterceptor(get<LoggingInterceptor>())
             .pingInterval(Duration.ofSeconds(10))
             .build()
     }
     single<OkHttpClient>(qualifier = named("esi")) {
-        val directory = File(get<AppDirectories>().getAppCacheDirectory(), "esi-cache")
+        val directory = get<AppDirectories>().getAppCacheDirectory().resolve("esi-cache")
         val size = 50L * 1024 * 1024 // 50MB
         OkHttpClient.Builder()
-            .cache(Cache(directory, size))
+            .cache(Cache(directory.toFile(), size))
             .addInterceptor(get<UserAgentInterceptor>())
             .addInterceptor(get<EsiErrorLimitInterceptor>())
             .addInterceptor(get<LoggingInterceptor>())

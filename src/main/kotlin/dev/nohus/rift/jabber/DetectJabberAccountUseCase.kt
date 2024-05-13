@@ -3,7 +3,8 @@ package dev.nohus.rift.jabber
 import dev.nohus.rift.utils.OperatingSystem
 import dev.nohus.rift.utils.osdirectories.OperatingSystemDirectories
 import org.koin.core.annotation.Single
-import java.io.File
+import kotlin.io.path.isReadable
+import kotlin.io.path.readText
 
 @Single
 class DetectJabberAccountUseCase(
@@ -18,11 +19,11 @@ class DetectJabberAccountUseCase(
 
     operator fun invoke(): ImportedJabberAccount? {
         val file = when (operatingSystem) {
-            OperatingSystem.Linux -> File(operatingSystemDirectories.getUserDirectory(), ".purple/accounts.xml")
-            OperatingSystem.Windows -> File(operatingSystemDirectories.getUserDirectory(), "AppData/Roaming/.purple/accounts.xml")
+            OperatingSystem.Linux -> operatingSystemDirectories.getUserDirectory().resolve(".purple/accounts.xml")
+            OperatingSystem.Windows -> operatingSystemDirectories.getUserDirectory().resolve("AppData/Roaming/.purple/accounts.xml")
             OperatingSystem.MacOs -> return null // Stored in Apple keystore
         }
-        if (!file.canRead()) return null
+        if (!file.isReadable()) return null
         val text = file.readText()
         val regex = """<account>.*</account>""".toRegex(setOf(RegexOption.MULTILINE, RegexOption.DOT_MATCHES_ALL))
         regex.findAll(text).forEach { match ->

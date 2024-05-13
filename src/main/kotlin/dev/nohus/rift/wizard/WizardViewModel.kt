@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.Factory
+import kotlin.io.path.absolutePathString
 
 @Factory
 class WizardViewModel(
@@ -113,7 +114,7 @@ class WizardViewModel(
                 it.copy(
                     dialogMessage = DialogMessage(
                         title = "Can't read settings",
-                        message = "Your settings couldn't be read and were reset. Your original settings file was backed up, and you can find it under:\n${appDirectories.getAppDataDirectory().absolutePath}",
+                        message = "Your settings couldn't be read and were reset. Your original settings file was backed up, and you can find it under:\n${appDirectories.getAppDataDirectory().absolutePathString()}",
                         type = MessageDialogType.Warning,
                     ),
                 )

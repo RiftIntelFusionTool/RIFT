@@ -11,7 +11,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import org.koin.core.annotation.Factory
-import java.io.File
 import java.nio.file.Path
 import java.nio.file.StandardWatchEventKinds.ENTRY_CREATE
 import java.nio.file.StandardWatchEventKinds.ENTRY_DELETE
@@ -39,7 +38,7 @@ class DirectoryObserver(
     sealed interface DirectoryObserverEvent {
 
         data class FileEvent(
-            val file: File,
+            val file: Path,
             val type: FileEventType,
         ) : DirectoryObserverEvent
 
@@ -48,17 +47,16 @@ class DirectoryObserver(
 
     private var watchJob: Job? = null
 
-    suspend fun observe(directory: File, onUpdate: suspend (DirectoryObserverEvent) -> Unit) = coroutineScope {
+    suspend fun observe(directory: Path, onUpdate: suspend (DirectoryObserverEvent) -> Unit) = coroutineScope {
         stop()
 
-        val path = directory.toPath()
-        val watchService = path.fileSystem.newWatchService()
-        path.register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE, OVERFLOW)
+        val watchService = directory.fileSystem.newWatchService()
+        directory.register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE, OVERFLOW)
 
         watchJob = launch {
             if (operatingSystem == OperatingSystem.Windows) {
                 launch {
-                    pokeFiles(path)
+                    pokeFiles(directory)
                 }
             }
             launch {
@@ -100,7 +98,7 @@ class DirectoryObserver(
         watchJob?.cancel()
     }
 
-    private suspend fun handleWatchEvent(directory: File, watchEvent: WatchEvent<*>, onUpdate: suspend (DirectoryObserverEvent) -> Unit) {
+    private suspend fun handleWatchEvent(directory: Path, watchEvent: WatchEvent<*>, onUpdate: suspend (DirectoryObserverEvent) -> Unit) {
         when (watchEvent.kind()) {
             ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE -> {
                 val context = watchEvent.context() as Path
@@ -110,7 +108,7 @@ class DirectoryObserver(
                     ENTRY_DELETE -> FileEventType.Deleted
                     else -> throw IllegalStateException()
                 }
-                val event = FileEvent(File(directory, context.name), type)
+                val event = FileEvent(directory.resolve(context.name), type)
                 onUpdate(event)
             }
             OVERFLOW -> {

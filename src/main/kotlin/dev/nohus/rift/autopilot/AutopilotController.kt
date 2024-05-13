@@ -7,7 +7,8 @@ import dev.nohus.rift.repositories.GetRouteUseCase
 import dev.nohus.rift.settings.persistence.Settings
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,7 +31,13 @@ class AutopilotController(
 
     private val _activeRoutes = MutableStateFlow<Map<Int, Route>>(emptyMap()) // Character ID -> Route
     val activeRoutes = _activeRoutes.asStateFlow()
-    private val scope = CoroutineScope(Job())
+    private val scope = CoroutineScope(SupervisorJob())
+
+    suspend fun start() = coroutineScope {
+        launch {
+            observeCharacterLocation()
+        }
+    }
 
     fun addWaypoint(destinationId: Long, solarSystemId: Int) {
         addWaypoint(
@@ -103,6 +110,28 @@ class AutopilotController(
             val currentSystemId = characterLocationRepository.locations.value[characterId]?.solarSystemId ?: return null
             val route = getRouteUseCase(currentSystemId, solarSystemId, 50, withJumpBridges = true) ?: return null
             UpdatedRoute(full = Route(route), appended = Route(route))
+        }
+    }
+
+    private suspend fun observeCharacterLocation() {
+        characterLocationRepository.locations.collect { locations ->
+            for ((characterId, location) in locations) {
+                val currentRoute = _activeRoutes.value[characterId]?.systems ?: continue
+                val index = currentRoute.indexOf(location.solarSystemId)
+                when {
+                    index > 0 -> {
+                        val newRoute = currentRoute.drop(index)
+                        _activeRoutes.value += (characterId to Route(newRoute))
+                    }
+                    index == 0 -> {
+                        // Character still at start of route
+                    }
+                    else -> {
+                        // Character no longer on route
+                        _activeRoutes.value -= characterId
+                    }
+                }
+            }
         }
     }
 }

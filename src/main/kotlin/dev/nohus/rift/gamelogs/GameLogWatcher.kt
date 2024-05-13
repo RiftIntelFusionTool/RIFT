@@ -8,7 +8,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.Single
-import java.io.File
+import java.nio.file.Path
 
 private val logger = KotlinLogging.logger {}
 
@@ -21,7 +21,7 @@ class GameLogWatcher(
     private val gameLogMessageParser: GameLogMessageParser,
 ) {
 
-    private var watchedDirectory: File? = null
+    private var watchedDirectory: Path? = null
 
     suspend fun start() = coroutineScope {
         launch {
@@ -52,7 +52,7 @@ class GameLogWatcher(
         }
     }
 
-    private suspend fun observeGameLogs(directory: File) {
+    private suspend fun observeGameLogs(directory: Path) {
         gameLogsObserver.observe(
             directory = directory,
             onCharacterLogin = ::onCharacterLogin,

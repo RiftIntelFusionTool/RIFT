@@ -1,5 +1,6 @@
 package dev.nohus.rift.database.local
 
+import dev.nohus.rift.utils.createNewFile
 import dev.nohus.rift.utils.directories.AppDirectories
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -9,7 +10,6 @@ import org.jetbrains.exposed.sql.Transaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.koin.core.annotation.Single
 import org.sqlite.SQLiteConfig
-import java.io.File
 import java.sql.DriverManager
 
 @Single
@@ -17,7 +17,7 @@ class LocalDatabase(
     appDirectories: AppDirectories,
 ) {
 
-    private val file = File(appDirectories.getAppDataDirectory(), "local.db").apply { createNewFile() }
+    private val file = appDirectories.getAppDataDirectory().resolve("local.db").apply { createNewFile() }
     private val targetDatabase: Database
     private val mutex = Mutex()
 
