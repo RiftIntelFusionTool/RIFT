@@ -28,7 +28,7 @@ class ParsePingUseCaseTest : FreeSpec({
     coEvery { mockCharactersRepository.getCharacterId("Mrbluff343") } returns 2
     coEvery { mockCharactersRepository.getCharacterId("Mist Amatin") } returns 3
     coEvery { mockCharactersRepository.getCharacterId("Asher Elias") } returns 4
-    every { mockSolarSystemsRepository.getSystem("1DQ1-A", null) } returns "1DQ1-A"
+    every { mockSolarSystemsRepository.getSystemName("1DQ1-A", null) } returns "1DQ1-A"
 
     listOf(
         """

@@ -60,7 +60,7 @@ class GameLogWatcher(
         )
     }
 
-    private fun onCharacterLogin(characterId: Int) {
+    private suspend fun onCharacterLogin(characterId: Int) {
         logger.info { "Logged in: $characterId" }
         onlineCharactersRepository.onCharacterLogin(characterId)
     }

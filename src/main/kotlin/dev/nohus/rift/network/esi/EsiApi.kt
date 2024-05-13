@@ -59,6 +59,12 @@ class EsiApi(
         }
     }
 
+    suspend fun getCharactersIdSearch(characterId: Int, categories: String, strict: Boolean, search: String): Result<CharactersIdSearch> {
+        return executeEveAuthorized(characterId) { authentication ->
+            service.getCharactersIdSearch(characterId, categories, strict, search, authentication)
+        }
+    }
+
     suspend fun getUniverseStationsId(stationId: Int): Result<UniverseStationsId> {
         return execute { service.getUniverseStationsId(stationId) }
     }

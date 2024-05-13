@@ -45,13 +45,13 @@ class ChooseChatMessageTokenizationUseCaseTest : FreeSpec({
         mockWordsRepository,
         characterNameValidator,
     )
-    every { mockSolarSystemsRepository.getSystem(any(), any()) } returns null
+    every { mockSolarSystemsRepository.getSystemName(any(), any()) } returns null
     every { mockShipTypesRepository.getShip(any()) } returns null
     coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns emptyMap()
     every { mockWordsRepository.isWord(any()) } returns false
 
     "system link, player link, player" {
-        every { mockSolarSystemsRepository.getSystem("D-W7F0", "Delve") } returns "D-W7F0"
+        every { mockSolarSystemsRepository.getSystemName("D-W7F0", "Delve") } returns "D-W7F0"
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("Ishani Kalki", "Shiva Callipso").existing()
         val tokenizations = parser.parse("D-W7F0  Ishani Kalki  Shiva Callipso", "Delve")
 
@@ -78,7 +78,7 @@ class ChooseChatMessageTokenizationUseCaseTest : FreeSpec({
     }
 
     "system clear" {
-        every { mockSolarSystemsRepository.getSystem("319-3D", "Delve") } returns "319-3D"
+        every { mockSolarSystemsRepository.getSystemName("319-3D", "Delve") } returns "319-3D"
         val tokenizations = parser.parse("319-3D clr", "Delve")
 
         val actual = target(tokenizations)
@@ -90,7 +90,7 @@ class ChooseChatMessageTokenizationUseCaseTest : FreeSpec({
     }
 
     "player, extra spaces, system, clear" {
-        every { mockSolarSystemsRepository.getSystem("MO-GZ5", "Delve") } returns "MO-GZ5"
+        every { mockSolarSystemsRepository.getSystemName("MO-GZ5", "Delve") } returns "MO-GZ5"
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("Rinah Minayin").existing()
         val tokenizations = parser.parse("Rinah Minayin   MO-GZ5 nv", "Delve")
 
@@ -104,7 +104,7 @@ class ChooseChatMessageTokenizationUseCaseTest : FreeSpec({
     }
 
     "system with star" {
-        every { mockSolarSystemsRepository.getSystem("N-8YET", "Delve") } returns "N-8YET"
+        every { mockSolarSystemsRepository.getSystemName("N-8YET", "Delve") } returns "N-8YET"
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("Charlie Murdoch").existing()
         val tokenizations = parser.parse("N-8YET*  Charlie Murdoch", "Delve")
 
@@ -117,7 +117,7 @@ class ChooseChatMessageTokenizationUseCaseTest : FreeSpec({
     }
 
     "system with star, clear" {
-        every { mockSolarSystemsRepository.getSystem("N-8YET", "Delve") } returns "N-8YET"
+        every { mockSolarSystemsRepository.getSystemName("N-8YET", "Delve") } returns "N-8YET"
         val tokenizations = parser.parse("N-8YET* clr", "Delve")
 
         val actual = target(tokenizations)
@@ -129,7 +129,7 @@ class ChooseChatMessageTokenizationUseCaseTest : FreeSpec({
     }
 
     "ship with star, player, system with star" {
-        every { mockSolarSystemsRepository.getSystem("NOL-M9", "Delve") } returns "NOL-M9"
+        every { mockSolarSystemsRepository.getSystemName("NOL-M9", "Delve") } returns "NOL-M9"
         every { mockShipTypesRepository.getShip("Caldari Shuttle") } returns "Caldari Shuttle"
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("Keeppley TT").existing()
         val tokenizations = parser.parse("Caldari Shuttle*  Keeppley TT  NOL-M9*", "Delve")
@@ -144,7 +144,7 @@ class ChooseChatMessageTokenizationUseCaseTest : FreeSpec({
     }
 
     "player, system, ship" {
-        every { mockSolarSystemsRepository.getSystem("SVM-3K", "Delve") } returns "SVM-3K"
+        every { mockSolarSystemsRepository.getSystemName("SVM-3K", "Delve") } returns "SVM-3K"
         every { mockShipTypesRepository.getShip("eris") } returns "Eris"
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("M2002M").existing()
         val tokenizations = parser.parse("M2002M  SVM-3K eris", "Delve")
@@ -159,7 +159,7 @@ class ChooseChatMessageTokenizationUseCaseTest : FreeSpec({
     }
 
     "player link, player, count, ship link, system" {
-        every { mockSolarSystemsRepository.getSystem("319-3D", "Delve") } returns "319-3D"
+        every { mockSolarSystemsRepository.getSystemName("319-3D", "Delve") } returns "319-3D"
         every { mockShipTypesRepository.getShip("capsule") } returns "Capsule"
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("ssllss1", "Yaakov Y2").existing()
         val tokenizations = parser.parse("ssllss1  Yaakov Y2 2x capsule  319-3D", "Delve")
@@ -220,8 +220,8 @@ class ChooseChatMessageTokenizationUseCaseTest : FreeSpec({
 
     "system, complex text, shortened system" {
         // TODO: More complexity here
-        every { mockSolarSystemsRepository.getSystem("MO-GZ5", "Delve") } returns "MO-GZ5"
-        every { mockSolarSystemsRepository.getSystem("1dq", "Delve") } returns "1DQ1-A"
+        every { mockSolarSystemsRepository.getSystemName("MO-GZ5", "Delve") } returns "MO-GZ5"
+        every { mockSolarSystemsRepository.getSystemName("1dq", "Delve") } returns "1DQ1-A"
         val tokenizations = parser.parse("MO-GZ5 neutrals in 1dq on Mo gate", "Delve")
 
         val actual = target(tokenizations)
@@ -249,7 +249,7 @@ class ChooseChatMessageTokenizationUseCaseTest : FreeSpec({
     }
 
     "player, plus count, system" {
-        every { mockSolarSystemsRepository.getSystem("ZXB-VC", "Delve") } returns "ZXB-VC"
+        every { mockSolarSystemsRepository.getSystemName("ZXB-VC", "Delve") } returns "ZXB-VC"
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("stark").existing()
         val tokenizations = parser.parse("stark +3 ZXB-VC", "Delve")
 
@@ -263,7 +263,7 @@ class ChooseChatMessageTokenizationUseCaseTest : FreeSpec({
     }
 
     "plus count, system, ship" {
-        every { mockSolarSystemsRepository.getSystem("ZXB-VC", "Delve") } returns "ZXB-VC"
+        every { mockSolarSystemsRepository.getSystemName("ZXB-VC", "Delve") } returns "ZXB-VC"
         every { mockShipTypesRepository.getShip("hecate") } returns "Hecate"
         val tokenizations = parser.parse("+5  ZXB-VC hecate", "Delve")
 
@@ -277,7 +277,7 @@ class ChooseChatMessageTokenizationUseCaseTest : FreeSpec({
     }
 
     "shiptypes question" {
-        every { mockSolarSystemsRepository.getSystem("ZXB-VC", "Delve") } returns "ZXB-VC"
+        every { mockSolarSystemsRepository.getSystemName("ZXB-VC", "Delve") } returns "ZXB-VC"
         val tokenizations = parser.parse("ZXB-VC those +5 do we know other shiptypes?", "Delve")
 
         val actual = target(tokenizations)
@@ -319,7 +319,7 @@ class ChooseChatMessageTokenizationUseCaseTest : FreeSpec({
     }
 
     "system link, player, plus count, count, ship, comma, count, keyword" {
-        every { mockSolarSystemsRepository.getSystem("319-3D", "Delve") } returns "319-3D"
+        every { mockSolarSystemsRepository.getSystemName("319-3D", "Delve") } returns "319-3D"
         every { mockShipTypesRepository.getShip("hecate") } returns "Hecate"
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("RB Charlote").existing()
         val tokenizations = parser.parse("319-3D  RB Charlote +3 1x hecate, 3x nv", "Delve")
@@ -337,7 +337,7 @@ class ChooseChatMessageTokenizationUseCaseTest : FreeSpec({
     }
 
     "player link, player, text, system, ship names" {
-        every { mockSolarSystemsRepository.getSystem("1-2J4P", "Delve") } returns "1-2J4P"
+        every { mockSolarSystemsRepository.getSystemName("1-2J4P", "Delve") } returns "1-2J4P"
         every { mockShipTypesRepository.getShip("purifier") } returns "Purifier"
         every { mockShipTypesRepository.getShip("sabre") } returns "Sabre"
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("FeiShi", "iT0p").existing()
@@ -357,7 +357,7 @@ class ChooseChatMessageTokenizationUseCaseTest : FreeSpec({
     }
 
     "system, text, url" {
-        every { mockSolarSystemsRepository.getSystem("Q-JQSG", "Delve") } returns "Q-JQSG"
+        every { mockSolarSystemsRepository.getSystemName("Q-JQSG", "Delve") } returns "Q-JQSG"
         val tokenizations = parser.parse("Q-JQSG clearing https://adashboard.info/intel/dscan/view/D91snCmT", "Delve")
 
         val actual = target(tokenizations)
@@ -387,7 +387,7 @@ class ChooseChatMessageTokenizationUseCaseTest : FreeSpec({
     }
 
     "player, plus count, link, system link" {
-        every { mockSolarSystemsRepository.getSystem("4K-TRB", "Delve") } returns "4K-TRB"
+        every { mockSolarSystemsRepository.getSystemName("4K-TRB", "Delve") } returns "4K-TRB"
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("Sixty Ever4", "Sixty").existing()
         val tokenizations = parser.parse("Sixty Ever4 +5 gang  4K-TRB*", "Delve")
 
@@ -416,8 +416,8 @@ class ChooseChatMessageTokenizationUseCaseTest : FreeSpec({
 
     "gate and gate camp" {
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("chazzathespazman", "camp").existing()
-        every { mockSolarSystemsRepository.getSystem("B-DBYQ", "Delve") } returns "B-DBYQ"
-        every { mockSolarSystemsRepository.getSystem("J5A-IX", "Delve") } returns "J5A-IX"
+        every { mockSolarSystemsRepository.getSystemName("B-DBYQ", "Delve") } returns "B-DBYQ"
+        every { mockSolarSystemsRepository.getSystemName("J5A-IX", "Delve") } returns "J5A-IX"
         val tokenizations = parser.parse("chazzathespazman +7  B-DBYQ gate camp on  J5A-IX gate", "Delve")
 
         val actual = target(tokenizations)

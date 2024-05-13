@@ -51,13 +51,13 @@ class ChatMessageParserTest : FreeSpec({
         mockWordsRepository,
         characterNameValidator,
     )
-    every { mockSolarSystemsRepository.getSystem(any(), eq("Delve")) } returns null
+    every { mockSolarSystemsRepository.getSystemName(any(), eq("Delve")) } returns null
     every { mockShipTypesRepository.getShip(any()) } returns null
     coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns emptyMap()
     every { mockWordsRepository.isWord(any()) } returns false
 
     "system link, player link, player" {
-        every { mockSolarSystemsRepository.getSystem("D-W7F0", "Delve") } returns "D-W7F0"
+        every { mockSolarSystemsRepository.getSystemName("D-W7F0", "Delve") } returns "D-W7F0"
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("Ishani Kalki", "Shiva Callipso").existing()
 
         val actual = target.parse("D-W7F0  Ishani Kalki  Shiva Callipso", "Delve")
@@ -82,7 +82,7 @@ class ChatMessageParserTest : FreeSpec({
     }
 
     "system clear" {
-        every { mockSolarSystemsRepository.getSystem("319-3D", "Delve") } returns "319-3D"
+        every { mockSolarSystemsRepository.getSystemName("319-3D", "Delve") } returns "319-3D"
 
         val actual = target.parse("319-3D clr", "Delve")
 
@@ -93,7 +93,7 @@ class ChatMessageParserTest : FreeSpec({
     }
 
     "player, extra spaces, system, clear" {
-        every { mockSolarSystemsRepository.getSystem("MO-GZ5", "Delve") } returns "MO-GZ5"
+        every { mockSolarSystemsRepository.getSystemName("MO-GZ5", "Delve") } returns "MO-GZ5"
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("Rinah Minayin").existing()
 
         val actual = target.parse("Rinah Minayin   MO-GZ5 nv", "Delve")
@@ -106,7 +106,7 @@ class ChatMessageParserTest : FreeSpec({
     }
 
     "system with star" {
-        every { mockSolarSystemsRepository.getSystem("N-8YET", "Delve") } returns "N-8YET"
+        every { mockSolarSystemsRepository.getSystemName("N-8YET", "Delve") } returns "N-8YET"
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("Charlie Murdoch").existing()
 
         val actual = target.parse("N-8YET*  Charlie Murdoch", "Delve")
@@ -118,7 +118,7 @@ class ChatMessageParserTest : FreeSpec({
     }
 
     "system with star, clear" {
-        every { mockSolarSystemsRepository.getSystem("N-8YET", "Delve") } returns "N-8YET"
+        every { mockSolarSystemsRepository.getSystemName("N-8YET", "Delve") } returns "N-8YET"
 
         val actual = target.parse("N-8YET* clr", "Delve")
 
@@ -129,7 +129,7 @@ class ChatMessageParserTest : FreeSpec({
     }
 
     "ship with star, player, system with star" {
-        every { mockSolarSystemsRepository.getSystem("NOL-M9", "Delve") } returns "NOL-M9"
+        every { mockSolarSystemsRepository.getSystemName("NOL-M9", "Delve") } returns "NOL-M9"
         every { mockShipTypesRepository.getShip("Caldari Shuttle") } returns "Caldari Shuttle"
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("Keeppley TT").existing()
 
@@ -143,7 +143,7 @@ class ChatMessageParserTest : FreeSpec({
     }
 
     "player, system, ship" {
-        every { mockSolarSystemsRepository.getSystem("SVM-3K", "Delve") } returns "SVM-3K"
+        every { mockSolarSystemsRepository.getSystemName("SVM-3K", "Delve") } returns "SVM-3K"
         every { mockShipTypesRepository.getShip("eris") } returns "Eris"
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("M2002M").existing()
 
@@ -157,7 +157,7 @@ class ChatMessageParserTest : FreeSpec({
     }
 
     "player link, player, count, ship link, system" {
-        every { mockSolarSystemsRepository.getSystem("319-3D", "Delve") } returns "319-3D"
+        every { mockSolarSystemsRepository.getSystemName("319-3D", "Delve") } returns "319-3D"
         every { mockShipTypesRepository.getShip("capsule") } returns "Capsule"
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("ssllss1", "Yaakov Y2").existing()
 
@@ -213,8 +213,8 @@ class ChatMessageParserTest : FreeSpec({
 
     "system, complex text, shortened system" {
         // TODO: More complexity here
-        every { mockSolarSystemsRepository.getSystem("MO-GZ5", "Delve") } returns "MO-GZ5"
-        every { mockSolarSystemsRepository.getSystem("1dq", "Delve") } returns "1DQ1-A"
+        every { mockSolarSystemsRepository.getSystemName("MO-GZ5", "Delve") } returns "MO-GZ5"
+        every { mockSolarSystemsRepository.getSystemName("1dq", "Delve") } returns "1DQ1-A"
 
         val actual = target.parse("MO-GZ5 neutrals in 1dq on Mo gate", "Delve")
 
@@ -240,7 +240,7 @@ class ChatMessageParserTest : FreeSpec({
     }
 
     "player, plus count, system" {
-        every { mockSolarSystemsRepository.getSystem("ZXB-VC", "Delve") } returns "ZXB-VC"
+        every { mockSolarSystemsRepository.getSystemName("ZXB-VC", "Delve") } returns "ZXB-VC"
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("stark").existing()
 
         val actual = target.parse("stark +3 ZXB-VC", "Delve")
@@ -253,7 +253,7 @@ class ChatMessageParserTest : FreeSpec({
     }
 
     "plus count, system, ship" {
-        every { mockSolarSystemsRepository.getSystem("ZXB-VC", "Delve") } returns "ZXB-VC"
+        every { mockSolarSystemsRepository.getSystemName("ZXB-VC", "Delve") } returns "ZXB-VC"
         every { mockShipTypesRepository.getShip("hecate") } returns "Hecate"
 
         val actual = target.parse("+5  ZXB-VC hecate", "Delve")
@@ -266,7 +266,7 @@ class ChatMessageParserTest : FreeSpec({
     }
 
     "plus count with space, system, ship" {
-        every { mockSolarSystemsRepository.getSystem("ZXB-VC", "Delve") } returns "ZXB-VC"
+        every { mockSolarSystemsRepository.getSystemName("ZXB-VC", "Delve") } returns "ZXB-VC"
         every { mockShipTypesRepository.getShip("hecate") } returns "Hecate"
 
         val actual = target.parse("+ 5  ZXB-VC hecate", "Delve")
@@ -279,7 +279,7 @@ class ChatMessageParserTest : FreeSpec({
     }
 
     "shiptypes question" {
-        every { mockSolarSystemsRepository.getSystem("ZXB-VC", "Delve") } returns "ZXB-VC"
+        every { mockSolarSystemsRepository.getSystemName("ZXB-VC", "Delve") } returns "ZXB-VC"
 
         val actual = target.parse("ZXB-VC those +5 do we know other shiptypes?", "Delve")
 
@@ -317,7 +317,7 @@ class ChatMessageParserTest : FreeSpec({
     }
 
     "system link, player, plus count, count, ship, comma, count, keyword" {
-        every { mockSolarSystemsRepository.getSystem("319-3D", "Delve") } returns "319-3D"
+        every { mockSolarSystemsRepository.getSystemName("319-3D", "Delve") } returns "319-3D"
         every { mockShipTypesRepository.getShip("hecate") } returns "Hecate"
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("RB Charlote").existing()
 
@@ -334,7 +334,7 @@ class ChatMessageParserTest : FreeSpec({
     }
 
     "player link, player, text, system, ship names" {
-        every { mockSolarSystemsRepository.getSystem("1-2J4P", "Delve") } returns "1-2J4P"
+        every { mockSolarSystemsRepository.getSystemName("1-2J4P", "Delve") } returns "1-2J4P"
         every { mockShipTypesRepository.getShip("purifier") } returns "Purifier"
         every { mockShipTypesRepository.getShip("sabre") } returns "Sabre"
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("FeiShi", "iT0p").existing()
@@ -353,7 +353,7 @@ class ChatMessageParserTest : FreeSpec({
     }
 
     "system, text, url" {
-        every { mockSolarSystemsRepository.getSystem("Q-JQSG", "Delve") } returns "Q-JQSG"
+        every { mockSolarSystemsRepository.getSystemName("Q-JQSG", "Delve") } returns "Q-JQSG"
 
         val actual = target.parse("Q-JQSG clearing https://adashboard.info/intel/dscan/view/D91snCmT", "Delve")
 
@@ -443,7 +443,7 @@ class ChatMessageParserTest : FreeSpec({
     "system gate" {
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("Ruthy").existing()
         every { mockShipTypesRepository.getShip("stabber") } returns "Stabber"
-        every { mockSolarSystemsRepository.getSystem("uvho", "Delve") } returns "UVHO-F"
+        every { mockSolarSystemsRepository.getSystemName("uvho", "Delve") } returns "UVHO-F"
 
         val actual = target.parse("Ruthy stabber uvho gate", "Delve")
 
@@ -455,8 +455,8 @@ class ChatMessageParserTest : FreeSpec({
     }
 
     "system gate with more text" {
-        every { mockSolarSystemsRepository.getSystem("k7", "Delve") } returns "K7D-II"
-        every { mockSolarSystemsRepository.getSystem("OGY", "Delve") } returns "OGY-6D"
+        every { mockSolarSystemsRepository.getSystemName("k7", "Delve") } returns "K7D-II"
+        every { mockSolarSystemsRepository.getSystemName("OGY", "Delve") } returns "OGY-6D"
 
         val actual = target.parse("moved away from k7 gate in OGY", "Delve")
 
@@ -471,8 +471,8 @@ class ChatMessageParserTest : FreeSpec({
     "gate system" {
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("CrystalWater").existing()
         every { mockShipTypesRepository.getShip("Retribution") } returns "Retribution"
-        every { mockSolarSystemsRepository.getSystem("FM-JK5", "Delve") } returns "FM-JK5"
-        every { mockSolarSystemsRepository.getSystem("JP4", "Delve") } returns "JP4-AA"
+        every { mockSolarSystemsRepository.getSystemName("FM-JK5", "Delve") } returns "FM-JK5"
+        every { mockSolarSystemsRepository.getSystemName("JP4", "Delve") } returns "JP4-AA"
 
         val actual = target.parse("FM-JK5  CrystalWater +10 gate JP4  Retribution", "Delve")
 
@@ -488,8 +488,8 @@ class ChatMessageParserTest : FreeSpec({
     "going system" {
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("CrystalWater").existing()
         every { mockShipTypesRepository.getShip("Retribution") } returns "Retribution"
-        every { mockSolarSystemsRepository.getSystem("FM-JK5", "Delve") } returns "FM-JK5"
-        every { mockSolarSystemsRepository.getSystem("JP4", "Delve") } returns "JP4-AA"
+        every { mockSolarSystemsRepository.getSystemName("FM-JK5", "Delve") } returns "FM-JK5"
+        every { mockSolarSystemsRepository.getSystemName("JP4", "Delve") } returns "JP4-AA"
 
         val actual = target.parse("FM-JK5  CrystalWater going JP4", "Delve")
 
@@ -503,8 +503,8 @@ class ChatMessageParserTest : FreeSpec({
     "jumped system" {
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("CrystalWater").existing()
         every { mockShipTypesRepository.getShip("Retribution") } returns "Retribution"
-        every { mockSolarSystemsRepository.getSystem("FM-JK5", "Delve") } returns "FM-JK5"
-        every { mockSolarSystemsRepository.getSystem("JP4", "Delve") } returns "JP4-AA"
+        every { mockSolarSystemsRepository.getSystemName("FM-JK5", "Delve") } returns "FM-JK5"
+        every { mockSolarSystemsRepository.getSystemName("JP4", "Delve") } returns "JP4-AA"
 
         val actual = target.parse("FM-JK5  CrystalWater jumped JP4", "Delve")
 
@@ -518,8 +518,8 @@ class ChatMessageParserTest : FreeSpec({
     "jumped gate" {
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("CrystalWater").existing()
         every { mockShipTypesRepository.getShip("Retribution") } returns "Retribution"
-        every { mockSolarSystemsRepository.getSystem("FM-JK5", "Delve") } returns "FM-JK5"
-        every { mockSolarSystemsRepository.getSystem("JP4", "Delve") } returns "JP4-AA"
+        every { mockSolarSystemsRepository.getSystemName("FM-JK5", "Delve") } returns "FM-JK5"
+        every { mockSolarSystemsRepository.getSystemName("JP4", "Delve") } returns "JP4-AA"
 
         val actual = target.parse("FM-JK5  CrystalWater jumped JP4 gate", "Delve")
 
@@ -531,7 +531,7 @@ class ChatMessageParserTest : FreeSpec({
     }
 
     "system ansiblex" {
-        every { mockSolarSystemsRepository.getSystem("1DQ", "Delve") } returns "1DQ1-A"
+        every { mockSolarSystemsRepository.getSystemName("1DQ", "Delve") } returns "1DQ1-A"
 
         val actual = target.parse("on 1DQ ansi", "Delve")
 
@@ -543,8 +543,8 @@ class ChatMessageParserTest : FreeSpec({
 
     "gate and gate camp" {
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("chazzathespazman", "camp").existing()
-        every { mockSolarSystemsRepository.getSystem("B-DBYQ", "Delve") } returns "B-DBYQ"
-        every { mockSolarSystemsRepository.getSystem("J5A-IX", "Delve") } returns "J5A-IX"
+        every { mockSolarSystemsRepository.getSystemName("B-DBYQ", "Delve") } returns "B-DBYQ"
+        every { mockSolarSystemsRepository.getSystemName("J5A-IX", "Delve") } returns "J5A-IX"
 
         val actual = target.parse("chazzathespazman +7  B-DBYQ gate camp on  J5A-IX gate", "Delve")
 
@@ -570,9 +570,9 @@ class ChatMessageParserTest : FreeSpec({
 
     "player name matching an out-of-region system name" {
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("KQK").existing()
-        every { mockSolarSystemsRepository.getSystem("KQK", "Delve") } returns "KQK1-2"
+        every { mockSolarSystemsRepository.getSystemName("KQK", "Delve") } returns "KQK1-2"
         every { mockSolarSystemsRepository.getRegionBySystem("KQK1-2") } returns "Pure Blind"
-        every { mockSolarSystemsRepository.getSystem("1-SMEB", "Delve") } returns "1-SMEB"
+        every { mockSolarSystemsRepository.getSystemName("1-SMEB", "Delve") } returns "1-SMEB"
 
         val actual = target.parse("KQK  1-SMEB", "Delve")
 
@@ -584,9 +584,9 @@ class ChatMessageParserTest : FreeSpec({
 
     "player name matching an in-region system name" {
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("KQK").existing()
-        every { mockSolarSystemsRepository.getSystem("KQK", "Delve") } returns "KQK1-2"
+        every { mockSolarSystemsRepository.getSystemName("KQK", "Delve") } returns "KQK1-2"
         every { mockSolarSystemsRepository.getRegionBySystem("KQK1-2") } returns "Delve"
-        every { mockSolarSystemsRepository.getSystem("1-SMEB", "Delve") } returns "1-SMEB"
+        every { mockSolarSystemsRepository.getSystemName("1-SMEB", "Delve") } returns "1-SMEB"
 
         val actual = target.parse("KQK  1-SMEB", "Delve")
 
@@ -598,7 +598,7 @@ class ChatMessageParserTest : FreeSpec({
 
     "player name substring matching a system name" {
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("Jita Alt 1").existing()
-        every { mockSolarSystemsRepository.getSystem("Jita", "Delve") } returns "Jita"
+        every { mockSolarSystemsRepository.getSystemName("Jita", "Delve") } returns "Jita"
 
         val actual = target.parse("Jita Alt 1", "Delve")
 
@@ -609,7 +609,7 @@ class ChatMessageParserTest : FreeSpec({
 
     "system, player name substring matching a system name" {
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("Jita Alt 1").existing()
-        every { mockSolarSystemsRepository.getSystem("Jita", "Delve") } returns "Jita"
+        every { mockSolarSystemsRepository.getSystemName("Jita", "Delve") } returns "Jita"
 
         val actual = target.parse("Jita Jita Alt 1", "Delve")
 

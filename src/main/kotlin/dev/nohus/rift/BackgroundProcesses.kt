@@ -5,6 +5,7 @@ import dev.nohus.rift.characters.ActiveCharacterRepository
 import dev.nohus.rift.characters.CharacterWalletRepository
 import dev.nohus.rift.characters.LocalCharactersRepository
 import dev.nohus.rift.characters.OnlineCharactersRepository
+import dev.nohus.rift.clipboard.Clipboard
 import dev.nohus.rift.gamelogs.GameLogWatcher
 import dev.nohus.rift.intel.ChatLogWatcher
 import dev.nohus.rift.jabber.client.StartJabberUseCase
@@ -35,6 +36,7 @@ class BackgroundProcesses(
     private val singleInstanceController: SingleInstanceController,
     private val killboardObserver: KillboardObserver,
     private val soundPlayer: SoundPlayer,
+    private val clipboard: Clipboard,
     private val settings: Settings,
 ) {
 
@@ -82,6 +84,9 @@ class BackgroundProcesses(
             }
             launch {
                 soundPlayer.start()
+            }
+            launch {
+                clipboard.start()
             }
         }
     }

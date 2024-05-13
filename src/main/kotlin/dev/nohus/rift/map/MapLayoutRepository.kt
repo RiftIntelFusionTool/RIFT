@@ -6,6 +6,7 @@ import dev.nohus.rift.database.static.StaticDatabase
 import dev.nohus.rift.repositories.SolarSystemsRepository
 import org.jetbrains.exposed.sql.selectAll
 import org.koin.core.annotation.Single
+import kotlin.math.pow
 import kotlin.math.roundToInt
 
 @Single
@@ -17,7 +18,9 @@ class MapLayoutRepository(
     data class Position(
         val x: Int,
         val y: Int,
-    )
+    ) {
+        fun distanceSquared(other: Position) = (x - other.x).toDouble().pow(2) + (y - other.y).toDouble().pow(2)
+    }
 
     // region ID -> system ID -> position
     private val systemPositionsByRegionId: Map<Int, Map<Int, Position>>

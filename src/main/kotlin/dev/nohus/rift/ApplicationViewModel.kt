@@ -4,6 +4,7 @@ import dev.nohus.rift.settings.persistence.Settings
 import dev.nohus.rift.singleinstance.SingleInstanceController
 import dev.nohus.rift.utils.directories.DetectDirectoriesUseCase
 import dev.nohus.rift.windowing.WindowManager
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,6 +13,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.Single
+
+private val logger = KotlinLogging.logger {}
 
 @Single
 class ApplicationViewModel(
@@ -80,6 +83,7 @@ class ApplicationViewModel(
     }
 
     fun onSingleInstanceRunAnywayClick() {
+        logger.info { "Starting additional instance anyway" }
         _state.update { it.copy(isAnotherInstanceDialogShown = false) }
     }
 

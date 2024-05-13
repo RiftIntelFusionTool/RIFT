@@ -36,6 +36,7 @@ data class SettingsModel(
     val alertGroups: Set<String> = emptySet(),
     val configurationPack: ConfigurationPack? = null,
     val hiddenCharacterIds: List<Int> = emptyList(),
+    val jumpBridgeNetwork: Map<String, String>? = null,
 )
 
 @Serializable
@@ -56,6 +57,8 @@ data class IntelMap(
     val intelPopupTimeoutSeconds: Int = 60,
     val isCharacterFollowing: Boolean = true,
     val isInvertZoom: Boolean = false,
+    val isJumpBridgeNetworkShown: Boolean = true,
+    val jumpBridgeNetworkOpacity: Int = 100,
 )
 
 @Serializable

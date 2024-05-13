@@ -138,4 +138,8 @@ class Settings(
     var hiddenCharacterIds: List<Int>
         get() = model.hiddenCharacterIds
         set(value) = update { copy(hiddenCharacterIds = value) }
+
+    var jumpBridgeNetwork: Map<String, String>?
+        get() = model.jumpBridgeNetwork
+        set(value) = update { copy(jumpBridgeNetwork = value) }
 }

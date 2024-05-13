@@ -82,3 +82,9 @@ data class UniverseStructuresId(
     @SerialName("type_id")
     val typeId: Int,
 )
+
+@Serializable
+data class CharactersIdSearch(
+    @SerialName("structure")
+    val structure: List<Long> = emptyList(),
+)

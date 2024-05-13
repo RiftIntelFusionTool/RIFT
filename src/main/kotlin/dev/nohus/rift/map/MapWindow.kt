@@ -283,11 +283,27 @@ private fun Map(
         }
     }
 
-    val mapPainter: MapPainter = remember(state.cluster, state.layout, solarSystemColorStrategy, state.mapType) {
+    val mapPainter: MapPainter = remember(
+        state.cluster,
+        state.layout,
+        state.jumpBridgeAdditionalSystems,
+        solarSystemColorStrategy,
+        state.mapType,
+        state.isJumpBridgeNetworkShown,
+        state.jumpBridgeNetworkOpacity,
+    ) {
         if (state.mapType is ClusterRegionsMap) {
             RegionsMapPainter(state.cluster, state.layout)
         } else {
-            SystemsMapPainter(state.cluster, state.layout, solarSystemColorStrategy, state.mapType)
+            SystemsMapPainter(
+                cluster = state.cluster,
+                layout = state.layout,
+                jumpBridgeAdditionalSystems = state.jumpBridgeAdditionalSystems,
+                solarSystemColorStrategy = solarSystemColorStrategy,
+                mapType = state.mapType,
+                isJumpBridgeNetworkShown = state.isJumpBridgeNetworkShown,
+                jumpBridgeNetworkOpacity = state.jumpBridgeNetworkOpacity,
+            )
         }
     }.apply { initializeComposed() }
 
@@ -456,7 +472,12 @@ private fun ForEachSystem(
         system: SolarSystemsRepository.MapSolarSystem,
     ) -> Unit,
 ) {
-    state.layout.forEach { (systemId, layoutPosition) ->
+    val layout = if (state.isJumpBridgeNetworkShown) {
+        state.layout
+    } else {
+        state.layout - state.jumpBridgeAdditionalSystems
+    }
+    layout.forEach { (systemId, layoutPosition) ->
         val isHighlightedOrHovered = systemId == state.mapState.hoveredSystem ||
             systemId == state.mapState.selectedSystem ||
             systemId in state.mapState.searchResults

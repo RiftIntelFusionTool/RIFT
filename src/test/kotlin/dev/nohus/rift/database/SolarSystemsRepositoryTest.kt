@@ -46,7 +46,7 @@ class SolarSystemsRepositoryTest : FreeSpec({
         Triple("1D", "Paragon Soul", "1DDR-X"),
     ).forEach { (input, regionHint, expected) ->
         "for input \"$input\" with region hint \"$regionHint\" getSystem() returns \"$expected\"" {
-            val actual = target.getSystem(input, regionHint)
+            val actual = target.getSystemName(input, regionHint)
             actual shouldBe expected
         }
     }

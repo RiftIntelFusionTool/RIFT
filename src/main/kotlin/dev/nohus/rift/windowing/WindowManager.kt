@@ -155,7 +155,7 @@ class WindowManager(
             RiftWindow.IntelSettings -> WindowSizing(defaultSize = (400 to null), minimumSize = 400 to null)
             RiftWindow.Settings -> WindowSizing(defaultSize = (820 to null), minimumSize = 820 to null)
             RiftWindow.Map -> WindowSizing(defaultSize = saved ?: (800 to 800), minimumSize = 350 to 300)
-            RiftWindow.MapSettings -> WindowSizing(defaultSize = (400 to null), minimumSize = 400 to null)
+            RiftWindow.MapSettings -> WindowSizing(defaultSize = (400 to 450), minimumSize = 400 to 450)
             RiftWindow.Characters -> WindowSizing(defaultSize = saved ?: (420 to 400), minimumSize = 350 to 300)
             RiftWindow.Alerts -> WindowSizing(defaultSize = saved ?: (500 to 500), minimumSize = 500 to 500)
             RiftWindow.About -> WindowSizing(defaultSize = (450 to null), minimumSize = (450 to null))

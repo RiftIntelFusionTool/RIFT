@@ -4,6 +4,7 @@ import dev.nohus.rift.database.static.Constellations
 import dev.nohus.rift.database.static.Regions
 import dev.nohus.rift.database.static.SolarSystems
 import dev.nohus.rift.database.static.StaticDatabase
+import dev.nohus.rift.utils.roundSecurity
 import org.jetbrains.exposed.sql.selectAll
 import org.koin.core.annotation.Single
 
@@ -20,6 +21,7 @@ class SolarSystemsRepository(
     private val sunTypes: Map<String, Int>
     private val systemIdsByName: Map<String, Int>
     private val systemNamesById: Map<Int, String>
+    private val systemsById: Map<Int, MapSolarSystem>
     val mapSolarSystems: List<MapSolarSystem>
     val mapConstellations: List<MapConstellation>
     val mapRegions: List<MapRegion>
@@ -46,6 +48,7 @@ class SolarSystemsRepository(
     )
 
     data class MapConstellation(
+        val id: Int,
         val name: String,
         val x: Double,
         val y: Double,
@@ -95,8 +98,10 @@ class SolarSystemsRepository(
                 sunTypeId = it[SolarSystems.sunTypeId],
             )
         }
+        systemsById = mapSolarSystems.associateBy { it.id }
         mapConstellations = constellationRows.map {
             MapConstellation(
+                id = it[Constellations.constellationId],
                 name = it[Constellations.constellationName],
                 x = it[Constellations.x],
                 y = it[Constellations.y],
@@ -130,7 +135,7 @@ class SolarSystemsRepository(
      * @param regionHint Region the system is expected to be in
      * @return Full name of the system or null if it's not a system name
      */
-    fun getSystem(name: String, regionHint: String?): String? {
+    fun getSystemName(name: String, regionHint: String?): String? {
         getSystemWithoutTypos(name, regionHint)?.let { return it }
         if ('0' in name) getSystemWithoutTypos(name.replace('0', 'O'), regionHint)?.let { return it }
         if ('O' in name) getSystemWithoutTypos(name.replace('O', '0'), regionHint)?.let { return it }
@@ -167,6 +172,11 @@ class SolarSystemsRepository(
         return systemNamesById[id]
     }
 
+    fun getSystem(name: String): MapSolarSystem? {
+        val id = getSystemId(name) ?: return null
+        return systemsById[id]
+    }
+
     fun getSystemSecurity(id: Int): Double? {
         return mapSolarSystems.firstOrNull { it.id == id }?.security
     }
@@ -186,5 +196,22 @@ class SolarSystemsRepository(
 
     fun getRegionIdBySystemId(systemId: Int): Int? {
         return regionIdBySystemId[systemId]
+    }
+
+    /**
+     * Non-NPC Null-Sec systems
+     */
+    fun getSovSystems(): List<MapSolarSystem> {
+        val npcNullRegions = listOf("Curse", "Great Wildlands", "Outer Ring", "Stain", "Syndicate", "Venal", "Yasna Zakh")
+        val npcNullConstellations = listOf("38G6-L", "N-K4Q0", "Phoenix", "U-7RBK", "XPJ1-6", "6-UCYU")
+        val npcNullRegionIds = mapRegions.filter { it.name in npcNullRegions }.map { it.id }
+        val npcNullConstellationIds = mapConstellations.filter { it.name in npcNullConstellations }.map { it.id }
+        return mapSolarSystems
+            .filter { system ->
+                system.regionId !in npcNullRegionIds && system.constellationId !in npcNullConstellationIds
+            }
+            .filter { system ->
+                system.security.roundSecurity() <= 0.0
+            }
     }
 }

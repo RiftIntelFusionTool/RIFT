@@ -66,6 +66,7 @@ fun AboutWindow(
         AboutWindowContent(
             state = state,
             onUpdateClick = viewModel::onUpdateClick,
+            onAppDataClick = viewModel::onAppDataClick,
             onLegalClick = viewModel::onLegalClick,
             onCreditsClick = viewModel::onCreditsClick,
         )
@@ -121,6 +122,7 @@ fun AboutWindow(
 private fun AboutWindowContent(
     state: UiState,
     onUpdateClick: () -> Unit,
+    onAppDataClick: () -> Unit,
     onLegalClick: () -> Unit,
     onCreditsClick: () -> Unit,
 ) {
@@ -216,6 +218,12 @@ private fun AboutWindowContent(
                     .padding(top = Spacing.medium)
                     .align(Alignment.End),
             ) {
+                RiftButton(
+                    text = "App data",
+                    type = ButtonType.Secondary,
+                    cornerCut = ButtonCornerCut.None,
+                    onClick = onAppDataClick,
+                )
                 RiftButton(
                     text = "Legal",
                     type = ButtonType.Secondary,

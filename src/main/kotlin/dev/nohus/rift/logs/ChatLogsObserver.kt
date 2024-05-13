@@ -27,6 +27,7 @@ class ChatLogsObserver(
     private val logFileParser: ChatLogFileParser,
 ) {
     private val logFiles = mutableListOf<ChatLogFile>()
+    private val logFilesMutex = Mutex()
     private var activeLogFiles: Map<String, ChatLogFileMetadata> = emptyMap() // String is the filename
     private var onMessageCallback: ((ChannelChatMessage) -> Unit)? = null
     private val handledMessagesSet = mutableSetOf<ChatMessage>()
@@ -37,7 +38,9 @@ class ChatLogsObserver(
         directory: File,
         onMessage: (ChannelChatMessage) -> Unit,
     ) {
-        logFiles.clear()
+        logFilesMutex.withLock {
+            logFiles.clear()
+        }
         activeLogFiles = emptyMap()
         onMessageCallback = onMessage
 
@@ -50,12 +53,16 @@ class ChatLogsObserver(
                     if (logFile != null) {
                         when (event.type) {
                             Created -> {
-                                logFiles += logFile
+                                logFilesMutex.withLock {
+                                    logFiles += logFile
+                                }
                                 updateActiveLogFiles()
                             }
                             Deleted -> {
-                                val file = logFiles.find { it.file.name == logFile.file.name }
-                                if (file != null) logFiles -= file
+                                logFilesMutex.withLock {
+                                    val file = logFiles.find { it.file.name == logFile.file.name }
+                                    if (file != null) logFiles -= file
+                                }
                                 updateActiveLogFiles()
                             }
                             Modified -> {
@@ -80,14 +87,16 @@ class ChatLogsObserver(
         val logFiles = directory.listFiles()?.mapNotNull { file ->
             matchChatLogFilenameUseCase(file)
         } ?: emptyList()
-        this.logFiles.clear()
-        this.logFiles.addAll(logFiles)
+        logFilesMutex.withLock {
+            this.logFiles.clear()
+            this.logFiles.addAll(logFiles)
+        }
         updateActiveLogFiles()
     }
 
     private suspend fun updateActiveLogFiles() {
         try {
-            val currentActiveLogFiles = logFiles.toList()
+            val currentActiveLogFiles = logFilesMutex.withLock { logFiles.toList() }
                 .filter { it.file.exists() }
                 .groupBy { it.characterId }
                 .flatMap { (characterId, playerLogFiles) ->

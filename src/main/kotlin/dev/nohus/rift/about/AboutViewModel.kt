@@ -7,6 +7,8 @@ import dev.nohus.rift.network.AsyncResource.Error
 import dev.nohus.rift.network.AsyncResource.Loading
 import dev.nohus.rift.network.AsyncResource.Ready
 import dev.nohus.rift.utils.OperatingSystem
+import dev.nohus.rift.utils.directories.AppDirectories
+import dev.nohus.rift.utils.openFileManager
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +33,7 @@ private val logger = KotlinLogging.logger {}
 class AboutViewModel(
     private val okHttpClient: OkHttpClient,
     operatingSystem: OperatingSystem,
+    private val appDirectories: AppDirectories,
 ) : ViewModel() {
 
     data class UiState(
@@ -70,6 +73,10 @@ class AboutViewModel(
 
     fun onUpdateClick() {
         _state.update { it.copy(isUpdateDialogShown = true) }
+    }
+
+    fun onAppDataClick() {
+        appDirectories.getAppDataDirectory().openFileManager()
     }
 
     fun onLegalClick() {

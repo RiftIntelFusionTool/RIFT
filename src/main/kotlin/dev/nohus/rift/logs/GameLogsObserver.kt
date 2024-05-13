@@ -8,6 +8,8 @@ import dev.nohus.rift.logs.parse.GameLogFileParser
 import dev.nohus.rift.logs.parse.GameLogMessage
 import dev.nohus.rift.logs.parse.GameLogMessageWithMetadata
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.koin.core.annotation.Single
 import java.io.File
 import java.io.IOException
@@ -22,16 +24,19 @@ class GameLogsObserver(
 ) {
 
     private val logFiles = mutableListOf<GameLogFile>()
+    private val logFilesMutex = Mutex()
     private var activeLogFiles: Map<String, GameLogFileMetadata> = emptyMap() // String is the filename
     private var onMessageCallback: ((GameLogMessageWithMetadata) -> Unit)? = null
     private val handledMessages = mutableSetOf<GameLogMessage>()
 
     suspend fun observe(
         directory: File,
-        onCharacterLogin: (characterId: Int) -> Unit,
+        onCharacterLogin: suspend (characterId: Int) -> Unit,
         onMessage: (GameLogMessageWithMetadata) -> Unit,
     ) {
-        logFiles.clear()
+        logFilesMutex.withLock {
+            logFiles.clear()
+        }
         activeLogFiles = emptyMap()
         onMessageCallback = onMessage
 
@@ -44,13 +49,17 @@ class GameLogsObserver(
                     if (logFile != null) {
                         when (event.type) {
                             Created -> {
-                                logFiles += logFile
+                                logFilesMutex.withLock {
+                                    logFiles += logFile
+                                }
                                 updateActiveLogFiles()
                                 matchGameLogFilenameUseCase(event.file)?.characterId?.toIntOrNull()?.let { onCharacterLogin(it) }
                             }
                             DirectoryObserver.FileEventType.Deleted -> {
-                                val file = logFiles.find { it.file.name == logFile.file.name }
-                                if (file != null) logFiles -= file
+                                logFilesMutex.withLock {
+                                    val file = logFiles.find { it.file.name == logFile.file.name }
+                                    if (file != null) logFiles -= file
+                                }
                                 updateActiveLogFiles()
                             }
                             DirectoryObserver.FileEventType.Modified -> {
@@ -70,18 +79,20 @@ class GameLogsObserver(
         directoryObserver.stop()
     }
 
-    private fun reloadLogFiles(directory: File) {
+    private suspend fun reloadLogFiles(directory: File) {
         val logFiles = directory.listFiles()?.mapNotNull { file ->
             matchGameLogFilenameUseCase(file)
         } ?: emptyList()
-        this.logFiles.clear()
-        this.logFiles.addAll(logFiles)
+        logFilesMutex.withLock {
+            this.logFiles.clear()
+            this.logFiles.addAll(logFiles)
+        }
         updateActiveLogFiles()
     }
 
-    private fun updateActiveLogFiles() {
+    private suspend fun updateActiveLogFiles() {
         try {
-            val currentActiveLogFiles = logFiles.toList()
+            val currentActiveLogFiles = logFilesMutex.withLock { logFiles.toList()  }
                 .filter { it.file.exists() }
                 .groupBy { it.characterId }
                 .mapNotNull { (characterId, playerLogFiles) ->

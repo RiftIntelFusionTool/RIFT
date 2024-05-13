@@ -550,7 +550,7 @@ class ChatMessageParser(
                 return@buildList
             }
 
-            val systemName = solarSystemsRepository.getSystem(text, regionHint)
+            val systemName = solarSystemsRepository.getSystemName(text, regionHint)
             if (systemName != null) add(System(systemName))
 
             val shipText = text

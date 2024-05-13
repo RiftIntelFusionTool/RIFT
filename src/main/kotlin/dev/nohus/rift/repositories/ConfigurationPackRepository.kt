@@ -78,4 +78,11 @@ class ConfigurationPackRepository(
     fun isFriendlyAlliance(allianceId: Int): Boolean {
         return allianceId in getFriendlyAllianceIds(settings.configurationPack)
     }
+
+    fun getJumpBridgeNetworkUrl(): String? {
+        return when (settings.configurationPack) {
+            Imperium -> "https://wiki.goonswarm.org/w/Alliance:Stargate"
+            null -> null
+        }
+    }
 }

@@ -2,11 +2,13 @@ package dev.nohus.rift.map.painter
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.center
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
@@ -24,12 +26,21 @@ import dev.nohus.rift.map.systemcolor.SolarSystemColorStrategy
 import dev.nohus.rift.repositories.MapGateConnectionsRepository
 import dev.nohus.rift.repositories.MapGateConnectionsRepository.GateConnection
 import dev.nohus.rift.repositories.SolarSystemsRepository
+import dev.nohus.rift.repositories.SolarSystemsRepository.MapSolarSystem
+import kotlin.math.asin
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 class SystemsMapPainter(
     private val cluster: Cluster,
     private val layout: Map<Int, Position>,
+    private val jumpBridgeAdditionalSystems: Set<Int>,
     private val solarSystemColorStrategy: SolarSystemColorStrategy,
     private val mapType: MapType,
+    private val isJumpBridgeNetworkShown: Boolean,
+    private val jumpBridgeNetworkOpacity: Int,
 ) : MapPainter {
 
     private lateinit var textMeasurer: TextMeasurer
@@ -38,9 +49,19 @@ class SystemsMapPainter(
     private val systemsInLayout = cluster.systems.filter {
         it.id in systemsIdsInLayout
     }
+    private val systemsWithGateConnections = systemsIdsInLayout - jumpBridgeAdditionalSystems
     private val connectionsInLayout = cluster.connections.filter {
-        it.from.id in systemsIdsInLayout && it.to.id in systemsIdsInLayout
+        it.from.id in systemsWithGateConnections && it.to.id in systemsWithGateConnections
     }
+    data class JumpBridgeConnectionLine(val from: MapSolarSystem, val to: MapSolarSystem, val bidirectional: Boolean)
+    private val jumpBridgeConnectionsInLayout = cluster.jumpBridgeConnections?.filter {
+        it.from.id in systemsIdsInLayout || it.to.id in systemsIdsInLayout
+    } ?: emptyList()
+    private val jumpBridgeConnectionLines = jumpBridgeConnectionsInLayout.map { connection ->
+        val (from, to) = listOf(connection.from, connection.to).sortedBy { it.id }
+        val isBidirectional = jumpBridgeConnectionsInLayout.find { it.from == to && it.to == from } != null
+        JumpBridgeConnectionLine(from, to, isBidirectional)
+    }.distinct()
     private val systemRadialGradients = mutableMapOf<Color, Brush>()
 
     @Composable
@@ -57,6 +78,11 @@ class SystemsMapPainter(
     ) = with(scope) {
         connectionsInLayout.forEach { connection ->
             drawSystemConnection(connection, mapType, center, scale, zoom)
+        }
+        if (isJumpBridgeNetworkShown) {
+            jumpBridgeConnectionLines.forEach { connection ->
+                drawJumpBridgeConnection(connection, mapType, center, scale, zoom)
+            }
         }
         if (mapType is MapType.ClusterSystemsMap) {
             systemsInLayout.forEach { system ->
@@ -83,7 +109,7 @@ class SystemsMapPainter(
     }
 
     private fun DrawScope.drawSystem(
-        system: SolarSystemsRepository.MapSolarSystem,
+        system: MapSolarSystem,
         center: DoubleOffset,
         scale: Float,
         zoom: Float,
@@ -138,6 +164,75 @@ class SystemsMapPainter(
                 val width = (1f / scale).coerceAtMost(2f)
                 drawLine(brush, start = Offset.Zero, end = deltaOffset, strokeWidth = width, pathEffect = effect)
             }
+        }
+    }
+
+    private fun DrawScope.drawJumpBridgeConnection(
+        connection: JumpBridgeConnectionLine,
+        mapType: MapType,
+        center: DoubleOffset,
+        scale: Float,
+        zoom: Float,
+    ) {
+        val fromLayoutPosition = layout[connection.from.id] ?: return
+        val toLayoutPosition = layout[connection.to.id] ?: return
+        val from = getCanvasCoordinates(fromLayoutPosition.x, fromLayoutPosition.y, center, scale)
+        val to = getCanvasCoordinates(toLayoutPosition.x, toLayoutPosition.y, center, scale)
+        val distance = sqrt((from.x - to.x).toDouble().pow(2.0) + (from.y - to.y).toDouble().pow(2.0)).toFloat()
+        val (p1, p2) = listOf(from, to).sortedWith(compareBy({ it.x }, { it.y }))
+        val isReversed = from == p2
+
+        val alphaModifier = jumpBridgeNetworkOpacity / 100f
+        val toColorFilter: Color.(isBidirectional: Boolean) -> Color = { if (it) this else this.copy(alpha = 0.1f) }
+        val colors = if (mapType is RegionMap || scale < 0.5) {
+            val fromColor = solarSystemColorStrategy.getActiveColor(connection.from)
+            val toColor = solarSystemColorStrategy.getActiveColor(connection.to)
+            val bridgeColor = Color(0xFF75D25A)
+            listOf(fromColor, bridgeColor, bridgeColor.toColorFilter(connection.bidirectional), toColor.toColorFilter(connection.bidirectional))
+        } else {
+            val fromColor = solarSystemColorStrategy.getInactiveColor(connection.from)
+            val toColor = solarSystemColorStrategy.getInactiveColor(connection.to)
+            val bridgeColor = Color(0xFF75D25A).copy(alpha = 0.1f)
+            listOf(fromColor, bridgeColor, bridgeColor.toColorFilter(connection.bidirectional), toColor.toColorFilter(connection.bidirectional))
+        }.map { it.copy(alpha = it.alpha * alphaModifier) }
+        val brush = Brush.linearGradient(
+            colors = colors,
+            start = if (isReversed) p2 else p1,
+            end = if (isReversed) p1 else p2,
+        )
+        drawArcBetweenTwoPoints(p1, p2, distance * 0.75f, brush, scale, zoom)
+    }
+
+    private fun DrawScope.drawArcBetweenTwoPoints(
+        a: Offset,
+        b: Offset,
+        radius: Float,
+        brush: Brush,
+        scale: Float,
+        zoom: Float,
+    ) {
+        val x = b.x - a.x
+        val y = b.y - a.y
+        val angle = atan2(y, x)
+        val l = sqrt((x * x + y * y))
+        if (2 * radius >= l) {
+            val sweep = asin(l / (2 * radius))
+            val h = radius * cos(sweep)
+            val c = Offset(
+                x = (a.x + x / 2 - h * (y / l)),
+                y = (a.y + y / 2 + h * (x / l)),
+            )
+            val width = (1f / scale).coerceAtMost(2f)
+            val sweepAngle = Math.toDegrees((2 * sweep).toDouble()).toFloat()
+            drawArc(
+                brush = brush,
+                topLeft = Offset(c.x - radius, c.y - radius),
+                size = Size(radius * 2, radius * 2),
+                startAngle = (Math.toDegrees((angle - sweep).toDouble()) - 90).toFloat(),
+                sweepAngle = sweepAngle,
+                useCenter = false,
+                style = Stroke(width, pathEffect = PathEffect.dashPathEffect(floatArrayOf(40f * zoom, 5f * zoom))),
+            )
         }
     }
 

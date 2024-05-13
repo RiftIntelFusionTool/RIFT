@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.koin.core.annotation.Single
 import java.time.Duration
@@ -29,6 +31,7 @@ class OnlineCharactersRepository(
     val onlineCharacters = _onlineCharacters.asStateFlow()
 
     private val lastSeen = mutableMapOf<Int, Instant>()
+    private val lastSeenMutex = Mutex()
     private val onlineSinceSeenDuration = Duration.ofMinutes(1)
     private var onlineGameClients = setOf<Int>()
 
@@ -72,17 +75,21 @@ class OnlineCharactersRepository(
         }
     }
 
-    fun onCharacterLogin(characterId: Int) {
-        lastSeen[characterId] = Instant.now()
+    suspend fun onCharacterLogin(characterId: Int) {
+        lastSeenMutex.withLock {
+            lastSeen[characterId] = Instant.now()
+        }
         updateOnlineCharacters()
     }
 
-    private fun updateOnlineCharacters() {
+    private suspend fun updateOnlineCharacters() {
         val now = Instant.now()
-        val onlineIds = lastSeen.toMap()
-            .filter { (_, timestamp) -> Duration.between(timestamp, now) < onlineSinceSeenDuration }
-            .map { (id, _) -> id }
-        _onlineCharacters.value = onlineIds
+        lastSeenMutex.withLock {
+            val onlineIds = lastSeen.toMap()
+                .filter { (_, timestamp) -> Duration.between(timestamp, now) < onlineSinceSeenDuration }
+                .map { (id, _) -> id }
+            _onlineCharacters.value = onlineIds
+        }
     }
 
     private suspend fun checkOpenEveClients() = withContext(Dispatchers.IO) {
@@ -95,12 +102,16 @@ class OnlineCharactersRepository(
                 .map { it.characterId }
                 .toSet()
             characterIds.forEach { characterId ->
-                lastSeen[characterId] = now
+                lastSeenMutex.withLock {
+                    lastSeen[characterId] = now
+                }
             }
         }
         val wentOffline = onlineGameClients - characterIds
         wentOffline.forEach {
-            lastSeen.remove(it)
+            lastSeenMutex.withLock {
+                lastSeen.remove(it)
+            }
         }
         onlineGameClients = characterIds
         updateOnlineCharacters()
@@ -125,7 +136,9 @@ class OnlineCharactersRepository(
                     }
                 }.awaitAll().forEach { (characterId, result) ->
                     if (result.success?.isOnline == true) {
-                        lastSeen[characterId] = now
+                        lastSeenMutex.withLock {
+                            lastSeen[characterId] = now
+                        }
                     }
                 }
         }

@@ -97,7 +97,7 @@ class ParsePingUseCase(
     }
 
     private fun parseFormupLocation(text: String): FormupLocation {
-        val system = solarSystemsRepository.getSystem(text, regionHint = null)
+        val system = solarSystemsRepository.getSystemName(text, regionHint = null)
         return if (system != null) FormupLocation.System(system) else FormupLocation.Text(text)
     }
 
@@ -129,7 +129,7 @@ class ParsePingUseCase(
 
     private fun getDoctrineLink(text: String): String? {
         val doctrines = mapOf(
-            "CFI" to "https://goonfleet.com/index.php/topic/350382-active-squad-beefl-cfi/",
+            "CFI" to "https://goonfleet.com/index.php/topic/353938-active-strat-cyclone-fleet-issue/",
             "SuperTrains" to "https://goonfleet.com/index.php/topic/342568-active-strat-supertrains-mainfleet-editionrokh/",
             "Techfleet" to "https://goonfleet.com/index.php/topic/327228-active%E2%80%94strat%E2%80%94techfleet/",
             "OSPREY NAVY ISSUE" to "https://goonfleet.com/index.php/topic/341744-active-peacetime-osprey-navy-issues/",

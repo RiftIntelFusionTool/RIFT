@@ -48,6 +48,15 @@ interface EsiService {
         @Header("Authorization") authorization: String,
     ): Double
 
+    @GET("/v3/characters/{id}/search/")
+    suspend fun getCharactersIdSearch(
+        @Path("id") characterId: Int,
+        @Query("categories") categories: String,
+        @Query("strict") strict: Boolean,
+        @Query("search") search: String,
+        @Header("Authorization") authorization: String,
+    ): CharactersIdSearch
+
     @GET("/v2/universe/stations/{id}/")
     suspend fun getUniverseStationsId(
         @Path("id") stationId: Int,

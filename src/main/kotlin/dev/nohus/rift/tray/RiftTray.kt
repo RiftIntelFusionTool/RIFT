@@ -143,14 +143,16 @@ private fun initialize(
             logger.error { "System tray failed to initialize" }
             false
         } else {
-            systemTray.setImage(getBestTrayIcon(systemTray, isUsingDarkTrayIcon))
-            if (operatingSystem == OperatingSystem.Windows) {
-                // On Windows the tooltip shows on hover
-                try {
+            val icon = getBestTrayIcon(systemTray, isUsingDarkTrayIcon)
+            try {
+                systemTray.setImage(icon)
+                if (operatingSystem == OperatingSystem.Windows) {
+                    // On Windows the tooltip shows on hover
                     systemTray.setTooltip("RIFT")
-                } catch (error: Error) {
-                    logger.error { "Failed to set tray tooltip" }
                 }
+            } catch (error: Error) {
+                logger.error(error) { "System tray crashed" }
+                return false
             }
             for (item in items) {
                 when (item) {

@@ -16,6 +16,8 @@ import dev.nohus.rift.map.MapLayoutRepository.Position
 import dev.nohus.rift.map.MapViewModel.MapType.ClusterRegionsMap
 import dev.nohus.rift.map.MapViewModel.MapType.ClusterSystemsMap
 import dev.nohus.rift.map.MapViewModel.MapType.RegionMap
+import dev.nohus.rift.repositories.JumpBridgesRepository
+import dev.nohus.rift.repositories.JumpBridgesRepository.JumpBridgeConnection
 import dev.nohus.rift.repositories.MapGateConnectionsRepository
 import dev.nohus.rift.repositories.MapGateConnectionsRepository.GateConnection
 import dev.nohus.rift.repositories.SolarSystemsRepository
@@ -33,6 +35,7 @@ import org.koin.core.annotation.Single
 import java.time.Duration
 import java.time.Instant
 import kotlin.math.pow
+import kotlin.math.roundToInt
 import kotlin.math.sqrt
 import dev.nohus.rift.settings.persistence.MapType as SettingsMapType
 
@@ -44,6 +47,7 @@ class MapViewModel(
     private val getOnlineCharactersLocationUseCase: GetOnlineCharactersLocationUseCase,
     private val intelStateController: IntelStateController,
     private val mapExternalControl: MapExternalControl,
+    private val jumpBridgesRepository: JumpBridgesRepository,
     private val settings: Settings,
 ) : ViewModel() {
 
@@ -52,6 +56,7 @@ class MapViewModel(
         val constellations: List<MapConstellation>,
         val regions: List<MapRegion>,
         val connections: List<GateConnection>,
+        val jumpBridgeConnections: List<JumpBridgeConnection>?,
     )
 
     data class MapState(
@@ -79,9 +84,12 @@ class MapViewModel(
         val cluster: Cluster,
         val mapType: MapType,
         val layout: Map<Int, Position>,
+        val jumpBridgeAdditionalSystems: Set<Int>,
         val mapState: MapState = MapState(),
         val isScrollZoomInverted: Boolean,
         val isUsingCompactMode: Boolean,
+        val isJumpBridgeNetworkShown: Boolean,
+        val jumpBridgeNetworkOpacity: Int,
     )
 
     private val openRegions = mutableSetOf<Int>()
@@ -100,11 +108,15 @@ class MapViewModel(
                 constellations = solarSystemsRepository.mapConstellations,
                 regions = solarSystemsRepository.mapRegions,
                 connections = gateConnectionsRepository.gateConnections,
+                jumpBridgeConnections = jumpBridgesRepository.getConnections(),
             ),
             mapType = ClusterSystemsMap,
             layout = emptyMap(),
+            jumpBridgeAdditionalSystems = emptySet(),
             isScrollZoomInverted = settings.intelMap.isInvertZoom,
             isUsingCompactMode = settings.intelMap.isUsingCompactMode,
+            isJumpBridgeNetworkShown = settings.intelMap.isJumpBridgeNetworkShown,
+            jumpBridgeNetworkOpacity = settings.intelMap.jumpBridgeNetworkOpacity,
         ),
     )
     val state = _state.asStateFlow()
@@ -123,6 +135,9 @@ class MapViewModel(
                         starColor = settings.intelMap.mapTypeStarColor,
                         isScrollZoomInverted = settings.intelMap.isInvertZoom,
                         isUsingCompactMode = settings.intelMap.isUsingCompactMode,
+                        isJumpBridgeNetworkShown = settings.intelMap.isJumpBridgeNetworkShown,
+                        jumpBridgeNetworkOpacity = settings.intelMap.jumpBridgeNetworkOpacity,
+                        cluster = it.cluster.copy(jumpBridgeConnections = jumpBridgesRepository.getConnections()),
                     )
                 }
             }
@@ -259,13 +274,63 @@ class MapViewModel(
             ClusterRegionsMap -> layoutRepository.getRegionLayout()
             is RegionMap -> layoutRepository.getLayout(mapType.regionId)
         }
+        val jumpBridgeAdditionalSystemsLayout = if (mapType is RegionMap) getJumpBridgeDestinationsLayout(layout) else emptyMap()
 
         var selectedId = focusedId ?: getOnlineCharacterLocationId(mapType)
         if (selectedId !in layout.keys) selectedId = null
         val initialTransform = mapTransforms[mapType]
 
         updateMapState { copy(hoveredSystem = null, selectedSystem = selectedId, contextMenuSystem = null, initialTransform = initialTransform) }
-        _state.update { it.copy(selectedTab = id, mapType = mapType, layout = layout) }
+        _state.update {
+            it.copy(
+                selectedTab = id,
+                mapType = mapType,
+                layout = layout + jumpBridgeAdditionalSystemsLayout,
+                jumpBridgeAdditionalSystems = jumpBridgeAdditionalSystemsLayout.keys,
+            )
+        }
+    }
+
+    /**
+     * Layout of systems that are connected by jump bridges from systems in this layout
+     */
+    private fun getJumpBridgeDestinationsLayout(originsLayout: Map<Int, Position>): Map<Int, Position> {
+        val outgoingJumpBridgeConnectionsInLayout = jumpBridgesRepository.getConnections()?.filter {
+            // TODO: Try xor
+            (it.from.id in originsLayout.keys || it.to.id in originsLayout.keys) && !(it.from.id in originsLayout.keys && it.to.id in originsLayout.keys)
+        } ?: emptyList()
+        return outgoingJumpBridgeConnectionsInLayout.fold(emptyMap()) { layout, connection ->
+            val (origin, destination) = if (connection.from.id in originsLayout.keys) connection.from to connection.to else connection.to to connection.from
+            if (destination.id in layout.keys) return@fold layout // Already in layout
+            val entry = destination.id to getOutOfRegionLayoutPosition(originsLayout, layout, origin.id)
+            layout + entry
+        }
+    }
+
+    private fun getOutOfRegionLayoutPosition(
+        originsLayout: Map<Int, Position>,
+        outOfRegionLayout: Map<Int, Position>,
+        system: Int,
+    ): Position {
+        val layoutCenter = Position(originsLayout.maxOf { it.value.x } / 2, originsLayout.maxOf { it.value.y } / 2)
+        val position = originsLayout[system]!!
+        val slope = if (position.x != layoutCenter.x) {
+            (position.y - layoutCenter.y) / (position.x - layoutCenter.x).toFloat()
+        } else {
+            if (position.y > layoutCenter.y) 1000f else -1000f
+        }
+        val b = position.y - (position.x * slope)
+
+        val xDelta = if (position.x > layoutCenter.x) 1 else -1
+        var x = position.x + xDelta
+        val combinedLayout = originsLayout + outOfRegionLayout
+        val minDistance = 80
+        while (combinedLayout.minOf { Position(x, (x * slope + b).toInt()).distanceSquared(it.value) } < (minDistance * minDistance)) {
+            x += xDelta
+        }
+
+        val y = x * slope + b
+        return Position(x, y.roundToInt())
     }
 
     private fun getOnlineCharacterLocationId(mapType: MapType): Int? {

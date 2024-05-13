@@ -42,25 +42,25 @@ dependencies {
     @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
     implementation(compose.desktop.components.animatedImage)
     implementation(compose.components.resources)
-    implementation("media.kamel:kamel-image:0.7.2")
+    implementation("media.kamel:kamel-image:0.9.4")
 
     // Logging
-    implementation("io.github.oshai:kotlin-logging-jvm:5.0.1")
-    implementation("ch.qos.logback:logback-classic:1.4.11")
+    implementation("io.github.oshai:kotlin-logging-jvm:6.0.9")
+    implementation("ch.qos.logback:logback-classic:1.5.6")
 
     // Koin
-    implementation("io.insert-koin:koin-core:3.4.3")
-    implementation("io.insert-koin:koin-logger-slf4j:3.4.3")
-    implementation("io.insert-koin:koin-annotations:1.2.2")
-    ksp("io.insert-koin:koin-ksp-compiler:1.2.2")
+    implementation("io.insert-koin:koin-core:3.5.6")
+    implementation("io.insert-koin:koin-logger-slf4j:3.5.6")
+    implementation("io.insert-koin:koin-annotations:1.3.1")
+    ksp("io.insert-koin:koin-ksp-compiler:1.3.1")
 
     // Other
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
-    implementation("org.apache.commons:commons-lang3:3.13.0")
-    implementation("org.apache.commons:commons-exec:1.3")
-    implementation("org.apache.httpcomponents.client5:httpclient5:5.2.1")
-    implementation("org.bitbucket.b_c:jose4j:0.9.3")
-    implementation("com.formdev:flatlaf:3.2.5")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    implementation("org.apache.commons:commons-lang3:3.14.0")
+    implementation("org.apache.commons:commons-exec:1.4.0")
+    implementation("org.apache.httpcomponents.client5:httpclient5:5.3.1")
+    implementation("org.bitbucket.b_c:jose4j:0.9.6")
+    implementation("com.formdev:flatlaf:3.4.1")
     implementation("org.jsoup:jsoup:1.17.2")
     implementation("org.nibor.autolink:autolink:0.11.0")
 
@@ -69,54 +69,54 @@ dependencies {
     implementation("org.jogamp.gluegen:gluegen-rt-main:2.5.0")
 
     // Smack (XMPP)
-    implementation("org.igniterealtime.smack:smack-java8:4.4.0")
-    implementation("org.igniterealtime.smack:smack-tcp:4.4.0")
-    implementation("org.igniterealtime.smack:smack-im:4.4.0")
-    implementation("org.igniterealtime.smack:smack-extensions:4.4.0")
+    implementation("org.igniterealtime.smack:smack-java8:4.4.8")
+    implementation("org.igniterealtime.smack:smack-tcp:4.4.8")
+    implementation("org.igniterealtime.smack:smack-im:4.4.8")
+    implementation("org.igniterealtime.smack:smack-extensions:4.4.8")
 
     // SystemTray
-    implementation("com.dorkbox:Collections:2.4")
-    implementation("com.dorkbox:Executor:3.13")
+    implementation("com.dorkbox:Collections:2.8")
+    implementation("com.dorkbox:Executor:3.14")
     implementation("com.dorkbox:Desktop:1.1")
-    implementation("com.dorkbox:JNA:1.2")
+    implementation("com.dorkbox:JNA:1.4")
     implementation(files("libs/OS.jar"))
     implementation("com.dorkbox:Updates:1.1")
-    implementation("com.dorkbox:Utilities:1.46")
-    implementation("org.javassist:javassist:3.29.2-GA")
-    val jnaVersion = "5.13.0"
+    implementation("com.dorkbox:Utilities:1.48")
+    implementation("org.javassist:javassist:3.30.2-GA")
+    val jnaVersion = "5.14.0"
     implementation("net.java.dev.jna:jna-jpms:${jnaVersion}")
     implementation("net.java.dev.jna:jna-platform-jpms:${jnaVersion}")
-    implementation("org.slf4j:slf4j-api:1.8.0-beta4")  // java 8
+    implementation("org.slf4j:slf4j-api:2.0.13")  // java 8
     implementation(files("libs/SystemTray.jar"))
 
     // Exposed
-    implementation("org.jetbrains.exposed:exposed-core:0.45.0")
-    implementation("org.jetbrains.exposed:exposed-jdbc:0.45.0")
-    implementation("org.xerial:sqlite-jdbc:3.44.1.0")
+    implementation("org.jetbrains.exposed:exposed-core:0.49.0")
+    implementation("org.jetbrains.exposed:exposed-jdbc:0.49.0")
+    implementation("org.xerial:sqlite-jdbc:3.45.3.0")
 
     // Retrofit
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-scalars:2.9.0")
-    implementation("com.squareup.okhttp3:okhttp:4.11.0")
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-scalars:2.11.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
 
     // Ktor
-    implementation("io.ktor:ktor-server-core-jvm:2.3.3")
-    implementation("io.ktor:ktor-server-netty-jvm:2.3.3")
-    implementation("io.ktor:ktor-client-core:2.3.3")
-    implementation("io.ktor:ktor-client-cio:2.3.3")
-    implementation("io.ktor:ktor-client-content-negotiation:2.3.3")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.3")
+    implementation("io.ktor:ktor-server-core-jvm:2.3.10")
+    implementation("io.ktor:ktor-server-netty-jvm:2.3.10")
+    implementation("io.ktor:ktor-client-core:2.3.10")
+    implementation("io.ktor:ktor-client-cio:2.3.10")
+    implementation("io.ktor:ktor-client-content-negotiation:2.3.10")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.10")
 
     // Sentry
-    implementation(platform("io.sentry:sentry-bom:7.0.0"))
+    implementation(platform("io.sentry:sentry-bom:7.8.0"))
     implementation("io.sentry:sentry")
     implementation("io.sentry:sentry-logback")
 
     // Testing
-    testImplementation("io.kotest:kotest-runner-junit5:5.6.2")
-    testImplementation("io.kotest:kotest-assertions-core:5.6.2")
-    testImplementation("io.mockk:mockk:1.13.7")
+    testImplementation("io.kotest:kotest-runner-junit5:5.8.1")
+    testImplementation("io.kotest:kotest-assertions-core:5.8.1")
+    testImplementation("io.mockk:mockk:1.13.10")
 }
 
 compose.desktop {
