@@ -2,9 +2,8 @@ package dev.nohus.rift.map.settings
 
 import dev.nohus.rift.ViewModel
 import dev.nohus.rift.clipboard.Clipboard
+import dev.nohus.rift.configurationpack.ConfigurationPackRepository
 import dev.nohus.rift.map.settings.JumpBridgesParser.JumpBridgeNetwork
-import dev.nohus.rift.network.Result
-import dev.nohus.rift.repositories.ConfigurationPackRepository
 import dev.nohus.rift.repositories.JumpBridgesRepository
 import dev.nohus.rift.settings.persistence.IntelMap
 import dev.nohus.rift.settings.persistence.MapStarColor
@@ -13,7 +12,6 @@ import dev.nohus.rift.settings.persistence.Settings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch

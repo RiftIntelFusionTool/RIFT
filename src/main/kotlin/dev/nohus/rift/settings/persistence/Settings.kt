@@ -136,6 +136,10 @@ class Settings(
         get() = model.configurationPack
         set(value) = update { copy(configurationPack = value) }
 
+    var isConfigurationPackReminderDismissed: Boolean
+        get() = model.isConfigurationPackReminderDismissed
+        set(value) = update { copy(isConfigurationPackReminderDismissed = value) }
+
     var hiddenCharacterIds: List<Int>
         get() = model.hiddenCharacterIds
         set(value) = update { copy(hiddenCharacterIds = value) }

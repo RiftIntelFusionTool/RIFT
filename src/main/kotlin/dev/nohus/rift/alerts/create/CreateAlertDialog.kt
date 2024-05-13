@@ -42,7 +42,7 @@ import dev.nohus.rift.alerts.create.FormAnswer.SingleChoiceAnswer
 import dev.nohus.rift.alerts.create.FormAnswer.SoundAnswer
 import dev.nohus.rift.alerts.create.FormAnswer.SpecificCharactersAnswer
 import dev.nohus.rift.alerts.create.FormAnswer.SystemAnswer
-import dev.nohus.rift.characters.LocalCharactersRepository.LocalCharacter
+import dev.nohus.rift.characters.repositories.LocalCharactersRepository.LocalCharacter
 import dev.nohus.rift.compose.ButtonCornerCut
 import dev.nohus.rift.compose.ButtonType
 import dev.nohus.rift.compose.RequirementIcon

@@ -12,6 +12,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.koin.core.annotation.Single
 import java.io.IOException
+import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import kotlin.io.path.exists
 import kotlin.io.path.listDirectoryEntries
@@ -76,6 +77,7 @@ class GameLogsObserver(
                 OverflowEvent -> reloadLogFiles(directory)
             }
         }
+        logger.info { "Stopped observing" }
     }
 
     fun stop() {
@@ -83,9 +85,11 @@ class GameLogsObserver(
     }
 
     private suspend fun reloadLogFiles(directory: Path) {
-        val logFiles = directory.listDirectoryEntries().mapNotNull { file ->
-            matchGameLogFilenameUseCase(file)
-        }
+        val logFiles = try {
+            directory.listDirectoryEntries().mapNotNull { file ->
+                matchGameLogFilenameUseCase(file)
+            }
+        } catch (e: NoSuchFileException) { emptyList() }
         logFilesMutex.withLock {
             this.logFiles.clear()
             this.logFiles.addAll(logFiles)

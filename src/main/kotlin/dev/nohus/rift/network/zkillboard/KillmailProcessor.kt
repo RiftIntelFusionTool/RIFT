@@ -1,10 +1,10 @@
 package dev.nohus.rift.network.zkillboard
 
+import dev.nohus.rift.configurationpack.ConfigurationPackRepository
 import dev.nohus.rift.intel.state.IntelStateController
 import dev.nohus.rift.intel.state.SystemEntity
 import dev.nohus.rift.repositories.CharacterDetailsRepository
 import dev.nohus.rift.repositories.CharactersRepository
-import dev.nohus.rift.repositories.ConfigurationPackRepository
 import dev.nohus.rift.repositories.ShipTypesRepository
 import dev.nohus.rift.repositories.SolarSystemsRepository
 import io.github.oshai.kotlinlogging.KotlinLogging

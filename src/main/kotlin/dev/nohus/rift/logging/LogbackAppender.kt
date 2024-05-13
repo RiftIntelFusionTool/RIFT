@@ -6,6 +6,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.AppenderBase
 import dev.nohus.rift.utils.GetOperatingSystemUseCase
 import dev.nohus.rift.utils.OperatingSystem
+import dev.nohus.rift.utils.createNewFile
 import dev.nohus.rift.utils.directories.AppDirectories
 import dev.nohus.rift.utils.osdirectories.LinuxDirectories
 import dev.nohus.rift.utils.osdirectories.MacDirectories
@@ -53,6 +54,7 @@ class LogbackAppender : AppenderBase<ILoggingEvent>() {
         }
         try {
             diagnosticsFile.deleteIfExists()
+            diagnosticsFile.createNewFile()
         } catch (ignore: IOException) {}
         super.start()
     }

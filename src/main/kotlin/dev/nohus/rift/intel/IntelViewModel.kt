@@ -1,7 +1,7 @@
 package dev.nohus.rift.intel
 
 import dev.nohus.rift.ViewModel
-import dev.nohus.rift.characters.OnlineCharactersRepository
+import dev.nohus.rift.characters.repositories.OnlineCharactersRepository
 import dev.nohus.rift.intel.settings.IntelReportsSettings
 import dev.nohus.rift.intel.state.AlertTriggeringMessagesRepository
 import dev.nohus.rift.intel.state.AlertTriggeringMessagesRepository.AlertTriggeringMessage

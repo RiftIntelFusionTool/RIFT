@@ -1,4 +1,4 @@
-package dev.nohus.rift.characters
+package dev.nohus.rift.characters.repositories
 
 import dev.nohus.rift.utils.OperatingSystem
 import dev.nohus.rift.utils.activewindow.GetActiveWindowUseCase

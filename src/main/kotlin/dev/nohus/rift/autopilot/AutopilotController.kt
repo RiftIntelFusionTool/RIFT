@@ -1,6 +1,6 @@
 package dev.nohus.rift.autopilot
 
-import dev.nohus.rift.characters.ActiveCharacterRepository
+import dev.nohus.rift.characters.repositories.ActiveCharacterRepository
 import dev.nohus.rift.location.CharacterLocationRepository
 import dev.nohus.rift.network.esi.EsiApi
 import dev.nohus.rift.repositories.GetRouteUseCase

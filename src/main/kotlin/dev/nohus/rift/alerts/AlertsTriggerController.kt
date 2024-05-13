@@ -6,7 +6,7 @@ import dev.nohus.rift.alerts.AlertTrigger.IntelReported
 import dev.nohus.rift.alerts.AlertTrigger.JabberMessage
 import dev.nohus.rift.alerts.AlertTrigger.JabberPing
 import dev.nohus.rift.alerts.AlertTrigger.NoChannelActivity
-import dev.nohus.rift.characters.OnlineCharactersRepository
+import dev.nohus.rift.characters.repositories.OnlineCharactersRepository
 import dev.nohus.rift.gamelogs.GameLogAction
 import dev.nohus.rift.intel.ParsedChannelChatMessage
 import dev.nohus.rift.intel.state.AlertTriggeringMessagesRepository
@@ -154,7 +154,8 @@ class AlertsTriggerController(
                 }
                 if (isChannelMatching) {
                     val triggerSender = alert.trigger.sender
-                    val isSenderMatching = triggerSender == null || channelChatMessage.chatMessage.author == triggerSender
+                    val isEveSystem = channelChatMessage.metadata.channelName == "Local" && channelChatMessage.chatMessage.author == "EVE System"
+                    val isSenderMatching = triggerSender == null && !isEveSystem || channelChatMessage.chatMessage.author == triggerSender
                     if (isSenderMatching) {
                         val containing = alert.trigger.messageContaining
                         val isMessageMatching = channelChatMessage.chatMessage.message.containsNonNull(containing)
@@ -179,7 +180,8 @@ class AlertsTriggerController(
                 }
                 if (isChannelMatching) {
                     val triggerSender = alert.trigger.sender
-                    val isSenderMatching = triggerSender == null || sender == triggerSender
+                    val isDirectorbot = sender == "directorbot"
+                    val isSenderMatching = triggerSender == null && !isDirectorbot || sender == triggerSender
                     if (isSenderMatching) {
                         val containing = alert.trigger.messageContaining
                         val isMessageMatching = message.lowercase().containsNonNull(containing?.lowercase())

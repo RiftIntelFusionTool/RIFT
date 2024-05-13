@@ -1,7 +1,7 @@
 package dev.nohus.rift.location
 
-import dev.nohus.rift.characters.LocalCharactersRepository
-import dev.nohus.rift.characters.OnlineCharactersRepository
+import dev.nohus.rift.characters.repositories.LocalCharactersRepository
+import dev.nohus.rift.characters.repositories.OnlineCharactersRepository
 import dev.nohus.rift.location.CharacterLocationRepository.Location
 import kotlinx.coroutines.flow.combine
 import org.koin.core.annotation.Single

@@ -1,9 +1,11 @@
 package dev.nohus.rift
 
+import dev.nohus.rift.configurationpack.ShouldShowConfigurationPackReminderUseCase
 import dev.nohus.rift.settings.persistence.Settings
 import dev.nohus.rift.singleinstance.SingleInstanceController
 import dev.nohus.rift.utils.directories.DetectDirectoriesUseCase
 import dev.nohus.rift.windowing.WindowManager
+import dev.nohus.rift.windowing.WindowManager.RiftWindow
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,6 +24,7 @@ class ApplicationViewModel(
     private val backgroundProcesses: BackgroundProcesses,
     private val windowManager: WindowManager,
     private val singleInstanceController: SingleInstanceController,
+    private val shouldShowConfigurationPackReminderUseCase: ShouldShowConfigurationPackReminderUseCase,
     private val settings: Settings,
 ) : ViewModel() {
 
@@ -71,6 +74,10 @@ class ApplicationViewModel(
             settings.updateFlow.map { it.isSetupWizardFinished }.collect { finished ->
                 _state.update { it.copy(isTrayIconShown = finished) }
             }
+        }
+        viewModelScope.launch {
+            val showReminder = shouldShowConfigurationPackReminderUseCase()
+            if (showReminder) windowManager.onWindowOpen(RiftWindow.ConfigurationPackReminder)
         }
     }
 

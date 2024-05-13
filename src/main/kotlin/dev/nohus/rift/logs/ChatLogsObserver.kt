@@ -14,6 +14,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.koin.core.annotation.Single
 import java.io.IOException
+import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
@@ -87,9 +88,11 @@ class ChatLogsObserver(
     }
 
     private suspend fun reloadLogFiles(directory: Path) {
-        val logFiles = directory.listDirectoryEntries().mapNotNull { file ->
-            matchChatLogFilenameUseCase(file)
-        }
+        val logFiles = try {
+            directory.listDirectoryEntries().mapNotNull { file ->
+                matchChatLogFilenameUseCase(file)
+            }
+        } catch (e: NoSuchFileException) { emptyList() }
         logFilesMutex.withLock {
             this.logFiles.clear()
             this.logFiles.addAll(logFiles)

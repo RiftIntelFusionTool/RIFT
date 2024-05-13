@@ -2,8 +2,7 @@ package dev.nohus.rift.neocom
 
 import dev.nohus.rift.ApplicationViewModel
 import dev.nohus.rift.ViewModel
-import dev.nohus.rift.repositories.ConfigurationPackRepository
-import dev.nohus.rift.settings.persistence.Settings
+import dev.nohus.rift.configurationpack.ConfigurationPackRepository
 import dev.nohus.rift.windowing.WindowManager
 import dev.nohus.rift.windowing.WindowManager.RiftWindow
 import kotlinx.coroutines.flow.MutableStateFlow

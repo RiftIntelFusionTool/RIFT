@@ -2,10 +2,10 @@ package dev.nohus.rift
 
 import dev.nohus.rift.alerts.AlertsTriggerController
 import dev.nohus.rift.autopilot.AutopilotController
-import dev.nohus.rift.characters.ActiveCharacterRepository
-import dev.nohus.rift.characters.CharacterWalletRepository
-import dev.nohus.rift.characters.LocalCharactersRepository
-import dev.nohus.rift.characters.OnlineCharactersRepository
+import dev.nohus.rift.characters.repositories.ActiveCharacterRepository
+import dev.nohus.rift.characters.repositories.CharacterWalletRepository
+import dev.nohus.rift.characters.repositories.LocalCharactersRepository
+import dev.nohus.rift.characters.repositories.OnlineCharactersRepository
 import dev.nohus.rift.clipboard.Clipboard
 import dev.nohus.rift.gamelogs.GameLogWatcher
 import dev.nohus.rift.intel.ChatLogWatcher

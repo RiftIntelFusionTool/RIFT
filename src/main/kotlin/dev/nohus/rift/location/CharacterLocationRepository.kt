@@ -1,7 +1,7 @@
 package dev.nohus.rift.location
 
-import dev.nohus.rift.characters.LocalCharactersRepository
-import dev.nohus.rift.characters.OnlineCharactersRepository
+import dev.nohus.rift.characters.repositories.LocalCharactersRepository
+import dev.nohus.rift.characters.repositories.OnlineCharactersRepository
 import dev.nohus.rift.network.Result.Failure
 import dev.nohus.rift.network.Result.Success
 import dev.nohus.rift.network.esi.EsiApi

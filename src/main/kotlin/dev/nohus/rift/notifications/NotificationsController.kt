@@ -64,6 +64,10 @@ class NotificationsController(
         notificationsStateFlow.update { it.takeLast(maxShownNotifications - 1) + notification }
     }
 
+    private fun hide(notification: Notification) {
+        notificationsStateFlow.update { it - notification }
+    }
+
     @Composable
     fun composeNotification() {
         val notifications by notificationsStateFlow.collectAsState()
@@ -80,6 +84,7 @@ class NotificationsController(
                     notifications = notifications,
                     position = settings.notificationPosition,
                     onHoldDisappearance = { isHeld = it },
+                    onCloseClick = { hide(it) },
                 )
             }
         }

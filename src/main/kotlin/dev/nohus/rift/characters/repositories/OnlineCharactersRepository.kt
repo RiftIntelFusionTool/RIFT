@@ -1,4 +1,4 @@
-package dev.nohus.rift.characters
+package dev.nohus.rift.characters.repositories
 
 import dev.nohus.rift.network.esi.EsiApi
 import dev.nohus.rift.utils.openwindows.GetOpenEveClientsUseCase
@@ -10,7 +10,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex

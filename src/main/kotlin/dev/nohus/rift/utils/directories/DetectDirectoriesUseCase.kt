@@ -1,6 +1,6 @@
 package dev.nohus.rift.utils.directories
 
-import dev.nohus.rift.characters.DetectEveSettingsDirectoryUseCase
+import dev.nohus.rift.characters.files.DetectEveSettingsDirectoryUseCase
 import dev.nohus.rift.logs.DetectLogsDirectoryUseCase
 import dev.nohus.rift.settings.persistence.Settings
 import org.koin.core.annotation.Single

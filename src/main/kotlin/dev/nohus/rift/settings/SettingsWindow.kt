@@ -48,11 +48,12 @@ import dev.nohus.rift.compose.hoverBackground
 import dev.nohus.rift.compose.modifyIf
 import dev.nohus.rift.compose.theme.RiftTheme
 import dev.nohus.rift.compose.theme.Spacing
+import dev.nohus.rift.configurationpack.ConfigurationPackRepository.SuggestedIntelChannels
+import dev.nohus.rift.configurationpack.displayName
 import dev.nohus.rift.generated.resources.Res
 import dev.nohus.rift.generated.resources.deleteicon
 import dev.nohus.rift.generated.resources.window_settings
 import dev.nohus.rift.notifications.NotificationEditWindow
-import dev.nohus.rift.repositories.ConfigurationPackRepository.SuggestedIntelChannels
 import dev.nohus.rift.settings.persistence.ConfigurationPack
 import dev.nohus.rift.settings.persistence.IntelChannel
 import dev.nohus.rift.utils.viewModel
@@ -360,12 +361,7 @@ private fun OtherSettingsSection(
         items = listOf(null) + ConfigurationPack.entries,
         selectedItem = configurationPack,
         onItemSelected = onConfigurationPackChange,
-        getItemName = {
-            when (it) {
-                ConfigurationPack.Imperium -> "The Imperium"
-                null -> "Default"
-            }
-        },
+        getItemName = { it?.displayName ?: "Default" },
         tooltip = """
             Enables settings specific to a player group,
             like intel channel suggestions.

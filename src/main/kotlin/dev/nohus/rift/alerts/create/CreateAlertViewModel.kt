@@ -33,10 +33,10 @@ import dev.nohus.rift.alerts.create.FormQuestion.SingleChoiceQuestion
 import dev.nohus.rift.alerts.create.FormQuestion.SoundQuestion
 import dev.nohus.rift.alerts.create.FormQuestion.SpecificCharactersQuestion
 import dev.nohus.rift.alerts.create.FormQuestion.SystemQuestion
-import dev.nohus.rift.characters.LocalCharactersRepository
-import dev.nohus.rift.characters.LocalCharactersRepository.LocalCharacter
+import dev.nohus.rift.characters.repositories.LocalCharactersRepository
+import dev.nohus.rift.characters.repositories.LocalCharactersRepository.LocalCharacter
+import dev.nohus.rift.configurationpack.ConfigurationPackRepository
 import dev.nohus.rift.logs.parse.CharacterNameValidator
-import dev.nohus.rift.repositories.ConfigurationPackRepository
 import dev.nohus.rift.repositories.ShipTypesRepository
 import dev.nohus.rift.repositories.SolarSystemsRepository
 import dev.nohus.rift.settings.persistence.Settings

@@ -8,8 +8,8 @@ import dev.nohus.rift.alerts.AlertsRepository
 import dev.nohus.rift.alerts.JabberPingType
 import dev.nohus.rift.alerts.create.CreateAlertInputModel
 import dev.nohus.rift.alerts.creategroup.CreateGroupInputModel
-import dev.nohus.rift.characters.LocalCharactersRepository
-import dev.nohus.rift.characters.LocalCharactersRepository.LocalCharacter
+import dev.nohus.rift.characters.repositories.LocalCharactersRepository
+import dev.nohus.rift.characters.repositories.LocalCharactersRepository.LocalCharacter
 import dev.nohus.rift.settings.persistence.Settings
 import dev.nohus.rift.utils.sound.Sound
 import dev.nohus.rift.utils.sound.SoundPlayer

@@ -1,7 +1,7 @@
 package dev.nohus.rift.sso
 
 import dev.nohus.rift.ViewModel
-import dev.nohus.rift.characters.LocalCharactersRepository
+import dev.nohus.rift.characters.repositories.LocalCharactersRepository
 import dev.nohus.rift.sso.authentication.SsoAuthenticator
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.MutableStateFlow

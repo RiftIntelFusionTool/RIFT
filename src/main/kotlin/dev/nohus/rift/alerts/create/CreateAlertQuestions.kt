@@ -9,7 +9,7 @@ import dev.nohus.rift.alerts.create.FormQuestion.SingleChoiceQuestion
 import dev.nohus.rift.alerts.create.FormQuestion.SoundQuestion
 import dev.nohus.rift.alerts.create.FormQuestion.SpecificCharactersQuestion
 import dev.nohus.rift.alerts.create.FormQuestion.SystemQuestion
-import dev.nohus.rift.repositories.ConfigurationPackRepository
+import dev.nohus.rift.configurationpack.ConfigurationPackRepository
 import dev.nohus.rift.repositories.ShipTypesRepository
 
 @Suppress("PropertyName")

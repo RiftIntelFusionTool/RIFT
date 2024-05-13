@@ -5,12 +5,12 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.utf16CodePoint
 import dev.nohus.rift.Event
 import dev.nohus.rift.ViewModel
-import dev.nohus.rift.characters.GetEveCharactersSettingsUseCase
-import dev.nohus.rift.characters.LocalCharactersRepository
+import dev.nohus.rift.characters.files.GetEveCharactersSettingsUseCase
+import dev.nohus.rift.characters.repositories.LocalCharactersRepository
 import dev.nohus.rift.compose.DialogMessage
 import dev.nohus.rift.compose.MessageDialogType
+import dev.nohus.rift.configurationpack.ConfigurationPackRepository
 import dev.nohus.rift.logs.GetChatLogsDirectoryUseCase
-import dev.nohus.rift.repositories.ConfigurationPackRepository
 import dev.nohus.rift.settings.SettingsInputModel
 import dev.nohus.rift.settings.persistence.ConfigurationPack
 import dev.nohus.rift.settings.persistence.Settings
@@ -167,7 +167,7 @@ class WizardViewModel(
             }
 
             is WizardStep.ConfigurationPacks -> {
-                settings.configurationPack = step.pack
+                configurationPackRepository.set(step.pack)
                 _state.update { it.copy(step = getIntelChannelsStep()) }
             }
 

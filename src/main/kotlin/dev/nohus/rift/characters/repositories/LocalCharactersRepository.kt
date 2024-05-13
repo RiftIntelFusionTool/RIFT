@@ -1,5 +1,6 @@
-package dev.nohus.rift.characters
+package dev.nohus.rift.characters.repositories
 
+import dev.nohus.rift.characters.files.GetEveCharactersSettingsUseCase
 import dev.nohus.rift.network.AsyncResource
 import dev.nohus.rift.network.esi.EsiApi
 import dev.nohus.rift.network.toResource

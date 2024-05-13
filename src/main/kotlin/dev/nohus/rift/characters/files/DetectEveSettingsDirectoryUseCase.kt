@@ -1,4 +1,4 @@
-package dev.nohus.rift.characters
+package dev.nohus.rift.characters.files
 
 import dev.nohus.rift.settings.persistence.Settings
 import org.koin.core.annotation.Single

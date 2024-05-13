@@ -1,6 +1,6 @@
 package dev.nohus.rift.gamelogs
 
-import dev.nohus.rift.characters.OnlineCharactersRepository
+import dev.nohus.rift.characters.repositories.OnlineCharactersRepository
 import dev.nohus.rift.logs.GameLogsObserver
 import dev.nohus.rift.logs.GetGameLogsDirectoryUseCase
 import dev.nohus.rift.settings.persistence.Settings
@@ -22,6 +22,7 @@ class GameLogWatcher(
 ) {
 
     private var watchedDirectory: Path? = null
+    private var isWatchedDirectoryInitialized = false
 
     suspend fun start() = coroutineScope {
         launch {
@@ -30,7 +31,7 @@ class GameLogWatcher(
         launch {
             settings.updateFlow.collect {
                 settings.eveLogsDirectory.let { new ->
-                    if (new != watchedDirectory) {
+                    if (isWatchedDirectoryInitialized && new != watchedDirectory) {
                         launch {
                             observeGameLogs()
                         }
@@ -46,8 +47,11 @@ class GameLogWatcher(
         val gameLogsDirectory = getGameLogsDirectoryUseCase(logsDirectory)
         if (gameLogsDirectory != null) {
             watchedDirectory = logsDirectory
+            isWatchedDirectoryInitialized = true
             observeGameLogs(gameLogsDirectory)
         } else {
+            watchedDirectory = null
+            isWatchedDirectoryInitialized = true
             logger.warn { "No game logs directory detected" }
         }
     }

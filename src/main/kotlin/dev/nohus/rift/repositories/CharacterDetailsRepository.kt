@@ -1,5 +1,6 @@
 package dev.nohus.rift.repositories
 
+import dev.nohus.rift.configurationpack.ConfigurationPackRepository
 import dev.nohus.rift.network.esi.EsiApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope

@@ -1,15 +1,14 @@
 package dev.nohus.rift.tray
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.rememberTrayState
 import com.formdev.flatlaf.FlatDarkLaf
 import dev.nohus.rift.ApplicationViewModel
+import dev.nohus.rift.configurationpack.ConfigurationPackRepository
 import dev.nohus.rift.di.koin
 import dev.nohus.rift.generated.resources.Res
 import dev.nohus.rift.generated.resources.tray_tray_128
@@ -32,7 +31,6 @@ import dev.nohus.rift.generated.resources.window_rift_64
 import dev.nohus.rift.generated.resources.window_satellite
 import dev.nohus.rift.generated.resources.window_settings
 import dev.nohus.rift.generated.resources.window_sovereignty
-import dev.nohus.rift.repositories.ConfigurationPackRepository
 import dev.nohus.rift.settings.persistence.Settings
 import dev.nohus.rift.tray.TrayMenuItem.Separator
 import dev.nohus.rift.tray.TrayMenuItem.TrayMenuTextItem

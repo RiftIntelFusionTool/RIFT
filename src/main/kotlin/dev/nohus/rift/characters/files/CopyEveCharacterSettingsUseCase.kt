@@ -1,4 +1,4 @@
-package dev.nohus.rift.characters
+package dev.nohus.rift.characters.files
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.koin.core.annotation.Single

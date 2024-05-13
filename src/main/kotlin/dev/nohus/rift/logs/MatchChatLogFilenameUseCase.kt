@@ -1,13 +1,17 @@
 package dev.nohus.rift.logs
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.sentry.Sentry
 import org.koin.core.annotation.Single
+import java.io.IOException
 import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import kotlin.io.path.getLastModifiedTime
 import kotlin.io.path.name
+
+private val logger = KotlinLogging.logger {}
 
 @Single
 class MatchChatLogFilenameUseCase {
@@ -23,8 +27,13 @@ class MatchChatLogFilenameUseCase {
             val time = match.groups["time"]!!.value
             val characterId = match.groups["characterid"]?.value ?: return null // Old log files do not contain the character ID
             val dateTime = LocalDateTime.parse("$date$time", dateFormatter)
-            val lastModifier = file.getLastModifiedTime().toInstant()
-            return ChatLogFile(file, name, dateTime, characterId, lastModifier)
+            try {
+                val lastModifier = file.getLastModifiedTime().toInstant()
+                return ChatLogFile(file, name, dateTime, characterId, lastModifier)
+            } catch (e: IOException) {
+                logger.error(e) { "Chat log file not found" }
+                return null
+            }
         } catch (e: DateTimeParseException) {
             Sentry.captureException(IllegalArgumentException("Could not parse chat log filename: ${file.name}", e))
             return null

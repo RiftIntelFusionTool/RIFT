@@ -1,8 +1,8 @@
 package dev.nohus.rift.repositories
 
-import dev.nohus.rift.characters.ActiveCharacterRepository
-import dev.nohus.rift.characters.LocalCharactersRepository
-import dev.nohus.rift.characters.OnlineCharactersRepository
+import dev.nohus.rift.characters.repositories.ActiveCharacterRepository
+import dev.nohus.rift.characters.repositories.LocalCharactersRepository
+import dev.nohus.rift.characters.repositories.OnlineCharactersRepository
 import dev.nohus.rift.location.CharacterLocationRepository
 import org.koin.core.annotation.Single
 

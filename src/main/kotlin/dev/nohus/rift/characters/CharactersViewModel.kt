@@ -1,6 +1,10 @@
 package dev.nohus.rift.characters
 
 import dev.nohus.rift.ViewModel
+import dev.nohus.rift.characters.files.CopyEveCharacterSettingsUseCase
+import dev.nohus.rift.characters.repositories.CharacterWalletRepository
+import dev.nohus.rift.characters.repositories.LocalCharactersRepository
+import dev.nohus.rift.characters.repositories.OnlineCharactersRepository
 import dev.nohus.rift.compose.DialogMessage
 import dev.nohus.rift.compose.MessageDialogType
 import dev.nohus.rift.location.CharacterLocationRepository

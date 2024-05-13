@@ -5,12 +5,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
@@ -33,7 +31,7 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
@@ -45,11 +43,12 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.rememberWindowState
 import dev.nohus.rift.alerts.AlertsTriggerController
-import dev.nohus.rift.characters.LocalCharactersRepository
+import dev.nohus.rift.characters.repositories.LocalCharactersRepository
 import dev.nohus.rift.compose.AsyncPlayerPortrait
 import dev.nohus.rift.compose.AsyncTypeIcon
 import dev.nohus.rift.compose.ClickablePlayer
 import dev.nohus.rift.compose.ClickableSystem
+import dev.nohus.rift.compose.RiftImageButton
 import dev.nohus.rift.compose.ScrollbarColumn
 import dev.nohus.rift.compose.SystemEntities
 import dev.nohus.rift.compose.modifyIfNotNull
@@ -59,6 +58,7 @@ import dev.nohus.rift.compose.theme.Spacing
 import dev.nohus.rift.di.koin
 import dev.nohus.rift.generated.resources.Res
 import dev.nohus.rift.generated.resources.window_loudspeaker_icon
+import dev.nohus.rift.generated.resources.window_titlebar_close
 import dev.nohus.rift.notifications.NotificationsController.Notification
 import dev.nohus.rift.repositories.SolarSystemsRepository
 import dev.nohus.rift.utils.Pos
@@ -70,6 +70,7 @@ fun NotificationWindow(
     notifications: List<Notification>,
     position: Pos?,
     onHoldDisappearance: (hold: Boolean) -> Unit,
+    onCloseClick: (Notification) -> Unit,
 ) {
     val state = rememberWindowState(
         width = Dp.Unspecified,
@@ -121,12 +122,10 @@ fun NotificationWindow(
             ) {
                 notifications.reversed().forEachIndexed { index, notification ->
                     if (index != 0) Divider(color = RiftTheme.colors.borderGreyLight, thickness = 1.dp)
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(Spacing.medium),
-                        modifier = Modifier.padding(horizontal = Spacing.medium),
-                    ) {
-                        NotificationContent(notification)
-                    }
+                    NotificationContent(
+                        notification = notification,
+                        onCloseClick = { onCloseClick(notification) },
+                    )
                 }
             }
         }
@@ -134,110 +133,117 @@ fun NotificationWindow(
 }
 
 @Composable
-private fun ColumnScope.NotificationContent(
+private fun NotificationContent(
     notification: Notification,
+    onCloseClick: () -> Unit,
 ) {
     when (notification) {
         is Notification.TextNotification -> {
-            Text(
-                text = buildAnnotatedString {
+            NotificationTitle(
+                title = buildAnnotatedString {
                     withStyle(SpanStyle(color = RiftTheme.colors.textHighlighted)) {
                         append(notification.title)
                     }
                 },
-                textAlign = TextAlign.Center,
-                style = RiftTheme.typography.titleSecondary,
-                modifier = Modifier.fillMaxWidth(),
+                onCloseClick = onCloseClick,
             )
-            if (notification.characterId != null) {
-                Character(notification.characterId, "Your character")
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.small),
-                modifier = Modifier.fillMaxWidth(),
+            Column(
+                verticalArrangement = Arrangement.spacedBy(Spacing.medium),
+                modifier = Modifier.padding(horizontal = Spacing.medium),
             ) {
-                if (notification.typeId != null) {
-                    AsyncTypeIcon(
-                        typeId = notification.typeId,
-                        modifier = Modifier.size(32.dp),
+                if (notification.characterId != null) {
+                    Character(notification.characterId, "Your character")
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.small),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    if (notification.typeId != null) {
+                        AsyncTypeIcon(
+                            typeId = notification.typeId,
+                            modifier = Modifier.size(32.dp),
+                        )
+                    }
+                    Text(
+                        text = buildAnnotatedString {
+                            val annotations = notification.message
+                                .getStringAnnotations(
+                                    Notification.TextNotification.styleTag,
+                                    0,
+                                    notification.message.length,
+                                )
+                            val styledMessage = buildAnnotatedString {
+                                append(notification.message)
+                                annotations.forEach { annotation ->
+                                    addStyle(
+                                        SpanStyle(color = RiftTheme.colors.textHighlighted),
+                                        annotation.start,
+                                        annotation.end,
+                                    )
+                                }
+                            }
+                            append(styledMessage)
+                        },
+                        style = RiftTheme.typography.titlePrimary,
                     )
                 }
-                Text(
-                    text = buildAnnotatedString {
-                        val annotations = notification.message
-                            .getStringAnnotations(
-                                Notification.TextNotification.styleTag,
-                                0,
-                                notification.message.length,
-                            )
-                        val styledMessage = buildAnnotatedString {
-                            append(notification.message)
-                            annotations.forEach { annotation ->
-                                addStyle(
-                                    SpanStyle(color = RiftTheme.colors.textHighlighted),
-                                    annotation.start,
-                                    annotation.end,
-                                )
-                            }
-                        }
-                        append(styledMessage)
-                    },
-                    style = RiftTheme.typography.titlePrimary,
-                )
             }
         }
 
         is Notification.ChatMessageNotification -> {
-            Text(
-                text = buildAnnotatedString {
+            NotificationTitle(
+                title = buildAnnotatedString {
                     append("Chat message in ")
                     withStyle(SpanStyle(color = RiftTheme.colors.textHighlighted)) {
                         append(notification.channel)
                     }
                 },
-                textAlign = TextAlign.Center,
-                style = RiftTheme.typography.titlePrimary,
-                modifier = Modifier.fillMaxWidth(),
+                onCloseClick = onCloseClick,
             )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth(),
+            Column(
+                verticalArrangement = Arrangement.spacedBy(Spacing.medium),
+                modifier = Modifier.padding(horizontal = Spacing.medium),
             ) {
-                if (notification.senderCharacterId != null) {
-                    ClickablePlayer(notification.senderCharacterId) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.small),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            AsyncPlayerPortrait(
-                                characterId = notification.senderCharacterId,
-                                size = 32,
-                                modifier = Modifier.size(32.dp),
-                            )
-                            Text(
-                                text = notification.sender,
-                                style = RiftTheme.typography.titlePrimary,
-                            )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    if (notification.senderCharacterId != null) {
+                        ClickablePlayer(notification.senderCharacterId) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.small),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                AsyncPlayerPortrait(
+                                    characterId = notification.senderCharacterId,
+                                    size = 32,
+                                    modifier = Modifier.size(32.dp),
+                                )
+                                Text(
+                                    text = notification.sender,
+                                    style = RiftTheme.typography.titlePrimary,
+                                )
+                            }
                         }
                     }
+                    Text(
+                        text = buildAnnotatedString {
+                            if (notification.senderCharacterId == null) {
+                                append(notification.sender)
+                            }
+                            append(" > ")
+                            append(notification.message)
+                        },
+                        style = RiftTheme.typography.titlePrimary,
+                    )
                 }
-                Text(
-                    text = buildAnnotatedString {
-                        if (notification.senderCharacterId == null) {
-                            append(notification.sender)
-                        }
-                        append(" > ")
-                        append(notification.message)
-                    },
-                    style = RiftTheme.typography.titlePrimary,
-                )
             }
         }
 
         is Notification.JabberMessageNotification -> {
-            Text(
-                text = buildAnnotatedString {
+            NotificationTitle(
+                title = buildAnnotatedString {
                     append("Jabber message ")
                     if (notification.sender == notification.chat) {
                         append("from ")
@@ -248,73 +254,98 @@ private fun ColumnScope.NotificationContent(
                         append(notification.chat)
                     }
                 },
-                textAlign = TextAlign.Center,
-                style = RiftTheme.typography.titlePrimary,
-                modifier = Modifier.fillMaxWidth(),
+                onCloseClick = onCloseClick,
             )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth(),
+            Column(
+                verticalArrangement = Arrangement.spacedBy(Spacing.medium),
+                modifier = Modifier.padding(horizontal = Spacing.medium),
             ) {
-                Text(
-                    text = buildAnnotatedString {
-                        if (notification.sender != notification.chat) {
-                            append(notification.sender)
-                            append(" > ")
-                        }
-                        append(notification.message)
-                    },
-                    style = RiftTheme.typography.titlePrimary,
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = buildAnnotatedString {
+                            if (notification.sender != notification.chat) {
+                                append(notification.sender)
+                                append(" > ")
+                            }
+                            append(notification.message)
+                        },
+                        style = RiftTheme.typography.titlePrimary,
+                    )
+                }
             }
         }
 
         is Notification.IntelNotification -> {
-            Text(
-                text = buildAnnotatedString {
-                    append(notification.title)
-                },
-                textAlign = TextAlign.Center,
-                style = RiftTheme.typography.titlePrimary,
-                modifier = Modifier.fillMaxWidth(),
+            NotificationTitle(
+                title = AnnotatedString(notification.title),
+                onCloseClick = onCloseClick,
             )
-            when (notification.locationMatch) {
-                is AlertsTriggerController.AlertLocationMatch.System -> {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        val systemSubtext = when (val distance = notification.locationMatch.distance) {
-                            0 -> "In the system"
-                            1 -> "1 jump away"
-                            else -> "$distance jumps away"
+            Column(
+                verticalArrangement = Arrangement.spacedBy(Spacing.medium),
+                modifier = Modifier.padding(horizontal = Spacing.medium),
+            ) {
+                when (notification.locationMatch) {
+                    is AlertsTriggerController.AlertLocationMatch.System -> {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            val systemSubtext = when (val distance = notification.locationMatch.distance) {
+                                0 -> "In the system"
+                                1 -> "1 jump away"
+                                else -> "$distance jumps away"
+                            }
+                            SolarSystem(notification.solarSystem, systemSubtext)
+                            SolarSystem(notification.locationMatch.systemId, "Reference system")
                         }
-                        SolarSystem(notification.solarSystem, systemSubtext)
-                        SolarSystem(notification.locationMatch.systemId, "Reference system")
                     }
-                }
 
-                is AlertsTriggerController.AlertLocationMatch.Character -> {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        val systemSubtext = when (val distance = notification.locationMatch.distance) {
-                            0 -> "In your system"
-                            1 -> "1 jump away"
-                            else -> "$distance jumps away"
+                    is AlertsTriggerController.AlertLocationMatch.Character -> {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            val systemSubtext = when (val distance = notification.locationMatch.distance) {
+                                0 -> "In your system"
+                                1 -> "1 jump away"
+                                else -> "$distance jumps away"
+                            }
+                            SolarSystem(notification.solarSystem, systemSubtext)
+                            Character(notification.locationMatch.characterId, "Your character")
                         }
-                        SolarSystem(notification.solarSystem, systemSubtext)
-                        Character(notification.locationMatch.characterId, "Your character")
                     }
                 }
+                Divider(color = RiftTheme.colors.borderGrey, modifier = Modifier.padding(start = Spacing.medium))
+                SystemEntities(
+                    entities = notification.systemEntities,
+                    system = notification.solarSystem,
+                )
             }
-            Divider(color = RiftTheme.colors.borderGrey, modifier = Modifier.padding(start = Spacing.medium))
-            SystemEntities(
-                entities = notification.systemEntities,
-                system = notification.solarSystem,
-            )
         }
+    }
+}
+
+@Composable
+private fun NotificationTitle(
+    title: AnnotatedString,
+    onCloseClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text(
+            text = title,
+            textAlign = TextAlign.Center,
+            style = RiftTheme.typography.titlePrimary,
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 16.dp)
+                .padding(horizontal = Spacing.medium),
+        )
+        RiftImageButton(Res.drawable.window_titlebar_close, 16.dp, onCloseClick)
     }
 }
 

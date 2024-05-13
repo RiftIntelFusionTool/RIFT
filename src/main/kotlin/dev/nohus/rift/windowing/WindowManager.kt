@@ -15,6 +15,7 @@ import dev.nohus.rift.Event
 import dev.nohus.rift.about.AboutWindow
 import dev.nohus.rift.alerts.list.AlertsWindow
 import dev.nohus.rift.characters.CharactersWindow
+import dev.nohus.rift.configurationpack.ConfigurationPackReminderWindow
 import dev.nohus.rift.intel.IntelWindow
 import dev.nohus.rift.intel.settings.IntelSettingsWindow
 import dev.nohus.rift.jabber.JabberInputModel
@@ -43,7 +44,8 @@ class WindowManager(
 
     @Serializable
     enum class RiftWindow {
-        Neocom, Intel, IntelSettings, Settings, Map, MapSettings, Characters, Pings, Alerts, About, Jabber
+        Neocom, Intel, IntelSettings, Settings, Map, MapSettings, Characters, Pings, Alerts, About, Jabber,
+        ConfigurationPackReminder,
     }
 
     data class RiftWindowState(
@@ -102,6 +104,7 @@ class WindowManager(
                     RiftWindow.About -> AboutWindow(state, onCloseRequest = { onWindowClose(RiftWindow.About) })
                     RiftWindow.Jabber -> JabberWindow(state.inputModel as? JabberInputModel ?: JabberInputModel.None, state, onCloseRequest = { onWindowClose(RiftWindow.Jabber) })
                     RiftWindow.Pings -> PingsWindow(state, onCloseRequest = { onWindowClose(RiftWindow.Pings) })
+                    RiftWindow.ConfigurationPackReminder -> ConfigurationPackReminderWindow(state, onCloseRequest = { onWindowClose(RiftWindow.ConfigurationPackReminder) })
                 }
             }
         }
@@ -161,6 +164,7 @@ class WindowManager(
             RiftWindow.About -> WindowSizing(defaultSize = (450 to null), minimumSize = (450 to null))
             RiftWindow.Jabber -> WindowSizing(defaultSize = saved ?: (400 to 500), minimumSize = (200 to 200))
             RiftWindow.Pings -> WindowSizing(defaultSize = saved ?: (400 to 500), minimumSize = (440 to 300))
+            RiftWindow.ConfigurationPackReminder -> WindowSizing(defaultSize = (450 to null), minimumSize = (450 to null))
         }
     }
 

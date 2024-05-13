@@ -1,9 +1,10 @@
-package dev.nohus.rift.characters
+package dev.nohus.rift.characters.files
 
 import dev.nohus.rift.utils.OperatingSystem
 import dev.nohus.rift.utils.directories.GetLinuxSteamLibrariesUseCase
 import dev.nohus.rift.utils.osdirectories.OperatingSystemDirectories
 import org.koin.core.annotation.Single
+import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
@@ -24,12 +25,12 @@ class GetEveSettingsDirectoryUseCase(
             OperatingSystem.MacOs -> getMacEveDataDirectory()
         } ?: return null
 
-        val tranquilityDirectory = (eveDataDirectory.listDirectoryEntries())
-            .firstOrNull { file ->
-                file.isDirectory() && file.name.endsWith("_tranquility")
-            } ?: return null
-
-        return tranquilityDirectory
+        return try {
+            (eveDataDirectory.listDirectoryEntries())
+                .firstOrNull { file ->
+                    file.isDirectory() && file.name.endsWith("_tranquility")
+                } ?: return null
+        } catch (e: NoSuchFileException) { null }
     }
 
     private fun getLinuxEveDataDirectory(): Path? {

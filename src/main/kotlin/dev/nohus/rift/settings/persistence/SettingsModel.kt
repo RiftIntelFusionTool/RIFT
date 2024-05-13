@@ -35,6 +35,7 @@ data class SettingsModel(
     val soundsVolume: Int = 100,
     val alertGroups: Set<String> = emptySet(),
     val configurationPack: ConfigurationPack? = null,
+    val isConfigurationPackReminderDismissed: Boolean = false,
     val hiddenCharacterIds: List<Int> = emptyList(),
     val jumpBridgeNetwork: Map<String, String>? = null,
     val isUsingRiftAutopilotRoute: Boolean = true,

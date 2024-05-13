@@ -1,11 +1,15 @@
 package dev.nohus.rift.logs
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.koin.core.annotation.Single
+import java.io.IOException
 import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.io.path.getLastModifiedTime
 import kotlin.io.path.name
+
+private val logger = KotlinLogging.logger {}
 
 @Single
 class MatchGameLogFilenameUseCase {
@@ -19,7 +23,12 @@ class MatchGameLogFilenameUseCase {
         val time = match.groups["time"]!!.value
         val dateTime = LocalDateTime.parse("$date$time", dateFormatter)
         val playerId = match.groups["playerid"]!!.value
-        val lastModifier = file.getLastModifiedTime().toInstant()
-        return GameLogFile(file, dateTime, playerId, lastModifier)
+        try {
+            val lastModifier = file.getLastModifiedTime().toInstant()
+            return GameLogFile(file, dateTime, playerId, lastModifier)
+        } catch (e: IOException) {
+            logger.error(e) { "Game log file not found" }
+            return null
+        }
     }
 }

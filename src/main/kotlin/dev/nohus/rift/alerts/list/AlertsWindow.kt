@@ -46,7 +46,7 @@ import dev.nohus.rift.alerts.PapType
 import dev.nohus.rift.alerts.create.CreateAlertDialog
 import dev.nohus.rift.alerts.creategroup.CreateGroupDialog
 import dev.nohus.rift.alerts.list.AlertsViewModel.UiState
-import dev.nohus.rift.characters.LocalCharactersRepository.LocalCharacter
+import dev.nohus.rift.characters.repositories.LocalCharactersRepository.LocalCharacter
 import dev.nohus.rift.compose.ButtonCornerCut
 import dev.nohus.rift.compose.ButtonType
 import dev.nohus.rift.compose.PointerInteractionStateHolder

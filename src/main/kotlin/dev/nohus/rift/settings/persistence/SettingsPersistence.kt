@@ -14,9 +14,9 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.koin.core.annotation.Named
 import org.koin.core.annotation.Single
-import java.io.FileNotFoundException
 import java.io.IOException
 import java.nio.file.Files
+import java.nio.file.NoSuchFileException
 import java.time.Instant
 import kotlin.io.path.createParentDirectories
 import kotlin.io.path.readText
@@ -42,7 +42,7 @@ class SettingsPersistence(
         return try {
             val serialized = configFile.readText()
             json.decodeFromString<SettingsModel>(serialized)
-        } catch (e: FileNotFoundException) {
+        } catch (e: NoSuchFileException) {
             logger.info { "Settings file not found" }
             SettingsModel()
         } catch (e: SerializationException) {

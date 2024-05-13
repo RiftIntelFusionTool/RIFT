@@ -44,6 +44,7 @@ class ChatLogWatcher(
     val channelChatMessages = _channelChatMessages.asStateFlow()
 
     private var watchedDirectory: Path? = null
+    private var isWatchedDirectoryInitialized = false
     private val mutexByChannel = mutableMapOf<String, Mutex>()
 
     suspend fun start() = coroutineScope {
@@ -53,7 +54,7 @@ class ChatLogWatcher(
         launch {
             settings.updateFlow.collect {
                 settings.eveLogsDirectory.let { new ->
-                    if (new != watchedDirectory) {
+                    if (isWatchedDirectoryInitialized && new != watchedDirectory) {
                         launch {
                             observeChatLogs()
                         }
@@ -69,8 +70,11 @@ class ChatLogWatcher(
         val chatLogsDirectory = getChatLogsDirectoryUseCase(logsDirectory)
         if (chatLogsDirectory != null) {
             watchedDirectory = logsDirectory
+            isWatchedDirectoryInitialized = true
             observeChatLogs(chatLogsDirectory)
         } else {
+            watchedDirectory = null
+            isWatchedDirectoryInitialized = true
             logger.warn { "No chat logs directory detected" }
         }
     }

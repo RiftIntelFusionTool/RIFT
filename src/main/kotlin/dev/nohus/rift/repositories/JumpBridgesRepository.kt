@@ -1,6 +1,6 @@
 package dev.nohus.rift.repositories
 
-import dev.nohus.rift.characters.LocalCharactersRepository
+import dev.nohus.rift.characters.repositories.LocalCharactersRepository
 import dev.nohus.rift.network.Result
 import dev.nohus.rift.network.esi.CharactersIdSearch
 import dev.nohus.rift.network.esi.EsiApi

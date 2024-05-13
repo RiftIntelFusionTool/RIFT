@@ -1,14 +1,14 @@
 package dev.nohus.rift.settings
 
 import dev.nohus.rift.ViewModel
-import dev.nohus.rift.characters.DetectEveSettingsDirectoryUseCase
-import dev.nohus.rift.characters.GetEveCharactersSettingsUseCase
+import dev.nohus.rift.characters.files.DetectEveSettingsDirectoryUseCase
+import dev.nohus.rift.characters.files.GetEveCharactersSettingsUseCase
 import dev.nohus.rift.compose.DialogMessage
 import dev.nohus.rift.compose.MessageDialogType
+import dev.nohus.rift.configurationpack.ConfigurationPackRepository
+import dev.nohus.rift.configurationpack.ConfigurationPackRepository.SuggestedIntelChannels
 import dev.nohus.rift.logs.DetectLogsDirectoryUseCase
 import dev.nohus.rift.logs.GetChatLogsDirectoryUseCase
-import dev.nohus.rift.repositories.ConfigurationPackRepository
-import dev.nohus.rift.repositories.ConfigurationPackRepository.SuggestedIntelChannels
 import dev.nohus.rift.repositories.SolarSystemsRepository
 import dev.nohus.rift.settings.persistence.ConfigurationPack
 import dev.nohus.rift.settings.persistence.IntelChannel
@@ -223,7 +223,7 @@ class SettingsViewModel(
     fun onConfigurationPackChange(configurationPack: ConfigurationPack?) {
         if (settings.configurationPack != configurationPack) {
             showRestartRequiredDialog("Some elements of a configuration pack will only take effect after you restart the application.")
-            settings.configurationPack = configurationPack
+            configurationPackRepository.set(configurationPack)
         }
     }
 

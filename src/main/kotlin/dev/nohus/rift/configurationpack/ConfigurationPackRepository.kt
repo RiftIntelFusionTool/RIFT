@@ -1,6 +1,6 @@
-package dev.nohus.rift.repositories
+package dev.nohus.rift.configurationpack
 
-import dev.nohus.rift.characters.LocalCharactersRepository
+import dev.nohus.rift.characters.repositories.LocalCharactersRepository
 import dev.nohus.rift.settings.persistence.ConfigurationPack
 import dev.nohus.rift.settings.persistence.ConfigurationPack.Imperium
 import dev.nohus.rift.settings.persistence.IntelChannel
@@ -17,6 +17,13 @@ class ConfigurationPackRepository(
         val promptButtonText: String,
         val channels: List<IntelChannel>,
     )
+
+    fun set(configurationPack: ConfigurationPack?) {
+        if (settings.configurationPack != configurationPack) {
+            settings.configurationPack = configurationPack
+            settings.isConfigurationPackReminderDismissed = false
+        }
+    }
 
     fun getSuggestedPack(): ConfigurationPack? {
         val characterAlliances = localCharactersRepository.characters.value
