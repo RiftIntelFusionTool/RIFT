@@ -12,6 +12,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -35,6 +36,7 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -62,9 +64,12 @@ import dev.nohus.rift.intel.state.SystemEntity
 import dev.nohus.rift.location.GetOnlineCharactersLocationUseCase.OnlineCharacterLocation
 import dev.nohus.rift.map.MapViewModel.MapType
 import dev.nohus.rift.map.MapViewModel.MapType.RegionMap
-import dev.nohus.rift.map.systemcolor.SolarSystemColorStrategy
+import dev.nohus.rift.map.systemcolor.SystemColorStrategy
+import dev.nohus.rift.repositories.MapStatusRepository.SolarSystemStatus
+import dev.nohus.rift.repositories.NamesRepository
 import dev.nohus.rift.repositories.ShipTypesRepository
 import dev.nohus.rift.repositories.SolarSystemsRepository.MapSolarSystem
+import dev.nohus.rift.settings.persistence.MapStarColor
 import dev.nohus.rift.utils.roundSecurity
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.DrawableResource
@@ -85,6 +90,8 @@ data class NodeSizes(
     val radiusWithMarginPx = marginPx + radiusPx
 }
 
+const val SOLAR_SYSTEM_NODE_BACKGROUND_CIRCLE_MAX_SCALE = 0.61f
+
 @Composable
 fun SolarSystemNode(
     system: MapSolarSystem,
@@ -92,7 +99,7 @@ fun SolarSystemNode(
     mapScale: Float,
     intel: List<Dated<SystemEntity>>?,
     onlineCharacters: List<OnlineCharacterLocation>,
-    solarSystemColorStrategy: SolarSystemColorStrategy,
+    systemColorStrategy: SystemColorStrategy,
     systemRadialGradients: MutableMap<Color, Brush>,
     nodeSizes: NodeSizes,
     modifier: Modifier,
@@ -100,7 +107,7 @@ fun SolarSystemNode(
     Box(
         modifier = modifier,
     ) {
-        val systemColor = solarSystemColorStrategy.getActiveColor(system)
+        val systemColor = systemColorStrategy.getActiveColor(system.id)
         val brush = systemRadialGradients.getOrPut(systemColor) {
             Brush.radialGradient(
                 0.0f to systemColor.copy(alpha = 1.0f),
@@ -120,11 +127,12 @@ fun SolarSystemNode(
 
         val hostileCount = hostileOrbitPainter.getHostileCount(intel)
         val entityIcons = hostileOrbitPainter.getEntityIcons(intel)
+        val nodeBackgroundCircleMaxScale = SOLAR_SYSTEM_NODE_BACKGROUND_CIRCLE_MAX_SCALE / LocalDensity.current.density
 
         Canvas(
             modifier = Modifier.size(2 * nodeSizes.radiusWithMargin),
         ) {
-            if (mapType is RegionMap && mapScale <= 0.61f) {
+            if (mapType is RegionMap && mapScale <= nodeBackgroundCircleMaxScale) {
                 drawCircle(mapBackground, radius = nodeSizes.radiusWithMarginPx, center = Offset.Zero)
             }
             drawCircle(brush, radius = nodeSizes.radiusPx, center = Offset.Zero)
@@ -323,6 +331,8 @@ fun SystemInfoBox(
     intel: List<Dated<SystemEntity>>?,
     hasIntelPopup: Boolean,
     onlineCharacters: List<OnlineCharacterLocation>,
+    systemStatus: SolarSystemStatus?,
+    colors: List<MapStarColor>,
     onRegionClick: () -> Unit,
     modifier: Modifier,
 ) {
@@ -393,11 +403,110 @@ fun SystemInfoBox(
                             }
                         }
                     }
+                    SystemStatus(colors, systemStatus)
                 }
             }
 
             if (intelGroups != null) {
                 Intel(intelGroups, system)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ColumnScope.SystemStatus(
+    colors: List<MapStarColor>,
+    systemStatus: SolarSystemStatus?,
+) {
+    val namesRepository: NamesRepository = koin.get()
+    colors.distinct().forEach { color ->
+        when (color) {
+            MapStarColor.Actual -> {}
+            MapStarColor.Security -> {}
+            MapStarColor.IntelHostiles -> {}
+            MapStarColor.Jumps -> {
+                val jumps = systemStatus?.shipJumps ?: 0
+                Text(
+                    text = "Jumps: $jumps",
+                    style = RiftTheme.typography.bodyPrimary,
+                )
+            }
+
+            MapStarColor.Kills -> {
+                val podKills = systemStatus?.podKills ?: 0
+                val shipKills = systemStatus?.shipKills ?: 0
+                Text(
+                    text = "Pod kills: $podKills\nShip kills: $shipKills",
+                    style = RiftTheme.typography.bodyPrimary,
+                )
+            }
+
+            MapStarColor.NpcKills -> {
+                val npcKills = systemStatus?.npcKills ?: 0
+                Text(
+                    text = "NPC kills: $npcKills",
+                    style = RiftTheme.typography.bodyPrimary,
+                )
+            }
+
+            MapStarColor.Assets -> {
+                val assets = systemStatus?.assetCount ?: 0
+                if (assets > 0) {
+                    Text(
+                        text = "Assets: $assets",
+                        style = RiftTheme.typography.bodyPrimary,
+                    )
+                }
+            }
+
+            MapStarColor.Incursions -> {
+                systemStatus?.incursion?.let { incursion ->
+                    Text(
+                        text = "${incursion.type}: ${incursion.state.name}",
+                        style = RiftTheme.typography.bodyPrimary,
+                    )
+                }
+            }
+            MapStarColor.Stations -> {
+                systemStatus?.stations?.takeIf { it.isNotEmpty() }?.let { stations ->
+                    Text(
+                        text = "Stations: ${stations.size}",
+                        style = RiftTheme.typography.bodyPrimary,
+                    )
+                }
+            }
+            MapStarColor.FactionWarfare -> {
+                systemStatus?.factionWarfare?.let { factionWarfare ->
+                    val owner = namesRepository.getName(factionWarfare.ownerFactionId) ?: "Unknown"
+                    val occupier = namesRepository.getName(factionWarfare.occupierFactionId) ?: "Unknown"
+                    val text = buildString {
+                        appendLine("Faction warfare: ${factionWarfare.contested.name}")
+                        appendLine("Owner: $owner")
+                        if (occupier != owner) {
+                            appendLine("Occupier: $occupier")
+                        }
+                        if (factionWarfare.victoryPoints != 0) {
+                            appendLine("Points: ${factionWarfare.victoryPoints}/${factionWarfare.victoryPointsThreshold}")
+                        }
+                    }.trim()
+                    Text(
+                        text = text,
+                        style = RiftTheme.typography.bodyPrimary,
+                    )
+                }
+            }
+            MapStarColor.Sovereignty -> {
+                systemStatus?.sovereignty?.let {
+                    val id = it.allianceId ?: it.factionId ?: it.corporationId
+                    if (id != null) {
+                        val name = namesRepository.getName(id) ?: "Unknown"
+                        Text(
+                            text = name,
+                            style = RiftTheme.typography.bodyPrimary,
+                        )
+                    }
+                }
             }
         }
     }

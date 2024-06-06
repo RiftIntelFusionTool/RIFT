@@ -22,7 +22,7 @@ class SolarSystemsRepository(
     private val systemIdsByName: Map<String, Int>
     private val systemNamesById: Map<Int, String>
     private val systemsById: Map<Int, MapSolarSystem>
-    val mapSolarSystems: List<MapSolarSystem>
+    private val mapSolarSystems: List<MapSolarSystem>
     val mapConstellations: List<MapConstellation>
     val mapRegions: List<MapRegion>
     val mapSystemConstellation: Map<Int, Int> // System ID -> Constellation ID
@@ -128,6 +128,14 @@ class SolarSystemsRepository(
         regionNamesById = mapRegions.associate { it.id to it.name }
         regionNamesBySystemName = mapSolarSystems.associate { it.name to regionNamesById[it.regionId]!! }
         regionIdBySystemId = mapSolarSystems.associate { it.id to it.regionId }
+    }
+
+    fun getSystems(knownSpace: Boolean = true): List<MapSolarSystem> {
+        return if (knownSpace) {
+            mapSolarSystems.filter { it.regionId <= 10001000 } // K-space
+        } else {
+            mapSolarSystems
+        }
     }
 
     /**

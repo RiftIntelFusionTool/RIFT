@@ -7,8 +7,8 @@ class GetSystemDistanceUseCase(
     private val getRouteUseCase: GetRouteUseCase,
 ) {
 
-    operator fun invoke(from: Int, to: Int, maxDistance: Int, withJumpBridges: Boolean): Int {
-        val route = getRouteUseCase(from, to, maxDistance, withJumpBridges) ?: return Int.MAX_VALUE
+    operator fun invoke(from: Int, to: Int, maxDistance: Int, withJumpBridges: Boolean): Int? {
+        val route = getRouteUseCase(from, to, maxDistance, withJumpBridges) ?: return null
         return route.size - 1
     }
 }

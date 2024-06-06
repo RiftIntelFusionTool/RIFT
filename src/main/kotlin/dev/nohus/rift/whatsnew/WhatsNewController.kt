@@ -15,8 +15,13 @@ class WhatsNewController(
     fun showIfRequired() {
         val lastShownVersion = settings.whatsNewVersion
         val currentVersion = BuildConfig.version
-        if (lastShownVersion != currentVersion) {
-            windowManager.onWindowOpen(RiftWindow.WhatsNew)
+        if (lastShownVersion != null && lastShownVersion != currentVersion) {
+            val hasChangelog = WhatsNew.getVersions().any {
+                VersionUtils.isNewer(lastShownVersion, it.version)
+            }
+            if (hasChangelog) {
+                windowManager.onWindowOpen(RiftWindow.WhatsNew)
+            }
         }
         resetWhatsNewVersion()
     }

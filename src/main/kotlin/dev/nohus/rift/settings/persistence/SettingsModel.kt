@@ -49,13 +49,17 @@ enum class MapType {
 
 @Serializable
 enum class MapStarColor {
-    Actual, Security, IntelHostiles
+    Actual, Security, IntelHostiles, Jumps, Kills, NpcKills, Assets, Incursions, Stations, FactionWarfare, Sovereignty
 }
 
 @Serializable
 data class IntelMap(
     val isUsingCompactMode: Boolean = false,
-    val mapTypeStarColor: Map<MapType, MapStarColor> = emptyMap(),
+    val mapTypeStarColor: Map<MapType, MapStarColor> = mapOf(
+        MapType.NewEden to MapStarColor.Security,
+        MapType.Region to MapStarColor.Security,
+    ),
+    val mapTypeCellColor: Map<MapType, MapStarColor?> = emptyMap(),
     val intelExpireSeconds: Int = 5 * 60,
     val intelPopupTimeoutSeconds: Int = 60,
     val isCharacterFollowing: Boolean = true,

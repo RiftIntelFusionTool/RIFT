@@ -46,7 +46,7 @@ class JumpBridgesParser(
     }
 
     private fun parseAnyJumpBridges(text: String): JumpBridgeNetwork? {
-        val systems = solarSystemsRepository.mapSolarSystems.map { it.name }
+        val systems = solarSystemsRepository.getSystems(knownSpace = true).map { it.name }
         val connections = text.lines().mapNotNull { line ->
             systems
                 .filter { it in line }

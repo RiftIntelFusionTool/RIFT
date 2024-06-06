@@ -38,8 +38,6 @@ import dev.nohus.rift.generated.resources.window_settings
 import dev.nohus.rift.generated.resources.window_warning
 import dev.nohus.rift.map.settings.MapSettingsViewModel.JumpBridgeNetworkState
 import dev.nohus.rift.map.settings.MapSettingsViewModel.UiState
-import dev.nohus.rift.settings.persistence.MapStarColor
-import dev.nohus.rift.settings.persistence.MapType
 import dev.nohus.rift.utils.openBrowser
 import dev.nohus.rift.utils.toURIOrNull
 import dev.nohus.rift.utils.viewModel
@@ -62,7 +60,6 @@ fun MapSettingsWindow(
     ) {
         MapSettingsWindowContent(
             state = state,
-            onStarColorChange = viewModel::onStarColorChange,
             onIntelExpireSecondsChange = viewModel::onIntelExpireSecondsChange,
             onIntelPopupTimeoutSecondsChange = viewModel::onIntelPopupTimeoutSecondsChange,
             onIsUsingCompactModeChange = viewModel::onIsUsingCompactModeChange,
@@ -125,7 +122,6 @@ fun MapSettingsWindow(
 @Composable
 private fun MapSettingsWindowContent(
     state: UiState,
-    onStarColorChange: (mapType: MapType, selected: MapStarColor) -> Unit,
     onIntelExpireSecondsChange: (Int) -> Unit,
     onIntelPopupTimeoutSecondsChange: (Int) -> Unit,
     onIsUsingCompactModeChange: (Boolean) -> Unit,
@@ -410,64 +406,6 @@ private fun MapSettingsWindowContent(
                     They are visible on hover even after this time.
                 """.trimIndent(),
             )
-        }
-
-        SectionTitle("System colors", Modifier.padding(vertical = Spacing.medium))
-        Row {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(Spacing.small),
-                modifier = Modifier.weight(1f),
-            ) {
-                Text(
-                    text = "New Eden map",
-                    style = RiftTheme.typography.bodySecondary,
-                )
-                RiftRadioButtonWithLabel(
-                    label = "Actual color",
-                    tooltip = "Systems will be colored with\nthe actual color of the star",
-                    isChecked = intelMap.mapTypeStarColor.getValue(MapType.NewEden) == MapStarColor.Actual,
-                    onChecked = { onStarColorChange(MapType.NewEden, MapStarColor.Actual) },
-                )
-                RiftRadioButtonWithLabel(
-                    label = "Security status",
-                    tooltip = "Systems will be colored according\nto their security status",
-                    isChecked = intelMap.mapTypeStarColor.getValue(MapType.NewEden) == MapStarColor.Security,
-                    onChecked = { onStarColorChange(MapType.NewEden, MapStarColor.Security) },
-                )
-                RiftRadioButtonWithLabel(
-                    label = "Reported hostiles",
-                    tooltip = "Systems will be colored according\nto the number of reported hostiles",
-                    isChecked = intelMap.mapTypeStarColor.getValue(MapType.NewEden) == MapStarColor.IntelHostiles,
-                    onChecked = { onStarColorChange(MapType.NewEden, MapStarColor.IntelHostiles) },
-                )
-            }
-            Column(
-                verticalArrangement = Arrangement.spacedBy(Spacing.small),
-                modifier = Modifier.weight(1f),
-            ) {
-                Text(
-                    text = "Region maps",
-                    style = RiftTheme.typography.bodySecondary,
-                )
-                RiftRadioButtonWithLabel(
-                    label = "Actual color",
-                    tooltip = "Systems will be colored with\nthe actual color of the star",
-                    isChecked = intelMap.mapTypeStarColor.getValue(MapType.Region) == MapStarColor.Actual,
-                    onChecked = { onStarColorChange(MapType.Region, MapStarColor.Actual) },
-                )
-                RiftRadioButtonWithLabel(
-                    label = "Security status",
-                    tooltip = "Systems will be colored according\nto their security status",
-                    isChecked = intelMap.mapTypeStarColor.getValue(MapType.Region) == MapStarColor.Security,
-                    onChecked = { onStarColorChange(MapType.Region, MapStarColor.Security) },
-                )
-                RiftRadioButtonWithLabel(
-                    label = "Reported hostiles",
-                    tooltip = "Systems will be colored according\nto the number of reported hostiles",
-                    isChecked = intelMap.mapTypeStarColor.getValue(MapType.Region) == MapStarColor.IntelHostiles,
-                    onChecked = { onStarColorChange(MapType.Region, MapStarColor.IntelHostiles) },
-                )
-            }
         }
     }
 }

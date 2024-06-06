@@ -1,6 +1,7 @@
 package dev.nohus.rift.logs.parse
 
 import org.koin.core.annotation.Single
+import java.io.IOException
 import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -24,25 +25,29 @@ class ChatLogFileParser {
         val metadata = mutableMapOf<String, String>()
         val systemMessages = mutableListOf<ChatMessage>()
 
-        file.bufferedReader(charset).useLines { lines ->
-            var inHeader = false
-            for (line in lines) {
-                if (line.length <= 1) continue
-                if (line == "        ---------------------------------------------------------------") {
-                    inHeader = !inHeader
-                } else if (inHeader) {
-                    val key = line.substringBefore(":").trim()
-                    val value = line.substringAfter(":").trim()
-                    metadata[key] = value
-                } else {
-                    val message = parseLine(line)
-                    if (message?.author == "EVE System") {
-                        systemMessages += message
+        try {
+            file.bufferedReader(charset).useLines { lines ->
+                var inHeader = false
+                for (line in lines) {
+                    if (line.length <= 1) continue
+                    if (line == "        ---------------------------------------------------------------") {
+                        inHeader = !inHeader
+                    } else if (inHeader) {
+                        val key = line.substringBefore(":").trim()
+                        val value = line.substringAfter(":").trim()
+                        metadata[key] = value
                     } else {
-                        break
+                        val message = parseLine(line)
+                        if (message?.author == "EVE System") {
+                            systemMessages += message
+                        } else {
+                            break
+                        }
                     }
                 }
             }
+        } catch (e: IOException) {
+            return null
         }
 
         if (systemMessages.isNotEmpty()) {

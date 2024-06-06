@@ -64,6 +64,8 @@ dependencies {
     implementation("com.formdev:flatlaf:3.4.1")
     implementation("org.jsoup:jsoup:1.17.2")
     implementation("org.nibor.autolink:autolink:0.11.0")
+    implementation("org.locationtech.jts:jts-core:1.19.0")
+    implementation("dev.chrisbanes.haze:haze:0.7.1")
 
     // OpenAL Audio
     implementation("org.jogamp.joal:joal-main:2.5.0")

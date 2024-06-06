@@ -73,6 +73,21 @@ interface EsiService {
         @Header("Authorization") authorization: String,
     ): UniverseStructuresId
 
+    @GET("/v1/universe/system_jumps/")
+    suspend fun getUniverseSystemJumps(): List<UniverseSystemJumps>
+
+    @GET("/v2/universe/system_kills/")
+    suspend fun getUniverseSystemKills(): List<UniverseSystemKills>
+
+    @GET("/v1/incursions/")
+    suspend fun getIncursions(): List<Incursion>
+
+    @GET("/v3/fw/systems/")
+    suspend fun getFactionWarfareSystems(): List<FactionWarfareSystem>
+
+    @GET("/v1/sovereignty/map/")
+    suspend fun getSovereigntyMap(): List<SovereigntySystem>
+
     @POST("/v2/ui/autopilot/waypoint/")
     suspend fun postUiAutopilotWaypoint(
         @Query("add_to_beginning") addToBeginning: Boolean,
@@ -94,4 +109,7 @@ interface EsiService {
         @Body assets: List<Long>,
         @Header("Authorization") authorization: String,
     ): List<CharactersIdAssetsName>
+
+    @GET("/v1/markets/prices/")
+    suspend fun getMarketsPrices(): List<MarketsPrice>
 }

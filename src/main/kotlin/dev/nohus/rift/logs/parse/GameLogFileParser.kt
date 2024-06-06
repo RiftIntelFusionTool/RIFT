@@ -1,6 +1,7 @@
 package dev.nohus.rift.logs.parse
 
 import org.koin.core.annotation.Single
+import java.io.IOException
 import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -23,21 +24,25 @@ class GameLogFileParser {
     fun parseHeader(characterId: String, file: Path): GameLogFileMetadata? {
         val metadata = mutableMapOf<String, String>()
 
-        file.bufferedReader(charset).useLines { lines ->
-            var inHeader = false
-            for (line in lines) {
-                if (line.length <= 1) continue
-                if (line == "------------------------------------------------------------") {
-                    inHeader = !inHeader
-                } else if (inHeader) {
-                    if (line == "  Gamelog") continue
-                    val key = line.substringBefore(":").trim()
-                    val value = line.substringAfter(":").trim()
-                    metadata[key] = value
-                } else {
-                    break
+        try {
+            file.bufferedReader(charset).useLines { lines ->
+                var inHeader = false
+                for (line in lines) {
+                    if (line.length <= 1) continue
+                    if (line == "------------------------------------------------------------") {
+                        inHeader = !inHeader
+                    } else if (inHeader) {
+                        if (line == "  Gamelog") continue
+                        val key = line.substringBefore(":").trim()
+                        val value = line.substringAfter(":").trim()
+                        metadata[key] = value
+                    } else {
+                        break
+                    }
                 }
             }
+        } catch (e: IOException) {
+            return null
         }
 
         return GameLogFileMetadata(

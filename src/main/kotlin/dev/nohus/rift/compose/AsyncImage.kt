@@ -62,18 +62,24 @@ fun AsyncTypeIcon(
     nameHint: String? = null,
     modifier: Modifier = Modifier,
 ) {
-    val staticFallbackIcon = @Composable {
-        val resource = if (nameHint != null) {
-            when {
-                "Blueprint" in nameHint -> Res.drawable.missing_blueprint
-                "SKIN" in nameHint -> Res.drawable.missing_skin
-                else -> Res.drawable.missing
-            }
-        } else {
-            Res.drawable.missing
+    if (nameHint != null) {
+        val resource = when {
+            "Blueprint" in nameHint -> Res.drawable.missing_blueprint
+            "SKIN" in nameHint -> Res.drawable.missing_skin
+            else -> null
         }
+        if (resource != null) {
+            FallbackIcon(
+                resource = resource,
+                modifier = modifier,
+            )
+            return
+        }
+    }
+
+    val staticFallbackIcon = @Composable {
         FallbackIcon(
-            resource = resource,
+            resource = Res.drawable.missing,
             modifier = modifier,
         )
     }

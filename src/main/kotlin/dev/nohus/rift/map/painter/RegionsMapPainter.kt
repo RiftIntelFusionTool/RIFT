@@ -10,13 +10,14 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.rememberTextMeasurer
 import dev.nohus.rift.map.DoubleOffset
-import dev.nohus.rift.map.MapLayoutRepository.Position
 import dev.nohus.rift.map.MapViewModel.Cluster
+import dev.nohus.rift.map.MapViewModel.Layout
 import dev.nohus.rift.map.systemcolor.RegionColors
+import dev.nohus.rift.map.systemcolor.SystemColorStrategy
 
 class RegionsMapPainter(
     private val cluster: Cluster,
-    private val layout: Map<Int, Position>,
+    private val layout: Map<Int, Layout>,
 ) : MapPainter {
 
     private lateinit var textMeasurer: TextMeasurer
@@ -43,25 +44,35 @@ class RegionsMapPainter(
         connectionColor = Color.White
     }
 
-    override fun draw(
+    override fun drawStatic(
         scope: DrawScope,
         center: DoubleOffset,
         scale: Float,
         zoom: Float,
-        animationPercentage: Float,
+        systemColorStrategy: SystemColorStrategy,
+        cellColorStrategy: SystemColorStrategy?,
     ) = with(scope) {
         connectionsInLayout.forEach { connection ->
             drawRegionConnection(connection, center, scale)
         }
     }
 
+    override fun drawAnimated(
+        scope: DrawScope,
+        center: DoubleOffset,
+        scale: Float,
+        zoom: Float,
+        animationPercentage: Float,
+        systemColorStrategy: SystemColorStrategy,
+    ) {}
+
     private fun DrawScope.drawRegionConnection(
         connection: RegionConnection,
         center: DoubleOffset,
         scale: Float,
     ) {
-        val fromLayoutPosition = layout[connection.from]!!
-        val toLayoutPosition = layout[connection.to]!!
+        val fromLayoutPosition = layout[connection.from]!!.position
+        val toLayoutPosition = layout[connection.to]!!.position
         val from = getCanvasCoordinates(fromLayoutPosition.x, fromLayoutPosition.y, center, scale)
         val to = getCanvasCoordinates(toLayoutPosition.x, toLayoutPosition.y, center, scale)
         val deltaOffset = to - from

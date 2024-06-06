@@ -128,6 +128,91 @@ data class UniverseStructuresId(
 )
 
 @Serializable
+data class UniverseSystemJumps(
+    @SerialName("ship_jumps")
+    val shipJumps: Int,
+    @SerialName("system_id")
+    val systemId: Int,
+)
+
+@Serializable
+data class UniverseSystemKills(
+    @SerialName("npc_kills")
+    val npcKills: Int,
+    @SerialName("pod_kills")
+    val podKills: Int,
+    @SerialName("ship_kills")
+    val shipKills: Int,
+    @SerialName("system_id")
+    val systemId: Int,
+)
+
+@Serializable
+data class Incursion(
+    @SerialName("infested_solar_systems")
+    val infestedSolarSystems: List<Int>,
+    @SerialName("state")
+    val state: IncursionState,
+    @SerialName("type")
+    val type: String,
+)
+
+@Serializable
+enum class IncursionState {
+    @SerialName("withdrawing")
+    Withdrawing,
+
+    @SerialName("mobilizing")
+    Mobilizing,
+
+    @SerialName("established")
+    Established,
+}
+
+@Serializable
+data class FactionWarfareSystem(
+    @SerialName("contested")
+    val contested: Contested,
+    @SerialName("occupier_faction_id")
+    val occupierFactionId: Int,
+    @SerialName("owner_faction_id")
+    val ownerFactionId: Int,
+    @SerialName("solar_system_id")
+    val solarSystemId: Int,
+    @SerialName("victory_points")
+    val victoryPoints: Int,
+    @SerialName("victory_points_threshold")
+    val victoryPointsThreshold: Int,
+)
+
+@Serializable
+enum class Contested {
+    @SerialName("captured")
+    Captured,
+
+    @SerialName("contested")
+    Contested,
+
+    @SerialName("uncontested")
+    Uncontested,
+
+    @SerialName("vulnerable")
+    Vulnerable,
+}
+
+@Serializable
+data class SovereigntySystem(
+    @SerialName("alliance_id")
+    val allianceId: Int? = null,
+    @SerialName("corporation_id")
+    val corporationId: Int? = null,
+    @SerialName("faction_id")
+    val factionId: Int? = null,
+    @SerialName("system_id")
+    val systemId: Int,
+)
+
+@Serializable
 data class CharactersIdSearch(
     @SerialName("structure")
     val structure: List<Long> = emptyList(),
@@ -174,4 +259,14 @@ data class CharactersIdAssetsName(
     val itemId: Long,
     @SerialName("name")
     val name: String,
+)
+
+@Serializable
+data class MarketsPrice(
+    @SerialName("adjusted_price")
+    val adjustedPrice: Double? = null,
+    @SerialName("average_price")
+    val averagePrice: Double? = null,
+    @SerialName("type_id")
+    val typeId: Int,
 )

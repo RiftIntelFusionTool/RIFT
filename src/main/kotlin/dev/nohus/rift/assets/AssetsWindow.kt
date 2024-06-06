@@ -21,6 +21,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -66,6 +67,7 @@ import dev.nohus.rift.generated.resources.Res
 import dev.nohus.rift.generated.resources.expand_more_16px
 import dev.nohus.rift.generated.resources.window_assets
 import dev.nohus.rift.map.SecurityColors
+import dev.nohus.rift.utils.formatIsk
 import dev.nohus.rift.utils.roundSecurity
 import dev.nohus.rift.utils.viewModel
 import dev.nohus.rift.windowing.WindowManager.RiftWindowState
@@ -299,12 +301,14 @@ private fun LocationHeader(
         AnimatedVisibility(isExpanded) {
             Column {
                 assets.forEach { asset ->
-                    AssetRow(
-                        asset = asset,
-                        expandedItems = expandedItems,
-                        onClick = onItemClick,
-                        onFitAction = onFitAction,
-                    )
+                    key(asset.asset.itemId) {
+                        AssetRow(
+                            asset = asset,
+                            expandedItems = expandedItems,
+                            onClick = onItemClick,
+                            onFitAction = onFitAction,
+                        )
+                    }
                 }
             }
         }
@@ -357,6 +361,11 @@ private fun AssetRow(
                                 append(" - $formatted m3")
                             }
                         }
+                        if (asset.price != null) {
+                            withStyle(style = SpanStyle(color = RiftTheme.colors.textSecondary)) {
+                                append(" - ${formatIsk(asset.price * asset.asset.quantity)}")
+                            }
+                        }
                     }
                     Text(
                         text = text,
@@ -376,6 +385,10 @@ private fun AssetRow(
                             val volume = asset.children.map { it.asset.quantity * (it.type?.volume ?: 0f) }.sum()
                             val formatted = NumberFormat.getNumberInstance().apply { maximumFractionDigits = 1 }.format(volume)
                             add("$formatted m3")
+
+                            val totalPrice = asset.children
+                                .mapNotNull { asset -> asset.price?.let { it * asset.asset.quantity } }.sum()
+                            add(formatIsk(totalPrice))
                         }
                     }.joinToString(" - ")
                     if (secondaryText.isNotEmpty()) {

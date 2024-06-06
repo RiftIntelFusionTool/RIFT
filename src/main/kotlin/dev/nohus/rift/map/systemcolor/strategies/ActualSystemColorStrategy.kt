@@ -1,23 +1,24 @@
-package dev.nohus.rift.map.systemcolor
+package dev.nohus.rift.map.systemcolor.strategies
 
 import androidx.compose.ui.graphics.Color
-import dev.nohus.rift.repositories.SolarSystemsRepository.MapSolarSystem
+import dev.nohus.rift.map.systemcolor.SystemColorStrategy
+import dev.nohus.rift.repositories.SolarSystemsRepository
+import org.koin.core.annotation.Single
 
-class ActualSolarSystemColorStrategy : SolarSystemColorStrategy {
+@Single
+class ActualSystemColorStrategy(
+    private val solarSystemsRepository: SolarSystemsRepository,
+) : SystemColorStrategy() {
 
-    private val inactiveColors = mutableMapOf<Int, Color>()
     private val activeColors = mutableMapOf<Int, Color>()
 
-    override fun getActiveColor(system: MapSolarSystem): Color {
-        return activeColors.getOrPut(system.sunTypeId) {
-            getActualColor(system.sunTypeId)
-        }
+    override fun hasData(system: Int): Boolean {
+        return true
     }
 
-    override fun getInactiveColor(system: MapSolarSystem): Color {
-        return inactiveColors.getOrPut(system.sunTypeId) {
-            getActualColor(system.sunTypeId).copy(alpha = 0.1f)
-        }
+    override fun getColor(system: Int): Color {
+        val sunTypeId = solarSystemsRepository.getSystem(system)?.sunTypeId ?: return Color.Unspecified
+        return activeColors.getOrPut(sunTypeId) { getActualColor(sunTypeId) }
     }
 
     private fun getActualColor(sunTypeId: Int): Color {

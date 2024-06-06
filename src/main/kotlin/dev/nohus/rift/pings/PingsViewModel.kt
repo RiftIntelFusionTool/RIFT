@@ -24,6 +24,7 @@ class PingsViewModel(
     private val jabberClient: JabberClient,
     private val windowManager: WindowManager,
     private val pingsRepository: PingsRepository,
+    private val openMumbleUseCase: OpenMumbleUseCase,
 ) : ViewModel() {
 
     data class UiState(
@@ -62,6 +63,12 @@ class PingsViewModel(
 
     fun onOpenJabberClick() {
         windowManager.onWindowOpen(WindowManager.RiftWindow.Jabber)
+    }
+
+    fun onMumbleClick(link: String) {
+        viewModelScope.launch {
+            openMumbleUseCase(link)
+        }
     }
 
     private fun PingModel.toUiModel(): PingUiModel {

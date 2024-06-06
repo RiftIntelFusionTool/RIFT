@@ -1,6 +1,7 @@
 package dev.nohus.rift.assets
 
 import dev.nohus.rift.characters.repositories.LocalCharactersRepository
+import dev.nohus.rift.network.AsyncResource
 import dev.nohus.rift.network.Result
 import dev.nohus.rift.network.esi.CharactersIdAsset
 import dev.nohus.rift.network.esi.CharactersIdAssetLocationType
@@ -47,8 +48,11 @@ class AssetsRepository(
     @OptIn(FlowPreview::class)
     suspend fun start() = coroutineScope {
         launch {
-            localCharactersRepository.characters.debounce(500).collect {
-                reloadEventFlow.emit(Unit)
+            localCharactersRepository.characters.debounce(500).collect { characters ->
+                // Load assets after all authenticated characters finished loading
+                if (characters.none { it.isAuthenticated && it.info is AsyncResource.Loading }) {
+                    reloadEventFlow.emit(Unit)
+                }
             }
         }
         launch {

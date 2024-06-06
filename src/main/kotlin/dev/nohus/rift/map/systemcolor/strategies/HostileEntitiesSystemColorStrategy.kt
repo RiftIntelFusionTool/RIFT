@@ -1,11 +1,13 @@
-package dev.nohus.rift.map.dataoverlay
+package dev.nohus.rift.map.systemcolor.strategies
 
 import dev.nohus.rift.intel.state.IntelStateController
 import dev.nohus.rift.intel.state.SystemEntity
+import dev.nohus.rift.map.systemcolor.PercentageSystemColorStrategy
+import dev.nohus.rift.map.systemcolor.PercentageSystemColorStrategyPalettes
 
-class HostileEntitiesMapDataOverlayPainter(
+class HostileEntitiesSystemColorStrategy(
     private val getIntel: (system: Int) -> List<IntelStateController.Dated<SystemEntity>>,
-) : PercentageMapDataOverlayPainter() {
+) : PercentageSystemColorStrategy(PercentageSystemColorStrategyPalettes.negative) {
 
     override fun hasData(system: Int): Boolean {
         return getIntel(system).isNotEmpty()

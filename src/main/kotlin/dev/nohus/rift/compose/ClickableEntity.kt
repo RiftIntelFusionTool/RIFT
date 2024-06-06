@@ -120,7 +120,7 @@ fun GetSystemContextMenuItems(
                 ContextMenuItem.TextItem(
                     text = if (mapType == null) "Show on Map" else "Show in New Eden",
                     onClick = {
-                        mapExternalControl.showSystem(systemId)
+                        mapExternalControl.showSystem(systemId, fromMap = mapType != null)
                     },
                 ),
             )
@@ -130,7 +130,7 @@ fun GetSystemContextMenuItems(
                 ContextMenuItem.TextItem(
                     text = if (mapType == null) "Show on Region Map" else "Show in Region",
                     onClick = {
-                        mapExternalControl.showSystemOnRegionMap(systemId)
+                        mapExternalControl.showSystemOnRegionMap(systemId, fromMap = mapType != null)
                     },
                 ),
             )

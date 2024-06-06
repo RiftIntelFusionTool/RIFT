@@ -114,7 +114,8 @@ class WindowManager(
         }
     }
 
-    fun onWindowOpen(window: RiftWindow, inputModel: Any? = null) {
+    fun onWindowOpen(window: RiftWindow, inputModel: Any? = null, ifClosed: Boolean = false) {
+        if (ifClosed && states.value[window]?.isVisible == true) return
         val state = states.value[window]?.copy(
             inputModel = inputModel,
             isVisible = true,

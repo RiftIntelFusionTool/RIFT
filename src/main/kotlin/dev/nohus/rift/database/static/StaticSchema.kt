@@ -66,3 +66,11 @@ object StarGates : Table() {
     val toSystemId = integer("toSystemId")
     val starGateTypeId = integer("starGateTypeId")
 }
+
+object Stations : Table() {
+    val id = integer("id")
+    val typeId = integer("typeId")
+    val systemId = integer("systemId")
+    val name = varchar("name", 100)
+    override val primaryKey = PrimaryKey(id)
+}

@@ -18,6 +18,8 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -80,16 +82,20 @@ fun <T> getStandardTransitionSpec(): @Composable Transition.Segment<PointerInter
 /**
  * Adds an animated hover/press background
  */
-fun Modifier.hoverBackground(): Modifier = composed {
+fun Modifier.hoverBackground(
+    hoverColor: Color? = null,
+    pressColor: Color? = null,
+    shape: Shape = RectangleShape,
+): Modifier = composed {
     val pointerInteractionStateHolder = remember { PointerInteractionStateHolder() }
     val colorTransitionSpec = getStandardTransitionSpec<Color>()
     val floatTransitionSpec = getStandardTransitionSpec<Float>()
     val transition = updateTransition(pointerInteractionStateHolder.current)
     val highlightColor by transition.animateColor(colorTransitionSpec) {
         when (it) {
-            PointerInteractionState.Normal -> RiftTheme.colors.backgroundHovered
-            PointerInteractionState.Hover -> RiftTheme.colors.backgroundHovered
-            PointerInteractionState.Press -> RiftTheme.colors.backgroundSelected
+            PointerInteractionState.Normal -> hoverColor ?: RiftTheme.colors.backgroundHovered
+            PointerInteractionState.Hover -> hoverColor ?: RiftTheme.colors.backgroundHovered
+            PointerInteractionState.Press -> pressColor ?: RiftTheme.colors.backgroundSelected
         }
     }
     val highlightAlpha by transition.animateFloat(floatTransitionSpec) {
@@ -101,5 +107,8 @@ fun Modifier.hoverBackground(): Modifier = composed {
     }
     return@composed this
         .pointerInteraction(pointerInteractionStateHolder)
-        .background(highlightColor.copy(alpha = highlightAlpha.coerceIn(0f..1f)))
+        .background(
+            color = highlightColor.copy(alpha = highlightAlpha.coerceIn(0f..1f)),
+            shape = shape,
+        )
 }

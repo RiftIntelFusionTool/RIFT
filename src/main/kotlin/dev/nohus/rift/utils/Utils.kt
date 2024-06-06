@@ -10,6 +10,7 @@ import java.io.IOException
 import java.net.URI
 import java.net.URISyntaxException
 import java.nio.file.Path
+import java.text.NumberFormat
 import kotlin.io.path.createFile
 
 fun URI.openBrowser() {
@@ -54,4 +55,11 @@ inline fun <reified VM : ViewModel> viewModel(): VM {
 @Composable
 inline fun <reified VM : ViewModel, I> viewModel(inputModel: I): VM {
     return remember { koin.get { parametersOf(inputModel) } }
+}
+
+fun formatIsk(number: Double): String {
+    val format = NumberFormat.getCompactNumberInstance()
+    format.minimumFractionDigits = 1
+    val formatted = format.format(number)
+    return "$formatted ISK"
 }

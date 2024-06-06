@@ -65,6 +65,19 @@ object WhatsNew {
                 -! What's new window
                 - Added this window, which pops up when the app is updated to let you know of changes
             """.trimIndent(),
+            "2.7.0" description """
+                -! New feature: System stats and info on the map!
+                - The map can now show the number of jumps, kills, NPC kills, stations, assets you own, incursion status, faction warfare status, and sovereignty
+                - Information can be chosen as the system color, or to color to area around systems
+                - Details are visible in the info box on hover
+                - New collapsible panel on the map allows quickly changing the data to be shown
+                - Map has been optimized and consumes less resources
+                
+                - Assets shown in the assets window now include their prices
+                - Mumble is now opened immediately from pings, without going through the web browser
+                - When there are multiple EVE installations, the newer character settings directory will be detected
+                - Blueprints and skins in the assets window no longer show incorrect icons
+            """.trimIndent(),
         ).reversed()
     }
 }

@@ -7,6 +7,7 @@ import org.koin.core.annotation.Single
 import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import kotlin.io.path.exists
+import kotlin.io.path.getLastModifiedTime
 import kotlin.io.path.isDirectory
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
@@ -16,6 +17,7 @@ class GetEveSettingsDirectoryUseCase(
     private val operatingSystem: OperatingSystem,
     private val operatingSystemDirectories: OperatingSystemDirectories,
     private val getLinuxSteamLibrariesUseCase: GetLinuxSteamLibrariesUseCase,
+    private val getEveCharactersSettingsUseCase: GetEveCharactersSettingsUseCase,
 ) {
 
     operator fun invoke(): Path? {
@@ -26,9 +28,13 @@ class GetEveSettingsDirectoryUseCase(
         } ?: return null
 
         return try {
-            (eveDataDirectory.listDirectoryEntries())
-                .firstOrNull { file ->
+            eveDataDirectory
+                .listDirectoryEntries()
+                .filter { file ->
                     file.isDirectory() && file.name.endsWith("_tranquility")
+                }.maxByOrNull {
+                    // Choose the directory where the newest character files are
+                    getEveCharactersSettingsUseCase(it).maxOfOrNull { it.getLastModifiedTime().toMillis() } ?: 0
                 } ?: return null
         } catch (e: NoSuchFileException) { null }
     }

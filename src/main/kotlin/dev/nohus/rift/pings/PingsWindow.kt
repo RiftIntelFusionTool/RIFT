@@ -62,6 +62,7 @@ fun PingsWindow(
         PingsWindowContent(
             state = state,
             onOpenJabberClick = viewModel::onOpenJabberClick,
+            onMumbleClick = viewModel::onMumbleClick,
         )
     }
 }
@@ -70,6 +71,7 @@ fun PingsWindow(
 private fun PingsWindowContent(
     state: UiState,
     onOpenJabberClick: () -> Unit,
+    onMumbleClick: (url: String) -> Unit,
 ) {
     Box(
         contentAlignment = Alignment.Center,
@@ -90,7 +92,7 @@ private fun PingsWindowContent(
             state.pings.forEach { ping ->
                 when (ping) {
                     is PingUiModel.PlainText -> PlainTextPing(state.displayTimezone, ping)
-                    is PingUiModel.FleetPing -> FleetPing(state.displayTimezone, ping)
+                    is PingUiModel.FleetPing -> FleetPing(state.displayTimezone, ping, onMumbleClick)
                 }
             }
         }
@@ -177,6 +179,7 @@ private fun PlainTextPing(
 private fun FleetPing(
     displayTimezone: ZoneId,
     ping: PingUiModel.FleetPing,
+    onMumbleClick: (url: String) -> Unit,
 ) {
     val type = buildAnnotatedString {
         if (ping.target == null || ping.target == "all") {
@@ -215,7 +218,7 @@ private fun FleetPing(
         buttons += RiftOpportunityBoxButton(
             resource = Res.drawable.microphone,
             tooltip = "Join ${ping.comms.channel} on Mumble",
-            action = { ping.comms.link.toURIOrNull()?.openBrowser() },
+            action = { onMumbleClick(ping.comms.link) },
         )
     }
     val title = when (ping.papType) {

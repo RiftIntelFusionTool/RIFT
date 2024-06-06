@@ -41,8 +41,7 @@ class GetSystemDistanceFromCharacterUseCase(
         if (characterIds.isEmpty()) return null
         characterIds.mapNotNull { characterId ->
             val characterSystemId = characterLocations[characterId]?.solarSystemId ?: return@mapNotNull null
-            val distance = getSystemDistanceUseCase(characterSystemId, systemId, maxDistance = 5, withJumpBridges = false)
-            distance
+            getSystemDistanceUseCase(characterSystemId, systemId, maxDistance = 5, withJumpBridges = false)
         }.minOrNull()?.let { distance ->
             return distance
         }

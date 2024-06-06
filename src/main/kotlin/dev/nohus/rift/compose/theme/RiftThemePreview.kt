@@ -21,6 +21,7 @@ import dev.nohus.rift.compose.ButtonType
 import dev.nohus.rift.compose.RiftButton
 import dev.nohus.rift.compose.RiftCheckboxWithLabel
 import dev.nohus.rift.compose.RiftDropdown
+import dev.nohus.rift.compose.RiftPill
 import dev.nohus.rift.compose.RiftRadioButtonWithLabel
 import dev.nohus.rift.compose.RiftTabBar
 import dev.nohus.rift.compose.RiftWindow
@@ -115,6 +116,14 @@ private fun ThemePreviewWindow(onCloseRequest: () -> Unit) {
                 onTabClosed = {},
                 modifier = Modifier.border(1.dp, RiftTheme.colors.borderGreyLight),
             )
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
+            ) {
+                RiftPill("Enforcer", isSelected = true)
+                RiftPill("Industrialist")
+                RiftPill("Combat")
+            }
         }
     }
 }

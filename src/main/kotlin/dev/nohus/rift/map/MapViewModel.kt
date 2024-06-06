@@ -21,20 +21,27 @@ import dev.nohus.rift.repositories.JumpBridgesRepository
 import dev.nohus.rift.repositories.JumpBridgesRepository.JumpBridgeConnection
 import dev.nohus.rift.repositories.MapGateConnectionsRepository
 import dev.nohus.rift.repositories.MapGateConnectionsRepository.GateConnection
+import dev.nohus.rift.repositories.MapStatusRepository
+import dev.nohus.rift.repositories.MapStatusRepository.SolarSystemStatus
 import dev.nohus.rift.repositories.SolarSystemsRepository
 import dev.nohus.rift.repositories.SolarSystemsRepository.MapConstellation
 import dev.nohus.rift.repositories.SolarSystemsRepository.MapRegion
 import dev.nohus.rift.repositories.SolarSystemsRepository.MapSolarSystem
+import dev.nohus.rift.settings.persistence.IntelMap
 import dev.nohus.rift.settings.persistence.MapStarColor
 import dev.nohus.rift.settings.persistence.Settings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.Single
+import org.locationtech.jts.geom.Coordinate
+import org.locationtech.jts.geom.GeometryCollection
+import org.locationtech.jts.geom.GeometryFactory
+import org.locationtech.jts.geom.Polygon
+import org.locationtech.jts.triangulate.VoronoiDiagramBuilder
 import java.time.Duration
 import java.time.Instant
 import kotlin.math.pow
@@ -52,6 +59,7 @@ class MapViewModel(
     private val mapExternalControl: MapExternalControl,
     private val jumpBridgesRepository: JumpBridgesRepository,
     private val autopilotController: AutopilotController,
+    private val mapStatusRepository: MapStatusRepository,
     private val settings: Settings,
 ) : ViewModel() {
 
@@ -70,6 +78,7 @@ class MapViewModel(
         val intel: Map<Int, List<IntelStateController.Dated<SystemEntity>>> = emptyMap(),
         val intelPopupSystems: List<Int> = emptyList(),
         val onlineCharacterLocations: Map<Int, List<OnlineCharacterLocation>> = emptyMap(),
+        val systemStatus: Map<Int, SolarSystemStatus> = emptyMap(),
         val contextMenuSystem: Int? = null,
         val initialTransform: Transform? = null,
         val autopilotConnections: List<Pair<Int, Int>> = emptyList(),
@@ -81,20 +90,23 @@ class MapViewModel(
         data class RegionMap(val regionId: Int) : MapType
     }
 
+    data class Layout(
+        val position: Position,
+        val polygon: List<Position>,
+    )
+
     data class UiState(
         val tabs: List<Tab>,
         val selectedTab: Int,
         val search: String?,
         val starColor: Map<SettingsMapType, MapStarColor>,
+        val cellColor: Map<SettingsMapType, MapStarColor?>,
         val cluster: Cluster,
         val mapType: MapType,
-        val layout: Map<Int, Position>,
+        val layout: Map<Int, Layout>,
         val jumpBridgeAdditionalSystems: Set<Int>,
         val mapState: MapState = MapState(),
-        val isScrollZoomInverted: Boolean,
-        val isUsingCompactMode: Boolean,
-        val isJumpBridgeNetworkShown: Boolean,
-        val jumpBridgeNetworkOpacity: Int,
+        val settings: IntelMap,
     )
 
     private val openRegions = mutableSetOf<Int>()
@@ -108,8 +120,9 @@ class MapViewModel(
             selectedTab = 0,
             search = null,
             starColor = settings.intelMap.mapTypeStarColor,
+            cellColor = settings.intelMap.mapTypeCellColor,
             cluster = Cluster(
-                systems = solarSystemsRepository.mapSolarSystems,
+                systems = solarSystemsRepository.getSystems(knownSpace = true),
                 constellations = solarSystemsRepository.mapConstellations,
                 regions = solarSystemsRepository.mapRegions,
                 connections = gateConnectionsRepository.gateConnections,
@@ -118,10 +131,7 @@ class MapViewModel(
             mapType = ClusterSystemsMap,
             layout = emptyMap(),
             jumpBridgeAdditionalSystems = emptySet(),
-            isScrollZoomInverted = settings.intelMap.isInvertZoom,
-            isUsingCompactMode = settings.intelMap.isUsingCompactMode,
-            isJumpBridgeNetworkShown = settings.intelMap.isJumpBridgeNetworkShown,
-            jumpBridgeNetworkOpacity = settings.intelMap.jumpBridgeNetworkOpacity,
+            settings = settings.intelMap,
         ),
     )
     val state = _state.asStateFlow()
@@ -134,14 +144,15 @@ class MapViewModel(
             getOnlineCharactersLocationUseCase().collect(::onOnlineCharacterLocationsUpdated)
         }
         viewModelScope.launch {
+            mapStatusRepository.status.collect { status -> updateMapState { copy(systemStatus = status) } }
+        }
+        viewModelScope.launch {
             settings.updateFlow.collect {
                 _state.update {
                     it.copy(
                         starColor = settings.intelMap.mapTypeStarColor,
-                        isScrollZoomInverted = settings.intelMap.isInvertZoom,
-                        isUsingCompactMode = settings.intelMap.isUsingCompactMode,
-                        isJumpBridgeNetworkShown = settings.intelMap.isJumpBridgeNetworkShown,
-                        jumpBridgeNetworkOpacity = settings.intelMap.jumpBridgeNetworkOpacity,
+                        cellColor = settings.intelMap.mapTypeCellColor,
+                        settings = settings.intelMap,
                         cluster = it.cluster.copy(jumpBridgeConnections = jumpBridgesRepository.getConnections()),
                     )
                 }
@@ -183,10 +194,12 @@ class MapViewModel(
 
     fun onMapHover(offset: Offset, mapScale: Float) {
         if (_state.value.mapType == ClusterRegionsMap) return
-        val (closestSystemId, closestSystemLayoutPosition) = _state.value.layout.minBy { (_, position) ->
+        val (closestSystemId, closestSystemLayout) = _state.value.layout.minBy { (_, layout) ->
+            val position = layout.position
             (offset.x - position.x).pow(2) + (offset.y - position.y).pow(2)
         }
-        val closestSystem = solarSystemsRepository.mapSolarSystems.first { it.id == closestSystemId }
+        val closestSystem = solarSystemsRepository.getSystems(knownSpace = true).first { it.id == closestSystemId }
+        val closestSystemLayoutPosition = closestSystemLayout.position
         val distanceInPixels = sqrt((offset.x - closestSystemLayoutPosition.x).pow(2) + (offset.y - closestSystemLayoutPosition.y).pow(2)) / mapScale
         val hoveredSystem = if (distanceInPixels < 10) closestSystem.id else null
         updateMapState { copy(hoveredSystem = hoveredSystem) }
@@ -280,6 +293,26 @@ class MapViewModel(
         updateMapState { copy(selectedSystem = visibleResultIds[index]) }
     }
 
+    fun onSystemColorChange(mapType: SettingsMapType, selected: MapStarColor) {
+        val new = settings.intelMap.mapTypeStarColor + (mapType to selected)
+        settings.intelMap = settings.intelMap.copy(mapTypeStarColor = new)
+    }
+
+    fun onSystemColorHover(mapType: SettingsMapType, selected: MapStarColor, isHovered: Boolean) {
+        val new = if (isHovered) _state.value.starColor + (mapType to selected) else settings.intelMap.mapTypeStarColor
+        _state.update { it.copy(starColor = new) }
+    }
+
+    fun onCellColorChange(mapType: SettingsMapType, selected: MapStarColor?) {
+        val new = settings.intelMap.mapTypeCellColor + (mapType to selected)
+        settings.intelMap = settings.intelMap.copy(mapTypeCellColor = new)
+    }
+
+    fun onCellColorHover(mapType: SettingsMapType, selected: MapStarColor?, isHovered: Boolean) {
+        val new = if (isHovered) _state.value.cellColor + (mapType to selected) else settings.intelMap.mapTypeCellColor
+        _state.update { it.copy(cellColor = new) }
+    }
+
     private fun openTab(id: Int, focusedId: Int?) {
         val tab = _state.value.tabs.firstOrNull { it.id == id } ?: return
         val mapType = tab.payload as? MapType ?: return
@@ -290,6 +323,8 @@ class MapViewModel(
         }
         val jumpBridgeAdditionalSystemsLayout = if (mapType is RegionMap) getJumpBridgeDestinationsLayout(layout) else emptyMap()
 
+        val combined = calculateVoronoi(layout + jumpBridgeAdditionalSystemsLayout)
+
         var selectedId = focusedId ?: getOnlineCharacterLocationId(mapType)
         if (selectedId !in layout.keys) selectedId = null
         val initialTransform = mapTransforms[mapType]
@@ -299,10 +334,28 @@ class MapViewModel(
             it.copy(
                 selectedTab = id,
                 mapType = mapType,
-                layout = layout + jumpBridgeAdditionalSystemsLayout,
+                layout = combined,
                 jumpBridgeAdditionalSystems = jumpBridgeAdditionalSystemsLayout.keys,
             )
         }
+    }
+
+    private fun calculateVoronoi(systems: Map<Int, Position>): Map<Int, Layout> {
+        val coordinates = systems.map { (system, position) ->
+            Coordinate(position.x.toDouble(), position.y.toDouble()) to system
+        }.toMap()
+        val builder = VoronoiDiagramBuilder()
+        builder.setSites(coordinates.keys)
+        val diagram = builder.getDiagram(GeometryFactory()) as GeometryCollection
+        return List(diagram.numGeometries) {
+            val polygon = diagram.getGeometryN(it) as Polygon
+            val points = polygon.exteriorRing.coordinates.map {
+                Position(it.x.toInt(), it.y.toInt())
+            }
+            val coordinate = polygon.userData as Coordinate
+            val system = coordinates[coordinate]!!
+            system to Layout(systems[system]!!, points)
+        }.toMap()
     }
 
     /**

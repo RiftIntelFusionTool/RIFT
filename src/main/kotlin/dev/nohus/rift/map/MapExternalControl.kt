@@ -20,13 +20,13 @@ class MapExternalControl(
         data class ShowSystemOnRegionMap(val solarSystemId: Int) : MapExternalControlEvent
     }
 
-    fun showSystem(solarSystemId: Int) {
-        windowManager.onWindowOpen(RiftWindow.Map)
+    fun showSystem(solarSystemId: Int, fromMap: Boolean) {
+        windowManager.onWindowOpen(RiftWindow.Map, ifClosed = fromMap)
         _event.tryEmit(DataEvent(MapExternalControlEvent.ShowSystem(solarSystemId)))
     }
 
-    fun showSystemOnRegionMap(solarSystemId: Int) {
-        windowManager.onWindowOpen(RiftWindow.Map)
+    fun showSystemOnRegionMap(solarSystemId: Int, fromMap: Boolean) {
+        windowManager.onWindowOpen(RiftWindow.Map, ifClosed = fromMap)
         _event.tryEmit(DataEvent(MapExternalControlEvent.ShowSystemOnRegionMap(solarSystemId)))
     }
 }

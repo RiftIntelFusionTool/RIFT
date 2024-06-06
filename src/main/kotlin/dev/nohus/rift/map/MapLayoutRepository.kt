@@ -52,7 +52,7 @@ class MapLayoutRepository(
     }
 
     fun getNewEdenLayout(): Map<Int, Position> {
-        return solarSystemsRepository.mapSolarSystems.associate { system ->
+        return solarSystemsRepository.getSystems(knownSpace = true).associate { system ->
             system.id to transformNewEdenCoordinate(system.x, system.z)
         }
     }

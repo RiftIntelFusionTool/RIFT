@@ -9,6 +9,7 @@ import dev.nohus.rift.characters.repositories.LocalCharactersRepository.LocalCha
 import dev.nohus.rift.location.CharacterLocationRepository
 import dev.nohus.rift.network.esi.CharactersIdAsset
 import dev.nohus.rift.repositories.GetSystemDistanceUseCase
+import dev.nohus.rift.repositories.PricesRepository
 import dev.nohus.rift.repositories.SolarSystemsRepository
 import dev.nohus.rift.repositories.TypesRepository
 import dev.nohus.rift.repositories.TypesRepository.Type
@@ -32,6 +33,7 @@ class AssetsViewModel(
     private val localCharactersRepository: LocalCharactersRepository,
     private val typesRepository: TypesRepository,
     private val fittingController: FittingController,
+    private val pricesRepository: PricesRepository,
 ) : ViewModel() {
 
     data class AssetLocation(
@@ -49,6 +51,7 @@ class AssetsViewModel(
         val name: String?,
         val typeName: String,
         val children: List<Asset>,
+        val price: Double? = null,
         val fitting: Fitting? = null,
     )
 
@@ -81,6 +84,7 @@ class AssetsViewModel(
                 assetsRepository.assets,
             ) { locations, activeCharacter, (assets, isLoading) ->
                 val activeCharacterLocation = locations[activeCharacter]?.solarSystemId
+                pricesRepository.refreshPrices()
                 val processedAssets = getAssetsByLocation(assets, activeCharacterLocation)
                 processedAssets to isLoading
             }.collect { (assets, isLoading) ->
@@ -276,6 +280,7 @@ class AssetsViewModel(
             name = asset.name,
             typeName = asset.typeName,
             children = getAssetTree(assets, asset.asset.itemId),
+            price = pricesRepository.getPrice(asset.asset.typeId),
         ).run {
             fittingController.fillFitting(this)
         }

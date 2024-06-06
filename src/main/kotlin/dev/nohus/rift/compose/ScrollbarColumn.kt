@@ -32,6 +32,7 @@ fun ScrollbarColumn(
     scrollbarModifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     isScrollbarConditional: Boolean = false,
+    hasScrollbarBackground: Boolean = false,
     isFillWidth: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -56,6 +57,7 @@ fun ScrollbarColumn(
         }
         if (!isScrollbarConditional || (scrollState.canScrollBackward || scrollState.canScrollForward)) {
             RiftVerticalScrollbar(
+                hasBackground = hasScrollbarBackground,
                 scrollState = scrollState,
                 modifier = scrollbarModifier.height(scrollbarHeight),
             )

@@ -365,7 +365,7 @@ class AlertsTriggerController(
             is IntelReportLocation.System -> {
                 val systemId = solarSystemsRepository.getSystemId(location.systemName)
                     ?: throw IllegalArgumentException("No system ${location.systemName}")
-                val distance = getSystemDistanceUseCase(systemId, reportSystemId, location.jumpsRange.max, withJumpBridges = false)
+                val distance = getSystemDistanceUseCase(systemId, reportSystemId, location.jumpsRange.max, withJumpBridges = false) ?: Int.MAX_VALUE
                 if (distance in location.jumpsRange) AlertLocationMatch.System(systemId, distance) else null
             }
             is IntelReportLocation.AnyOwnedCharacter -> {
@@ -390,7 +390,7 @@ class AlertsTriggerController(
     private fun isCharacterWithinDistance(characterId: Int, systemId: Int, range: JumpRange): Int? {
         val characterSystemId = characterLocationRepository.locations.value[characterId]?.solarSystemId
         return if (characterSystemId != null) {
-            val distance = getSystemDistanceUseCase(characterSystemId, systemId, range.max, withJumpBridges = false)
+            val distance = getSystemDistanceUseCase(characterSystemId, systemId, range.max, withJumpBridges = false) ?: Int.MAX_VALUE
             if (distance in range) distance else null
         } else {
             null

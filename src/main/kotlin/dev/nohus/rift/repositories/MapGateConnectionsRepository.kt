@@ -23,7 +23,7 @@ class MapGateConnectionsRepository(
     val systemNeighbors: Map<Int, List<Int>>
 
     init {
-        val systems = solarSystemsRepository.mapSolarSystems.associateBy { it.id }
+        val systems = solarSystemsRepository.getSystems(knownSpace = true).associateBy { it.id }
         val deduplicatedConnections = starGatesRepository.connections.map { pair ->
             listOf(pair.first, pair.second).sorted().let { it[0] to it[1] }
         }.distinct()

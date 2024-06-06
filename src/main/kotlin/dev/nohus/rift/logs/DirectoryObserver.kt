@@ -3,6 +3,7 @@ package dev.nohus.rift.logs
 import dev.nohus.rift.logs.DirectoryObserver.DirectoryObserverEvent.FileEvent
 import dev.nohus.rift.logs.DirectoryObserver.DirectoryObserverEvent.OverflowEvent
 import dev.nohus.rift.utils.OperatingSystem
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
@@ -22,6 +23,8 @@ import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.name
+
+private val logger = KotlinLogging.logger {}
 
 /**
  * Provides a callback informing about filesystem changes in a chosen directory
@@ -52,6 +55,7 @@ class DirectoryObserver(
 
         val watchService = directory.fileSystem.newWatchService()
         directory.register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE, OVERFLOW)
+        logger.debug { "Observing directory: $directory" }
 
         watchJob = launch {
             if (operatingSystem == OperatingSystem.Windows) {
@@ -87,6 +91,7 @@ class DirectoryObserver(
                     Duration.between(Instant.ofEpochMilli(it.lastModified()), Instant.now()) < Duration.ofHours(2)
                 }
                 ?: emptyList()
+            logger.debug { "Poking files: ${recentFiles.size}" }
             repeat(100) { // 100 * 200 == 20 seconds
                 recentFiles.forEach { it.length() }
                 delay(200)
@@ -109,6 +114,7 @@ class DirectoryObserver(
                     else -> throw IllegalStateException()
                 }
                 val event = FileEvent(directory.resolve(context.name), type)
+                logger.debug { "File update event: ${event.file.name} ${event.type}" }
                 onUpdate(event)
             }
             OVERFLOW -> {

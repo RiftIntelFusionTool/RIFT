@@ -81,10 +81,10 @@ import dev.nohus.rift.network.AsyncResource
 import dev.nohus.rift.repositories.SolarSystemsRepository
 import dev.nohus.rift.sso.SsoAuthority
 import dev.nohus.rift.sso.SsoDialog
+import dev.nohus.rift.utils.formatIsk
 import dev.nohus.rift.utils.viewModel
 import dev.nohus.rift.windowing.WindowManager.RiftWindowState
 import org.jetbrains.compose.resources.painterResource
-import java.text.NumberFormat
 
 @Composable
 fun CharactersWindow(
@@ -492,13 +492,6 @@ private fun NoSettingsFileIcon() {
         tooltipAnchor = TooltipAnchor.BottomEnd,
         modifier = Modifier.padding(start = Spacing.small),
     )
-}
-
-private fun formatIsk(number: Double): String {
-    val format = NumberFormat.getCompactNumberInstance()
-    format.minimumFractionDigits = 1
-    val formatted = format.format(number)
-    return "$formatted ISK"
 }
 
 @Composable

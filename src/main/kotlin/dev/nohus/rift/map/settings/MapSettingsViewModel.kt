@@ -6,8 +6,6 @@ import dev.nohus.rift.configurationpack.ConfigurationPackRepository
 import dev.nohus.rift.map.settings.JumpBridgesParser.JumpBridgeNetwork
 import dev.nohus.rift.repositories.JumpBridgesRepository
 import dev.nohus.rift.settings.persistence.IntelMap
-import dev.nohus.rift.settings.persistence.MapStarColor
-import dev.nohus.rift.settings.persistence.MapType
 import dev.nohus.rift.settings.persistence.Settings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -89,11 +87,6 @@ class MapSettingsViewModel(
                 }
             }
         }
-    }
-
-    fun onStarColorChange(mapType: MapType, selected: MapStarColor) {
-        val new = settings.intelMap.mapTypeStarColor + (mapType to selected)
-        settings.intelMap = settings.intelMap.copy(mapTypeStarColor = new)
     }
 
     fun onIntelExpireSecondsChange(seconds: Int) {

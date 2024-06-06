@@ -80,6 +80,26 @@ class EsiApi(
         }
     }
 
+    suspend fun getUniverseSystemJumps(): Result<List<UniverseSystemJumps>> {
+        return execute { service.getUniverseSystemJumps() }
+    }
+
+    suspend fun getUniverseSystemKills(): Result<List<UniverseSystemKills>> {
+        return execute { service.getUniverseSystemKills() }
+    }
+
+    suspend fun getIncursions(): Result<List<Incursion>> {
+        return execute { service.getIncursions() }
+    }
+
+    suspend fun getFactionWarfareSystems(): Result<List<FactionWarfareSystem>> {
+        return execute { service.getFactionWarfareSystems() }
+    }
+
+    suspend fun getSovereigntyMap(): Result<List<SovereigntySystem>> {
+        return execute { service.getSovereigntyMap() }
+    }
+
     suspend fun postUiAutopilotWaypoint(
         destinationId: Long,
         clearOtherWaypoints: Boolean,
@@ -105,5 +125,9 @@ class EsiApi(
         return executeEveAuthorized(characterId) { authentication ->
             service.getCharactersIdAssetsNames(characterId, assets, authentication)
         }
+    }
+
+    suspend fun getMarketsPrices(): Result<List<MarketsPrice>> {
+        return execute { service.getMarketsPrices() }
     }
 }
