@@ -7,6 +7,8 @@ import org.koin.logger.SLF4JLogger
 
 lateinit var koin: Koin
 
+val koinOrNull: Koin? get() = if (::koin.isInitialized) koin else null
+
 fun startKoin() {
     koin = startKoin {
         logger(SLF4JLogger())

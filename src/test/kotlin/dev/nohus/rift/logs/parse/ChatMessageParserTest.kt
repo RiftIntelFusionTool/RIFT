@@ -239,6 +239,17 @@ class ChatMessageParserTest : FreeSpec({
         )
     }
 
+    "negative ship count" {
+        every { mockShipTypesRepository.getShip("loki") } returns "Loki"
+
+        val actual = target.parse("-3 loki", "Delve")
+
+        actual shouldContain listOf(
+            "-3".token(),
+            "loki".token(Ship("Loki")),
+        )
+    }
+
     "player, plus count, system" {
         every { mockSolarSystemsRepository.getSystemName("ZXB-VC", "Delve") } returns "ZXB-VC"
         coEvery { mockCharactersRepository.getCharacterNamesStatus(any()) } returns listOf("stark").existing()

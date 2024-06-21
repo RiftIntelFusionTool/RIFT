@@ -28,8 +28,8 @@ class MatchChatLogFilenameUseCase {
             val characterId = match.groups["characterid"]?.value ?: return null // Old log files do not contain the character ID
             val dateTime = LocalDateTime.parse("$date$time", dateFormatter)
             try {
-                val lastModifier = file.getLastModifiedTime().toInstant()
-                return ChatLogFile(file, name, dateTime, characterId, lastModifier)
+                val lastModified = file.getLastModifiedTime().toInstant()
+                return ChatLogFile(file, name, dateTime, characterId, lastModified)
             } catch (e: IOException) {
                 logger.error(e) { "Chat log file not found" }
                 return null

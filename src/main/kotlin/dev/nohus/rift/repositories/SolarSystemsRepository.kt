@@ -25,8 +25,8 @@ class SolarSystemsRepository(
     private val mapSolarSystems: List<MapSolarSystem>
     val mapConstellations: List<MapConstellation>
     val mapRegions: List<MapRegion>
-    val mapSystemConstellation: Map<Int, Int> // System ID -> Constellation ID
-    val mapConstellationSystems: Map<Int, List<Int>> // Constellation ID -> System IDs
+    private val mapSystemConstellation: Map<Int, Int> // System ID -> Constellation ID
+    private val mapConstellationSystems: Map<Int, List<Int>> // Constellation ID -> System IDs
     private val regionNamesById: Map<Int, String> // Region ID -> Region name
     private val regionNamesBySystemName: Map<String, String> // System name -> Region name
     private val regionIdBySystemId: Map<Int, Int> // System ID -> Region ID
@@ -210,6 +210,8 @@ class SolarSystemsRepository(
         return regionIdBySystemId[systemId]
     }
 
+    fun getSystems() = mapSolarSystems
+
     /**
      * Non-NPC Null-Sec systems
      */
@@ -220,7 +222,9 @@ class SolarSystemsRepository(
         val npcNullConstellationIds = mapConstellations.filter { it.name in npcNullConstellations }.map { it.id }
         return mapSolarSystems
             .filter { system ->
-                system.regionId !in npcNullRegionIds && system.constellationId !in npcNullConstellationIds
+                system.regionId !in npcNullRegionIds &&
+                    system.regionId < 11000000 && // K-space regions
+                    system.constellationId !in npcNullConstellationIds
             }
             .filter { system ->
                 system.security.roundSecurity() <= 0.0

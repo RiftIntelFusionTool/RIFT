@@ -7,6 +7,7 @@ import androidx.compose.ui.text.withAnnotation
 import dev.nohus.rift.alerts.AlertsTriggerController.AlertLocationMatch
 import dev.nohus.rift.gamelogs.GameLogAction
 import dev.nohus.rift.intel.state.SystemEntity
+import dev.nohus.rift.logging.analytics.Analytics
 import dev.nohus.rift.logs.parse.ChannelChatMessage
 import dev.nohus.rift.notifications.NotificationsController
 import dev.nohus.rift.notifications.NotificationsController.Notification
@@ -36,6 +37,7 @@ class AlertsActionController(
     private val typesRepository: TypesRepository,
     private val charactersRepository: CharactersRepository,
     private val windowManager: WindowManager,
+    private val analytics: Analytics,
 ) {
 
     private val scope = CoroutineScope(Job())
@@ -122,6 +124,7 @@ class AlertsActionController(
     }
 
     private fun triggerAlert(alert: Alert, notification: Notification, title: String, message: String) {
+        analytics.alertTriggered()
         alert.actions.forEach { action ->
             when (action) {
                 AlertAction.RiftNotification -> sendRiftNotification(notification)

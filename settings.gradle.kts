@@ -6,14 +6,15 @@ pluginManagement {
     }
 
     plugins {
-        kotlin("jvm") version "1.9.23"
-        kotlin("plugin.serialization") version "1.9.23"
-        id("com.google.devtools.ksp") version "1.9.23-1.0.20"
-        id("org.jetbrains.compose") version "1.6.10"
-        id("com.diffplug.spotless") version "6.22.0"
+        kotlin("jvm") version "2.0.0"
+        kotlin("plugin.serialization") version "2.0.0"
+        id("com.google.devtools.ksp") version "2.0.0-1.0.22"
+        id("org.jetbrains.kotlin.plugin.compose") version "2.0.0"
+        id("org.jetbrains.compose") version "1.6.11"
+        id("com.diffplug.spotless") version "6.25.0"
         id("com.github.gmazzo.buildconfig") version "5.3.5"
-        id("io.sentry.jvm.gradle") version "4.4.1"
-        id("dev.hydraulic.conveyor") version "1.6"
+        id("io.sentry.jvm.gradle") version "4.8.0"
+        id("dev.hydraulic.conveyor") version "1.10"
     }
 }
 

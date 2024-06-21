@@ -14,7 +14,9 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
 import org.koin.core.annotation.Single
 
@@ -69,9 +71,11 @@ class JumpBridgesRepository(
             logger.info { "Searching for structures" }
             val systems = solarSystemsRepository.getSovSystems().shuffled().map { it.name }
 
+            val resultsMutex = Mutex()
             val foundStructureIds = mutableSetOf<Long>()
-            val foundConnections = mutableListOf<Pair<String, String>>()
-            val searchedSystems = mutableListOf<String>()
+            data class JumpBridge(val id: Long, val from: String, val to: String)
+            val foundJumpBridges = mutableListOf<JumpBridge>()
+            val searchedSystems = mutableSetOf<String>()
             val semaphore = Semaphore(10)
             systems.map { system ->
                 async {
@@ -82,10 +86,14 @@ class JumpBridgesRepository(
                                 searchResult = esiApi.getCharactersIdSearch(characterId, "structure", false, search = system)
                             }
                         }
+                        val newFoundConnectionsMutex = Mutex()
+                        val newFoundJumpBridges = mutableListOf<JumpBridge>()
                         when (val result = searchResult) {
                             is Result.Success -> {
                                 val structureIds = result.data.structure.filter { it !in foundStructureIds }
-                                foundStructureIds += structureIds
+                                resultsMutex.withLock {
+                                    foundStructureIds += structureIds
+                                }
                                 structureIds.map { structureId ->
                                     async {
                                         var structureResult: Result<UniverseStructuresId>? = null
@@ -99,13 +107,15 @@ class JumpBridgesRepository(
                                                 val ansiblexName = result.data.name
                                                     .takeIf { result.data.typeId == ANSIBLEX_TYPE_ID }
                                                 if (ansiblexName != null) {
-                                                    val connection = systems.filter { it in ansiblexName }
+                                                    val jumpBridge = systems.filter { it in ansiblexName }
                                                         .take(2)
                                                         .sortedBy { ansiblexName.indexOf(it) }
                                                         .takeIf { it.size == 2 }
-                                                        ?.let { it[0] to it[1] }
-                                                    if (connection != null) {
-                                                        foundConnections += connection
+                                                        ?.let { JumpBridge(structureId, it[0], it[1]) }
+                                                    if (jumpBridge != null) {
+                                                        newFoundConnectionsMutex.withLock {
+                                                            newFoundJumpBridges += jumpBridge
+                                                        }
                                                     }
                                                 }
                                             }
@@ -122,15 +132,35 @@ class JumpBridgesRepository(
                                 cancel()
                             }
                         }
-                        searchedSystems += system
-                        send(SearchState.Progress(progress = (searchedSystems.size / systems.size.toFloat()), connectionsCount = foundConnections.size))
+                        resultsMutex.withLock {
+                            foundJumpBridges += newFoundJumpBridges
+                            searchedSystems += system
+                            send(SearchState.Progress(progress = (searchedSystems.size / systems.size.toFloat()), connectionsCount = foundJumpBridges.size))
+                        }
                     }
                 }
             }.awaitAll()
 
-            val foundSystemConnections = foundConnections.mapNotNull { (from, to) ->
-                val fromSystem = solarSystemsRepository.getSystem(from) ?: return@mapNotNull null
-                val toSystem = solarSystemsRepository.getSystem(to) ?: return@mapNotNull null
+            // Find multiple gates in the same system
+            foundJumpBridges.groupBy { it.from }.filter { it.value.size > 1 }.forEach { (from, gates) ->
+                logger.info { "Duplicate gates in system $from: $gates" }
+                val newest = gates.maxBy { it.id }
+                gates.filter { it != newest }.forEach { old ->
+                    val reverse = foundJumpBridges.firstOrNull { it.from == old.to && it.to == old.from }
+                    if (reverse != null) {
+                        logger.info { "Removing $old and reverse $reverse" }
+                        foundJumpBridges -= old
+                        foundJumpBridges -= reverse
+                    } else {
+                        logger.info { "Removing $old" }
+                        foundJumpBridges -= old
+                    }
+                }
+            }
+
+            val foundSystemConnections = foundJumpBridges.mapNotNull { jumpBridge ->
+                val fromSystem = solarSystemsRepository.getSystem(jumpBridge.from) ?: return@mapNotNull null
+                val toSystem = solarSystemsRepository.getSystem(jumpBridge.to) ?: return@mapNotNull null
                 JumpBridgeConnection(fromSystem, toSystem)
             }
             send(SearchState.Result(foundSystemConnections))

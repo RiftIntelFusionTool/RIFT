@@ -2,6 +2,7 @@ package dev.nohus.rift.utils.sound
 
 import dev.nohus.rift.generated.resources.Res
 import dev.nohus.rift.settings.persistence.Settings
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -11,11 +12,14 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.Single
 import java.io.InputStream
+import java.nio.file.InvalidPathException
 import java.nio.file.Path
 import java.util.concurrent.Executors
 import kotlin.io.path.exists
 import kotlin.io.path.inputStream
 import kotlin.io.path.isReadable
+
+private val logger = KotlinLogging.logger {}
 
 @Single
 class SoundPlayer(
@@ -58,9 +62,13 @@ class SoundPlayer(
     }
 
     fun playFile(path: String) = scope.launch {
-        val file = Path.of(path)
-        if (!file.exists() || !file.isReadable()) return@launch
-        play(file.inputStream())
+        try {
+            val file = Path.of(path)
+            if (!file.exists() || !file.isReadable()) return@launch
+            play(file.inputStream())
+        } catch (e: InvalidPathException) {
+            logger.error { "Could not play file with in invalid path: \"$path\"" }
+        }
     }
 
     private suspend fun play(inputStream: InputStream) {

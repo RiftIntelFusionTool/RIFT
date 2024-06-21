@@ -12,11 +12,6 @@ class AlertsRepository(
     private val settings: Settings,
 ) {
 
-    fun getAlerts(): Flow<List<Alert>> = flow {
-        emit(settings.alerts)
-        emitAll(settings.updateFlow.map { it.alerts })
-    }
-
     fun add(alert: Alert) {
         val alerts = settings.alerts.filter { it.id != alert.id }
         settings.alerts = alerts + alert

@@ -214,6 +214,26 @@ data class SovereigntySystem(
 
 @Serializable
 data class CharactersIdSearch(
+    @SerialName("agent")
+    val agent: List<Long> = emptyList(),
+    @SerialName("alliance")
+    val alliance: List<Long> = emptyList(),
+    @SerialName("character")
+    val character: List<Long> = emptyList(),
+    @SerialName("constellation")
+    val constellation: List<Long> = emptyList(),
+    @SerialName("corporation")
+    val corporation: List<Long> = emptyList(),
+    @SerialName("faction")
+    val faction: List<Long> = emptyList(),
+    @SerialName("inventory_type")
+    val inventoryType: List<Long> = emptyList(),
+    @SerialName("region")
+    val region: List<Long> = emptyList(),
+    @SerialName("solar_system")
+    val solarSystem: List<Long> = emptyList(),
+    @SerialName("station")
+    val station: List<Long> = emptyList(),
     @SerialName("structure")
     val structure: List<Long> = emptyList(),
 )

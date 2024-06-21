@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.onClick
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -27,6 +29,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
@@ -47,6 +51,7 @@ import dev.nohus.rift.assets.AssetsViewModel.SortType
 import dev.nohus.rift.assets.AssetsViewModel.UiState
 import dev.nohus.rift.assets.FittingController.Fitting
 import dev.nohus.rift.characters.repositories.LocalCharactersRepository.LocalCharacter
+import dev.nohus.rift.compose.AsyncPlayerPortrait
 import dev.nohus.rift.compose.AsyncTypeIcon
 import dev.nohus.rift.compose.ButtonCornerCut
 import dev.nohus.rift.compose.ButtonType
@@ -57,8 +62,10 @@ import dev.nohus.rift.compose.RiftContextMenuArea
 import dev.nohus.rift.compose.RiftDropdown
 import dev.nohus.rift.compose.RiftDropdownWithLabel
 import dev.nohus.rift.compose.RiftTextField
+import dev.nohus.rift.compose.RiftTooltipArea
 import dev.nohus.rift.compose.RiftWindow
 import dev.nohus.rift.compose.ScrollbarLazyColumn
+import dev.nohus.rift.compose.TooltipAnchor
 import dev.nohus.rift.compose.hoverBackground
 import dev.nohus.rift.compose.theme.Cursors
 import dev.nohus.rift.compose.theme.RiftTheme
@@ -136,6 +143,7 @@ private fun AssetsWindowContent(
                         SortType.Distance -> "Distance"
                         SortType.Name -> "Name"
                         SortType.Count -> "Asset count"
+                        SortType.Price -> "Total price"
                     }
                 },
             )
@@ -169,6 +177,11 @@ private fun AssetsWindowContent(
         var expandedLocations by remember { mutableStateOf<Set<AssetLocation>>(emptySet()) }
         var expandedItems by remember { mutableStateOf<Set<Long>>(emptySet()) }
         ScrollbarLazyColumn {
+            val characterNames: Map<Int, String>? = if (state.filterCharacter == null) {
+                state.characters.mapNotNull { it.characterId to (it.info.success?.name ?: return@mapNotNull null) }.toMap()
+            } else {
+                null
+            }
             state.assets.forEach { (location, assets) ->
                 val isLocationExpanded = location in expandedLocations
                 item(key = location.locationId) {
@@ -177,6 +190,7 @@ private fun AssetsWindowContent(
                         assets = assets,
                         isExpanded = isLocationExpanded,
                         expandedItems = expandedItems,
+                        characterNames = characterNames,
                         onClick = {
                             if (isLocationExpanded) expandedLocations -= location else expandedLocations += location
                         },
@@ -251,6 +265,7 @@ private fun LocationHeader(
     assets: List<Asset>,
     isExpanded: Boolean,
     expandedItems: Set<Long>,
+    characterNames: Map<Int, String>?,
     onClick: () -> Unit,
     onItemClick: (itemId: Long) -> Unit,
     onFitAction: (Fitting, FitAction) -> Unit,
@@ -285,6 +300,9 @@ private fun LocationHeader(
                     append(location.name)
                     append(" - ")
                     append("${assets.size} Item${if (assets.size != 1) "s" else ""}")
+                    val totalPrice = assets.sumOf { getTotalPrice(it) }
+                    append(" - ")
+                    append(formatIsk(totalPrice))
                     location.distance?.let {
                         append(" - ")
                         append("Route: $it Jump${if (it != 1) "s" else ""}")
@@ -295,6 +313,8 @@ private fun LocationHeader(
                     style = RiftTheme.typography.bodyPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Visible,
+                    softWrap = false,
+                    modifier = Modifier.clipToBounds(),
                 )
             }
         }
@@ -305,6 +325,7 @@ private fun LocationHeader(
                         AssetRow(
                             asset = asset,
                             expandedItems = expandedItems,
+                            characterNames = characterNames,
                             onClick = onItemClick,
                             onFitAction = onFitAction,
                         )
@@ -321,6 +342,7 @@ private fun AssetRow(
     asset: Asset,
     expandedItems: Set<Long>,
     depth: Int = 1,
+    characterNames: Map<Int, String>?,
     onClick: (Long) -> Unit,
     onFitAction: (Fitting, FitAction) -> Unit,
 ) {
@@ -367,10 +389,31 @@ private fun AssetRow(
                             }
                         }
                     }
-                    Text(
-                        text = text,
-                        style = RiftTheme.typography.bodyPrimary,
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (depth == 1 && characterNames != null) {
+                            RiftTooltipArea(
+                                tooltip = "${characterNames[asset.characterId] ?: asset.characterId}",
+                                anchor = TooltipAnchor.TopStart,
+                                contentAnchor = Alignment.BottomCenter,
+                                modifier = Modifier.padding(end = Spacing.small),
+                            ) {
+                                AsyncPlayerPortrait(
+                                    characterId = asset.characterId,
+                                    size = 32,
+                                    modifier = Modifier
+                                        .size(16.dp)
+                                        .clip(CircleShape)
+                                        .border(1.dp, RiftTheme.colors.borderGrey, CircleShape),
+                                )
+                            }
+                        }
+                        Text(
+                            text = text,
+                            style = RiftTheme.typography.bodyPrimary,
+                        )
+                    }
                     val secondaryText = buildList {
                         val flag = LocationFlags.getName(asset.asset.locationFlag)
                         if (flag != null) {
@@ -386,8 +429,7 @@ private fun AssetRow(
                             val formatted = NumberFormat.getNumberInstance().apply { maximumFractionDigits = 1 }.format(volume)
                             add("$formatted m3")
 
-                            val totalPrice = asset.children
-                                .mapNotNull { asset -> asset.price?.let { it * asset.asset.quantity } }.sum()
+                            val totalPrice = asset.children.sumOf { getTotalPrice(it) }
                             add(formatIsk(totalPrice))
                         }
                     }.joinToString(" - ")
@@ -435,6 +477,7 @@ private fun AssetRow(
                         asset = child,
                         expandedItems = expandedItems,
                         depth = depth + 1,
+                        characterNames = characterNames,
                         onClick = onClick,
                         onFitAction = onFitAction,
                     )
@@ -442,6 +485,12 @@ private fun AssetRow(
             }
         }
     }
+}
+
+private fun getTotalPrice(asset: Asset): Double {
+    val price = asset.price?.let { it * asset.asset.quantity } ?: 0.0
+    val childrenPrice = asset.children.sumOf { getTotalPrice(it) }
+    return price + childrenPrice
 }
 
 @Composable

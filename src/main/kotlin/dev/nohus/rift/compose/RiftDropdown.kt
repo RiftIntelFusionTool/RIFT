@@ -35,17 +35,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
@@ -60,9 +62,11 @@ import dev.nohus.rift.generated.resources.window_buttonglow
 import org.jetbrains.compose.resources.painterResource
 import java.time.Duration
 import java.time.Instant
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun <T> RiftDropdown(
     items: List<T>,
@@ -132,6 +136,18 @@ fun <T> RiftDropdown(
                 .onClick {
                     if (Duration.between(dismissedTimestamp, Instant.now()) > Duration.ofMillis(100)) {
                         isExpanded = true
+                    }
+                }
+                .onPointerEvent(PointerEventType.Scroll) { event ->
+                    event.changes.forEach { change ->
+                        val scrollDelta = change.scrollDelta.y
+                        var index = items.indexOf(selectedItem)
+                        index = if (scrollDelta > 0) {
+                            min(index + 1, items.lastIndex)
+                        } else {
+                            max(index - 1, 0)
+                        }
+                        onItemSelected(items[index])
                     }
                 }
                 .onSizeChanged { size = it },

@@ -21,32 +21,21 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.PointerMatcher
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.onDrag
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -74,22 +63,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
-import dev.chrisbanes.haze.hazeChild
 import dev.nohus.rift.compose.GetSystemContextMenuItems
 import dev.nohus.rift.compose.RiftContextMenuPopup
-import dev.nohus.rift.compose.RiftPill
 import dev.nohus.rift.compose.RiftTabBar
 import dev.nohus.rift.compose.RiftTextField
-import dev.nohus.rift.compose.RiftTooltipArea
 import dev.nohus.rift.compose.RiftWindow
-import dev.nohus.rift.compose.ScrollbarColumn
 import dev.nohus.rift.compose.TitleBarStyle
-import dev.nohus.rift.compose.TooltipAnchor
 import dev.nohus.rift.compose.theme.RiftTheme
 import dev.nohus.rift.compose.theme.Spacing
 import dev.nohus.rift.di.koin
 import dev.nohus.rift.generated.resources.Res
-import dev.nohus.rift.generated.resources.expand_more_16px
 import dev.nohus.rift.generated.resources.window_map
 import dev.nohus.rift.map.MapViewModel.Layout
 import dev.nohus.rift.map.MapViewModel.MapType
@@ -98,31 +81,27 @@ import dev.nohus.rift.map.MapViewModel.MapType.ClusterSystemsMap
 import dev.nohus.rift.map.MapViewModel.MapType.RegionMap
 import dev.nohus.rift.map.MapViewModel.Transform
 import dev.nohus.rift.map.MapViewModel.UiState
-import dev.nohus.rift.map.PanelState.CellColor
-import dev.nohus.rift.map.PanelState.Collapsed
-import dev.nohus.rift.map.PanelState.Expanded
-import dev.nohus.rift.map.PanelState.StarColor
 import dev.nohus.rift.map.painter.MapPainter
 import dev.nohus.rift.map.painter.RegionsMapPainter
 import dev.nohus.rift.map.painter.SystemsMapPainter
 import dev.nohus.rift.map.systemcolor.SystemColorStrategy
-import dev.nohus.rift.map.systemcolor.strategies.ActualSystemColorStrategy
 import dev.nohus.rift.map.systemcolor.strategies.AssetsSystemColorStrategy
 import dev.nohus.rift.map.systemcolor.strategies.FactionWarfareSystemColorStrategy
 import dev.nohus.rift.map.systemcolor.strategies.HostileEntitiesSystemColorStrategy
 import dev.nohus.rift.map.systemcolor.strategies.IncursionsSystemColorStrategy
+import dev.nohus.rift.map.systemcolor.strategies.JumpRangeSystemColorStrategy
 import dev.nohus.rift.map.systemcolor.strategies.JumpsSystemColorStrategy
 import dev.nohus.rift.map.systemcolor.strategies.KillsSystemColorStrategy
+import dev.nohus.rift.map.systemcolor.strategies.MetaliminalStormsSystemColorStrategy
 import dev.nohus.rift.map.systemcolor.strategies.NpcKillsSystemColorStrategy
 import dev.nohus.rift.map.systemcolor.strategies.SecuritySystemColorStrategy
 import dev.nohus.rift.map.systemcolor.strategies.SovereigntySystemColorStrategy
+import dev.nohus.rift.map.systemcolor.strategies.StarColorSystemColorStrategy
 import dev.nohus.rift.map.systemcolor.strategies.StationsSystemColorStrategy
 import dev.nohus.rift.repositories.SolarSystemsRepository
-import dev.nohus.rift.settings.persistence.IntelMap
-import dev.nohus.rift.settings.persistence.MapStarColor
+import dev.nohus.rift.settings.persistence.MapSystemInfoType
 import dev.nohus.rift.utils.viewModel
 import dev.nohus.rift.windowing.WindowManager.RiftWindowState
-import org.jetbrains.compose.resources.painterResource
 import org.koin.core.parameter.parametersOf
 import kotlin.math.pow
 import kotlin.math.roundToInt
@@ -168,6 +147,10 @@ fun MapWindow(
             onSystemColorHover = viewModel::onSystemColorHover,
             onCellColorChange = viewModel::onCellColorChange,
             onCellColorHover = viewModel::onCellColorHover,
+            onIndicatorChange = viewModel::onIndicatorChange,
+            onInfoBoxChange = viewModel::onInfoBoxChange,
+            onJumpRangeTargetUpdate = viewModel::onJumpRangeTargetUpdate,
+            onJumpRangeDistanceUpdate = viewModel::onJumpRangeDistanceUpdate,
         )
     }
 }
@@ -186,10 +169,14 @@ private fun MapWindowContent(
     onMapClick: (button: Int) -> Unit,
     onContextMenuDismiss: () -> Unit,
     onMapTransformChanged: (MapType, Transform) -> Unit,
-    onSystemColorChange: (SettingsMapType, MapStarColor) -> Unit,
-    onSystemColorHover: (SettingsMapType, MapStarColor, Boolean) -> Unit,
-    onCellColorChange: (SettingsMapType, MapStarColor?) -> Unit,
-    onCellColorHover: (SettingsMapType, MapStarColor?, Boolean) -> Unit,
+    onSystemColorChange: (SettingsMapType, MapSystemInfoType) -> Unit,
+    onSystemColorHover: (SettingsMapType, MapSystemInfoType, Boolean) -> Unit,
+    onCellColorChange: (SettingsMapType, MapSystemInfoType?) -> Unit,
+    onCellColorHover: (SettingsMapType, MapSystemInfoType?, Boolean) -> Unit,
+    onIndicatorChange: (SettingsMapType, MapSystemInfoType) -> Unit,
+    onInfoBoxChange: (SettingsMapType, MapSystemInfoType) -> Unit,
+    onJumpRangeTargetUpdate: (String) -> Unit,
+    onJumpRangeDistanceUpdate: (Double) -> Unit,
 ) {
     Box {
         val hazeState = remember { HazeState() }
@@ -213,225 +200,20 @@ private fun MapWindowContent(
                 onMapTransformChanged = { onMapTransformChanged(state.mapType, it) },
             )
         }
-        SettingsPanel(
+        MapSettingsPanel(
             hazeState = hazeState,
             mapType = state.mapType,
-            settings = state.settings,
+            systemInfoTypes = state.systemInfoTypes,
+            mapJumpRangeState = state.mapJumpRangeState,
             onSystemColorChange = onSystemColorChange,
             onSystemColorHover = onSystemColorHover,
             onCellColorChange = onCellColorChange,
             onCellColorHover = onCellColorHover,
+            onIndicatorChange = onIndicatorChange,
+            onInfoBoxChange = onInfoBoxChange,
+            onJumpRangeTargetUpdate = onJumpRangeTargetUpdate,
+            onJumpRangeDistanceUpdate = onJumpRangeDistanceUpdate,
         )
-    }
-}
-
-enum class PanelState {
-    Collapsed, Expanded, StarColor, CellColor
-}
-
-@OptIn(ExperimentalComposeUiApi::class)
-@Composable
-private fun SettingsPanel(
-    hazeState: HazeState,
-    mapType: MapType,
-    settings: IntelMap,
-    onSystemColorChange: (SettingsMapType, MapStarColor) -> Unit,
-    onSystemColorHover: (SettingsMapType, MapStarColor, Boolean) -> Unit,
-    onCellColorChange: (SettingsMapType, MapStarColor?) -> Unit,
-    onCellColorHover: (SettingsMapType, MapStarColor?, Boolean) -> Unit,
-) {
-    val settingsMapType = when (mapType) {
-        ClusterRegionsMap -> null
-        ClusterSystemsMap -> SettingsMapType.NewEden
-        is RegionMap -> SettingsMapType.Region
-    } ?: return
-    Column(
-        modifier = Modifier.padding(1.dp),
-    ) {
-        var panelState: PanelState by remember { mutableStateOf(Collapsed) }
-        ScrollbarColumn(
-            verticalArrangement = Arrangement.spacedBy(Spacing.small),
-            isScrollbarConditional = true,
-            hasScrollbarBackground = false,
-            modifier = Modifier
-                .heightIn(max = 200.dp)
-                .onPointerEvent(PointerEventType.Enter) {
-                    if (panelState == Collapsed) panelState = Expanded
-                }
-                .onPointerEvent(PointerEventType.Exit) {
-                    if (panelState == Expanded) panelState = Collapsed
-                }
-                .hazeChild(hazeState),
-        ) {
-            AnimatedContent(targetState = panelState) { state ->
-                val systemPills = movableContentOf {
-                    val isExpanded = state == StarColor
-                    SystemColorPills(
-                        isExpanded = isExpanded,
-                        isCellColor = false,
-                        selected = settings.mapTypeStarColor[settingsMapType],
-                        onPillClick = {
-                            if (isExpanded) {
-                                onSystemColorChange(settingsMapType, it!!)
-                                panelState = Expanded
-                            } else {
-                                panelState = StarColor
-                            }
-                        },
-                        onPillHover = { color, isHovered ->
-                            if (isExpanded) onSystemColorHover(settingsMapType, color!!, isHovered)
-                        },
-                    )
-                }
-                val cellPills = movableContentOf {
-                    val isExpanded = state == CellColor
-                    SystemColorPills(
-                        isExpanded = isExpanded,
-                        isCellColor = true,
-                        selected = settings.mapTypeCellColor[settingsMapType],
-                        onPillClick = {
-                            if (isExpanded) {
-                                onCellColorChange(settingsMapType, it)
-                                panelState = Expanded
-                            } else {
-                                panelState = CellColor
-                            }
-                        },
-                        onPillHover = { color, isHovered ->
-                            if (isExpanded) onCellColorHover(settingsMapType, color, isHovered)
-                        },
-                    )
-                }
-                when (state) {
-                    Collapsed -> {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Image(
-                                painter = painterResource(Res.drawable.expand_more_16px),
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .padding(horizontal = Spacing.small)
-                                    .size(16.dp),
-                            )
-                        }
-                    }
-                    Expanded -> {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(Spacing.medium),
-                            modifier = Modifier
-                                .padding(Spacing.medium)
-                                .fillMaxWidth(),
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
-
-                            ) {
-                                Text(
-                                    text = "System:",
-                                    style = RiftTheme.typography.titlePrimary,
-                                )
-                                systemPills()
-                            }
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
-                            ) {
-                                Text(
-                                    text = "Background:",
-                                    style = RiftTheme.typography.titlePrimary,
-                                )
-                                cellPills()
-                            }
-                        }
-                    }
-                    StarColor -> {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(Spacing.medium),
-                            modifier = Modifier.padding(Spacing.medium),
-                        ) {
-                            Text(
-                                text = "System color",
-                                style = RiftTheme.typography.titlePrimary,
-                            )
-                            systemPills()
-                        }
-                    }
-                    CellColor -> {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(Spacing.medium),
-                            modifier = Modifier.padding(Spacing.medium),
-                        ) {
-                            Text(
-                                text = "System background color",
-                                style = RiftTheme.typography.titlePrimary,
-                            )
-                            cellPills()
-                        }
-                    }
-                }
-            }
-        }
-        Box(
-            modifier = Modifier.fillMaxWidth().height(1.dp).background(RiftTheme.colors.borderGrey),
-        )
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun SystemColorPills(
-    isExpanded: Boolean,
-    isCellColor: Boolean,
-    selected: MapStarColor?,
-    onPillClick: (MapStarColor?) -> Unit,
-    onPillHover: (MapStarColor?, Boolean) -> Unit,
-) {
-    FlowRow(
-        verticalArrangement = Arrangement.spacedBy(Spacing.medium),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
-        modifier = Modifier,
-    ) {
-        val pills = if (isCellColor) MapStarColor.entries + null else MapStarColor.entries
-        pills.filter { isExpanded || selected == it }
-            .forEach { color ->
-                val (text, tooltip) = getMapStarColorName(color)
-                RiftTooltipArea(
-                    tooltip = tooltip,
-                    anchor = TooltipAnchor.TopCenter,
-                    contentAnchor = Alignment.BottomCenter,
-                ) {
-                    RiftPill(
-                        text = text,
-                        isSelected = isExpanded && selected == color,
-                        onClick = {
-                            onPillClick(color)
-                        },
-                        onHoverChange = {
-                            onPillHover(color, it)
-                        },
-                    )
-                }
-            }
-    }
-}
-
-private fun getMapStarColorName(color: MapStarColor?): Pair<String, String> {
-    return when (color) {
-        MapStarColor.Actual -> "Actual color" to "Colored with the\nactual color of the star"
-        MapStarColor.Security -> "Security status" to "Colored according to the\nsecurity status"
-        MapStarColor.IntelHostiles -> "Hostiles count" to "Colored according to the\nnumber of reported hostiles"
-        MapStarColor.Jumps -> "Jumps" to "Colored according to the\nnumber of jumps in the last hour"
-        MapStarColor.Kills -> "Kills" to "Colored according to the\nnumber of ship and pod kills in the last hour"
-        MapStarColor.NpcKills -> "NPC Kills" to "Colored according to the\nnumber of NPCs killed in the last hour"
-        MapStarColor.Assets -> "Assets" to "Colored according to the\nnumber of owned assets located here"
-        MapStarColor.Incursions -> "Incursions" to "Colored according to the\nincursion status"
-        MapStarColor.Stations -> "Stations" to "Colored according to the\nnumber of stations"
-        MapStarColor.FactionWarfare -> "Faction Warfare" to "Colored according to the\nfaction warfare occupier"
-        MapStarColor.Sovereignty -> "Sovereignty" to "Colored according to the\nsovereignty holder"
-        null -> "None" to "No background color"
     }
 }
 
@@ -539,7 +321,7 @@ private fun Map(
     var canvasSize by remember { mutableStateOf(Size.Zero) }
 
     val hostileEntitiesSystemColorStrategy = remember(state.mapState.intel) {
-        HostileEntitiesSystemColorStrategy { system -> state.mapState.intel[system] ?: emptyList() }
+        HostileEntitiesSystemColorStrategy { system -> state.mapState.intel[system].orEmpty() }
     }
     val systemStatusColorStrategies = remember(state.mapState.systemStatus) {
         SystemStatusColorStrategies(
@@ -551,6 +333,8 @@ private fun Map(
             stations = StationsSystemColorStrategy(state.mapState.systemStatus),
             factionWarfare = FactionWarfareSystemColorStrategy(state.mapState.systemStatus),
             sovereignty = koin.get { parametersOf(state.mapState.systemStatus) },
+            storms = MetaliminalStormsSystemColorStrategy(state.mapState.systemStatus),
+            jumpRange = JumpRangeSystemColorStrategy(state.mapState.systemStatus),
         )
     }
 
@@ -590,32 +374,29 @@ private fun Map(
         animationSpec = infiniteRepeatable(tween(10_000, easing = LinearEasing)),
     )
 
-    val colors = state.starColor to state.cellColor
-    Crossfade(
-        targetState = colors,
-    ) { (starColor, cellColor) ->
+    Crossfade(targetState = state.systemInfoTypes) { systemInfoTypes ->
         val solarSystemColorStrategy = remember(
             state.mapType,
-            starColor,
+            systemInfoTypes.starApplied,
             hostileEntitiesSystemColorStrategy,
             systemStatusColorStrategies,
         ) {
             getSolarSystemColorStrategy(
                 state.mapType,
-                starColor,
+                systemInfoTypes.starApplied,
                 hostileEntitiesSystemColorStrategy,
                 systemStatusColorStrategies,
             )!!
         }
         val cellColorStrategy = remember(
             state.mapType,
-            cellColor,
+            systemInfoTypes.cellApplied,
             hostileEntitiesSystemColorStrategy,
             systemStatusColorStrategies,
         ) {
             getSolarSystemColorStrategy(
                 state.mapType,
-                cellColor,
+                systemInfoTypes.cellApplied,
                 hostileEntitiesSystemColorStrategy,
                 systemStatusColorStrategies,
             )
@@ -728,31 +509,35 @@ data class SystemStatusColorStrategies(
     val stations: StationsSystemColorStrategy,
     val factionWarfare: FactionWarfareSystemColorStrategy,
     val sovereignty: SovereigntySystemColorStrategy,
+    val storms: MetaliminalStormsSystemColorStrategy,
+    val jumpRange: JumpRangeSystemColorStrategy,
 )
 
 fun getSolarSystemColorStrategy(
     mapType: MapType,
-    color: Map<SettingsMapType, MapStarColor?>,
+    color: Map<SettingsMapType, MapSystemInfoType?>,
     hostileEntitiesSystemColorStrategy: HostileEntitiesSystemColorStrategy,
     systemStatusColorStrategies: SystemStatusColorStrategies,
 ): SystemColorStrategy? {
     val color = when (mapType) {
-        ClusterSystemsMap -> color[SettingsMapType.NewEden]
+        is ClusterSystemsMap -> color[SettingsMapType.NewEden]
+        is ClusterRegionsMap -> color[SettingsMapType.NewEden]
         is RegionMap -> color[SettingsMapType.Region]
-        else -> MapStarColor.Actual
     } ?: return null
     return when (color) {
-        MapStarColor.Actual -> koin.get<ActualSystemColorStrategy>()
-        MapStarColor.Security -> koin.get<SecuritySystemColorStrategy>()
-        MapStarColor.IntelHostiles -> hostileEntitiesSystemColorStrategy
-        MapStarColor.Jumps -> systemStatusColorStrategies.jumps
-        MapStarColor.Kills -> systemStatusColorStrategies.kills
-        MapStarColor.NpcKills -> systemStatusColorStrategies.npcKills
-        MapStarColor.Assets -> systemStatusColorStrategies.assets
-        MapStarColor.Incursions -> systemStatusColorStrategies.incursions
-        MapStarColor.Stations -> systemStatusColorStrategies.stations
-        MapStarColor.FactionWarfare -> systemStatusColorStrategies.factionWarfare
-        MapStarColor.Sovereignty -> systemStatusColorStrategies.sovereignty
+        MapSystemInfoType.StarColor -> koin.get<StarColorSystemColorStrategy>()
+        MapSystemInfoType.Security -> koin.get<SecuritySystemColorStrategy>()
+        MapSystemInfoType.IntelHostiles -> hostileEntitiesSystemColorStrategy
+        MapSystemInfoType.Jumps -> systemStatusColorStrategies.jumps
+        MapSystemInfoType.Kills -> systemStatusColorStrategies.kills
+        MapSystemInfoType.NpcKills -> systemStatusColorStrategies.npcKills
+        MapSystemInfoType.Assets -> systemStatusColorStrategies.assets
+        MapSystemInfoType.Incursions -> systemStatusColorStrategies.incursions
+        MapSystemInfoType.Stations -> systemStatusColorStrategies.stations
+        MapSystemInfoType.FactionWarfare -> systemStatusColorStrategies.factionWarfare
+        MapSystemInfoType.Sovereignty -> systemStatusColorStrategies.sovereignty
+        MapSystemInfoType.MetaliminalStorms -> systemStatusColorStrategies.storms
+        MapSystemInfoType.JumpRange -> systemStatusColorStrategies.jumpRange
     }
 }
 
@@ -775,7 +560,7 @@ private fun SolarSystemsLayer(
             mapType = state.mapType,
             mapScale = mapScale,
             intel = state.mapState.intel[system.id],
-            onlineCharacters = state.mapState.onlineCharacterLocations[system.id] ?: emptyList(),
+            onlineCharacters = state.mapState.onlineCharacterLocations[system.id].orEmpty(),
             systemColorStrategy = systemColorStrategy,
             systemRadialGradients = systemRadialGradients,
             nodeSizes = nodeSizes,
@@ -795,7 +580,8 @@ private fun SystemInfoBoxesLayer(
     nodeSizes: NodeSizes,
     onRegionClick: (regionId: Int, systemId: Int) -> Unit,
 ) {
-    val colors = getCurrentColors(state)
+    val indicatorsInfoTypes = getIndicatorsInfoTypes(state)
+    val infoBoxInfoTypes = getInfoBoxInfoTypes(state)
     ForEachSystem(state, animatedCenter, mapScale, canvasSize) { isHighlightedOrHovered, dpCoordinates, system ->
         val hasIntelPopup = system.id in state.mapState.intelPopupSystems
         val zIndex = if (hasIntelPopup || isHighlightedOrHovered) 1f else 0f
@@ -812,9 +598,10 @@ private fun SystemInfoBoxesLayer(
                 isHighlightedOrHovered = isHighlightedOrHovered,
                 intel = state.mapState.intel[system.id],
                 hasIntelPopup = hasIntelPopup,
-                onlineCharacters = state.mapState.onlineCharacterLocations[system.id] ?: emptyList(),
+                onlineCharacters = state.mapState.onlineCharacterLocations[system.id].orEmpty(),
                 systemStatus = state.mapState.systemStatus[system.id],
-                colors = colors,
+                infoTypes = infoBoxInfoTypes,
+                indicatorsInfoTypes = indicatorsInfoTypes,
                 onRegionClick = { onRegionClick(system.regionId, system.id) },
                 modifier = Modifier
                     .offset(dpCoordinates.first, dpCoordinates.second)
@@ -825,13 +612,22 @@ private fun SystemInfoBoxesLayer(
     }
 }
 
-private fun getCurrentColors(state: UiState): List<MapStarColor> {
-    val settingsMapType = when (state.mapType) {
+private fun getIndicatorsInfoTypes(state: UiState): List<MapSystemInfoType> {
+    val settingsMapType = getSettingsMapType(state.mapType)
+    return state.systemInfoTypes.indicators[settingsMapType].orEmpty()
+}
+
+private fun getInfoBoxInfoTypes(state: UiState): List<MapSystemInfoType> {
+    val settingsMapType = getSettingsMapType(state.mapType)
+    return state.systemInfoTypes.infoBox[settingsMapType].orEmpty()
+}
+
+private fun getSettingsMapType(mapType: MapType): SettingsMapType {
+    return when (mapType) {
         ClusterRegionsMap -> SettingsMapType.NewEden
         ClusterSystemsMap -> SettingsMapType.NewEden
         is RegionMap -> SettingsMapType.Region
     }
-    return listOfNotNull(state.starColor[settingsMapType], state.cellColor[settingsMapType])
 }
 
 @Composable

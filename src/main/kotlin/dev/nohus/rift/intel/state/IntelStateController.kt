@@ -19,8 +19,6 @@ import org.koin.core.annotation.Single
 import java.time.Duration
 import java.time.Instant
 
-private val logger = KotlinLogging.logger {}
-
 @Single
 class IntelStateController(
     private val understandMessageUseCase: UnderstandMessageUseCase,

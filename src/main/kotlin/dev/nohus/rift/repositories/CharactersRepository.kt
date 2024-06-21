@@ -13,7 +13,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.sql.batchUpsert
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.koin.core.annotation.Single
 import java.time.Instant
 
@@ -103,7 +103,7 @@ class CharactersRepository(
     private suspend fun getCharactersFromDatabase(names: List<String>): Map<String, CharacterState> =
         withContext(Dispatchers.IO) {
             localDatabase.transaction {
-                Characters.select { Characters.name inList names }.associate { row ->
+                Characters.selectAll().where { Characters.name inList names }.associate { row ->
                     row[Characters.name] to when {
                         row[Characters.isInactive] == true -> Inactive(row[Characters.characterId]!!)
                         row[Characters.exists] -> Exists(row[Characters.characterId]!!)

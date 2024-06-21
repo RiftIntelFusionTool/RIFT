@@ -12,6 +12,8 @@ import dev.nohus.rift.gamelogs.GameLogWatcher
 import dev.nohus.rift.intel.ChatLogWatcher
 import dev.nohus.rift.jabber.client.StartJabberUseCase
 import dev.nohus.rift.location.CharacterLocationRepository
+import dev.nohus.rift.logging.analytics.Analytics
+import dev.nohus.rift.map.MapJumpRangeController
 import dev.nohus.rift.network.zkillboard.KillboardObserver
 import dev.nohus.rift.pings.PingsRepository
 import dev.nohus.rift.repositories.MapStatusRepository
@@ -41,6 +43,8 @@ class BackgroundProcesses(
     private val autopilotController: AutopilotController,
     private val assetsRepository: AssetsRepository,
     private val mapStatusRepository: MapStatusRepository,
+    private val mapJumpRangeController: MapJumpRangeController,
+    private val analytics: Analytics,
     private val settings: Settings,
 ) {
 
@@ -97,6 +101,12 @@ class BackgroundProcesses(
             }
             launch {
                 mapStatusRepository.start()
+            }
+            launch {
+                mapJumpRangeController.start()
+            }
+            launch {
+                analytics.start()
             }
         }
     }

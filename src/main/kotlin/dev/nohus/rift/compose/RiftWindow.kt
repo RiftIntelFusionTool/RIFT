@@ -25,6 +25,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -56,11 +57,14 @@ import dev.nohus.rift.di.koin
 import dev.nohus.rift.generated.resources.Res
 import dev.nohus.rift.generated.resources.menu_close
 import dev.nohus.rift.generated.resources.window_background_dots
+import dev.nohus.rift.generated.resources.window_locked_16px
 import dev.nohus.rift.generated.resources.window_overlay_fullscreen_off_16px
 import dev.nohus.rift.generated.resources.window_overlay_fullscreen_on_16px
 import dev.nohus.rift.generated.resources.window_titlebar_close
+import dev.nohus.rift.generated.resources.window_titlebar_kebab
 import dev.nohus.rift.generated.resources.window_titlebar_minimize
 import dev.nohus.rift.generated.resources.window_titlebar_tune
+import dev.nohus.rift.generated.resources.window_unlocked_16px
 import dev.nohus.rift.get
 import dev.nohus.rift.windowing.AlwaysOnTopController
 import dev.nohus.rift.windowing.LocalRiftWindow
@@ -87,6 +91,7 @@ fun RiftWindow(
 ) {
     val alwaysOnTopController: AlwaysOnTopController = remember { koin.get() }
     val isAlwaysOnTop by alwaysOnTopController.isAlwaysOnTop(state.window).collectAsState(false)
+    val isLocked by alwaysOnTopController.isLocked(state.window).collectAsState(false)
     Window(
         onCloseRequest = onCloseClick,
         state = state.windowState,
@@ -94,7 +99,7 @@ fun RiftWindow(
         title = title,
         icon = painterResource(icon),
         undecorated = true,
-        resizable = isResizable,
+        resizable = isResizable && !isLocked,
         alwaysOnTop = isAlwaysOnTop,
     ) {
         MinimumSizeHandler(state)
@@ -107,10 +112,16 @@ fun RiftWindow(
                 title = title,
                 icon = icon,
                 isAlwaysOnTop = isAlwaysOnTop,
+                isLocked = isLocked,
                 onTuneClick = onTuneClick,
                 tuneContextMenuItems = tuneContextMenuItems,
                 onAlwaysOnTopClick = if (state.window != null) {
                     { alwaysOnTopController.toggleAlwaysOnTop(state.window) }
+                } else {
+                    null
+                },
+                onLockClick = if (state.window != null) {
+                    { alwaysOnTopController.toggleLocked(state.window) }
                 } else {
                     null
                 },
@@ -176,9 +187,11 @@ fun WindowScope.RiftDialog(
                 title = title,
                 icon = icon,
                 isAlwaysOnTop = false,
+                isLocked = false,
                 onTuneClick = null,
                 tuneContextMenuItems = null,
                 onAlwaysOnTopClick = null,
+                onLockClick = null,
                 onMinimizeClick = { parentState.windowState.isMinimized = true },
                 onCloseClick = onCloseClick,
                 width = state.size.width,
@@ -200,9 +213,11 @@ private fun WindowScope.RiftWindowContent(
     title: String,
     icon: DrawableResource,
     isAlwaysOnTop: Boolean,
+    isLocked: Boolean,
     onTuneClick: (() -> Unit)?,
     tuneContextMenuItems: List<ContextMenuItem>?,
     onAlwaysOnTopClick: (() -> Unit)?,
+    onLockClick: (() -> Unit)?,
     onMinimizeClick: () -> Unit,
     onCloseClick: () -> Unit,
     width: Dp,
@@ -234,9 +249,11 @@ private fun WindowScope.RiftWindowContent(
                 icon = icon,
                 titleBarContent = titleBarContent,
                 isAlwaysOnTop = isAlwaysOnTop,
+                isLocked = isLocked,
                 onTuneClick = onTuneClick,
                 tuneContextMenuItems = tuneContextMenuItems,
                 onAlwaysOnTopClick = onAlwaysOnTopClick,
+                onLockClick = onLockClick,
                 onMinimizeClick = onMinimizeClick,
                 onCloseClick = onCloseClick,
                 width = width,
@@ -294,37 +311,23 @@ private fun WindowScope.TitleBar(
     titleBarContent: @Composable ((height: Dp) -> Unit)? = null,
     width: Dp,
     isAlwaysOnTop: Boolean,
+    isLocked: Boolean,
     onTuneClick: (() -> Unit)?,
     tuneContextMenuItems: List<ContextMenuItem>?,
     onAlwaysOnTopClick: (() -> Unit)?,
+    onLockClick: (() -> Unit)?,
     onMinimizeClick: () -> Unit,
     onCloseClick: () -> Unit,
 ) {
-    val alwaysOnTopItem = if (onAlwaysOnTopClick != null) {
-        listOf(
-            if (isAlwaysOnTop) {
-                ContextMenuItem.TextItem(
-                    "Disable always above",
-                    Res.drawable.window_overlay_fullscreen_on_16px,
-                    onClick = onAlwaysOnTopClick,
-                )
-            } else {
-                ContextMenuItem.TextItem(
-                    "Enable always above",
-                    Res.drawable.window_overlay_fullscreen_off_16px,
-                    onClick = onAlwaysOnTopClick,
-                )
-            },
-        )
-    } else {
-        emptyList()
-    }
-    val contextMenuItems = alwaysOnTopItem + listOf(
-        ContextMenuItem.TextItem("Minimize", onClick = onMinimizeClick),
-        ContextMenuItem.DividerItem,
-        ContextMenuItem.TextItem("Close", Res.drawable.menu_close, onClick = onCloseClick),
+    val contextMenuItems = getTitleBarContextMenuItems(
+        isAlwaysOnTop = isAlwaysOnTop,
+        isLocked = isLocked,
+        onAlwaysOnTopClick = onAlwaysOnTopClick,
+        onLockClick = onLockClick,
+        onMinimizeClick = onMinimizeClick,
+        onCloseClick = onCloseClick,
     )
-    WindowDraggableArea {
+    val titleBar = movableContentOf {
         val horizontalPadding = when (style) {
             TitleBarStyle.Full -> Spacing.mediumLarge
             TitleBarStyle.Small -> Spacing.medium
@@ -371,6 +374,7 @@ private fun WindowScope.TitleBar(
                                 TitleBarStyle.Full -> RiftTheme.typography.headlineHighlighted
                                 TitleBarStyle.Small -> RiftTheme.typography.titleHighlighted
                             },
+                            maxLines = 1,
                         )
                     }
                 }
@@ -381,8 +385,8 @@ private fun WindowScope.TitleBar(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
                     modifier = Modifier
                         .padding(start = Spacing.medium)
-                        .padding(vertical = Spacing.medium)
-                        .padding(end = horizontalPadding),
+                        .padding(end = Spacing.small)
+                        .padding(vertical = Spacing.medium),
                 ) {
                     if (onTuneClick != null) {
                         RiftImageButton(Res.drawable.window_titlebar_tune, 16.dp, onTuneClick)
@@ -396,18 +400,103 @@ private fun WindowScope.TitleBar(
                             RiftImageButton(Res.drawable.window_titlebar_tune, 16.dp, {})
                         }
                     }
-                    if (onAlwaysOnTopClick != null) {
-                        if (isAlwaysOnTop) {
-                            RiftImageButton(Res.drawable.window_overlay_fullscreen_on_16px, 16.dp, onAlwaysOnTopClick)
-                        } else {
-                            RiftImageButton(Res.drawable.window_overlay_fullscreen_off_16px, 16.dp, onAlwaysOnTopClick)
-                        }
+                }
+            }
+            if (contextMenuItems.size > 2) {
+                RiftContextMenuArea(contextMenuItems, acceptsLeftClick = true) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
+                        modifier = Modifier
+                            .padding(horizontal = Spacing.small)
+                            .padding(vertical = Spacing.medium),
+                    ) {
+                        RiftImageButton(Res.drawable.window_titlebar_kebab, 16.dp, {})
+                    }
+                }
+            }
+            RiftContextMenuArea(contextMenuItems) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
+                    modifier = Modifier
+                        .padding(start = Spacing.small)
+                        .padding(vertical = Spacing.medium)
+                        .padding(end = horizontalPadding),
+                ) {
+                    if (onAlwaysOnTopClick != null && isAlwaysOnTop) {
+                        RiftImageButton(Res.drawable.window_overlay_fullscreen_on_16px, 16.dp, onAlwaysOnTopClick)
+                    }
+                    if (onLockClick != null && isLocked) {
+                        RiftImageButton(Res.drawable.window_locked_16px, 16.dp, onLockClick)
                     }
                     RiftImageButton(Res.drawable.window_titlebar_minimize, 16.dp, onMinimizeClick)
                     RiftImageButton(Res.drawable.window_titlebar_close, 16.dp, onCloseClick)
                 }
             }
         }
+    }
+    if (isLocked) {
+        titleBar()
+    } else {
+        WindowDraggableArea {
+            titleBar()
+        }
+    }
+}
+
+private fun getTitleBarContextMenuItems(
+    isAlwaysOnTop: Boolean,
+    isLocked: Boolean,
+    onAlwaysOnTopClick: (() -> Unit)?,
+    onLockClick: (() -> Unit)?,
+    onMinimizeClick: () -> Unit,
+    onCloseClick: () -> Unit,
+): List<ContextMenuItem> {
+    return buildList {
+        if (onAlwaysOnTopClick != null) {
+            if (isAlwaysOnTop) {
+                add(
+                    ContextMenuItem.TextItem(
+                        "Disable always above",
+                        Res.drawable.window_overlay_fullscreen_on_16px,
+                        onClick = onAlwaysOnTopClick,
+                    ),
+                )
+            } else {
+                add(
+                    ContextMenuItem.TextItem(
+                        "Enable always above",
+                        Res.drawable.window_overlay_fullscreen_off_16px,
+                        onClick = onAlwaysOnTopClick,
+                    ),
+                )
+            }
+        }
+        if (onLockClick != null) {
+            if (isLocked) {
+                add(
+                    ContextMenuItem.TextItem(
+                        "Unlock window size and position",
+                        Res.drawable.window_locked_16px,
+                        onClick = onLockClick,
+                    ),
+                )
+            } else {
+                add(
+                    ContextMenuItem.TextItem(
+                        "Lock window size and position",
+                        Res.drawable.window_unlocked_16px,
+                        onClick = onLockClick,
+                    ),
+                )
+            }
+        }
+        if (onAlwaysOnTopClick != null || onLockClick != null) {
+            add(ContextMenuItem.DividerItem)
+        }
+        add(ContextMenuItem.TextItem("Minimize", onClick = onMinimizeClick))
+        add(ContextMenuItem.TextItem("Close", Res.drawable.menu_close, onClick = onCloseClick))
     }
 }
 

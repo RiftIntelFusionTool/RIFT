@@ -10,6 +10,9 @@ import dev.nohus.rift.logs.parse.ChatLogFileMetadata
 import dev.nohus.rift.logs.parse.ChatLogFileParser
 import dev.nohus.rift.logs.parse.ChatMessage
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.koin.core.annotation.Single
@@ -18,8 +21,8 @@ import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
+import java.time.ZoneOffset
 import kotlin.io.path.exists
-import kotlin.io.path.getLastModifiedTime
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
 
@@ -51,6 +54,7 @@ class ChatLogsObserver(
 
         logger.info { "Observing chat logs: $directory" }
         reloadLogFiles(directory)
+        logger.debug { "Starting directory observer for chat logs: $directory" }
         directoryObserver.observe(directory) { event ->
             when (event) {
                 is FileEvent -> {
@@ -90,8 +94,13 @@ class ChatLogsObserver(
 
     private suspend fun reloadLogFiles(directory: Path) {
         val logFiles = try {
-            directory.listDirectoryEntries().mapNotNull { file ->
-                matchChatLogFilenameUseCase(file)
+            val entries = directory.listDirectoryEntries()
+            coroutineScope {
+                entries.map { file ->
+                    async {
+                        matchChatLogFilenameUseCase(file)
+                    }
+                }.awaitAll().filterNotNull()
             }
         } catch (e: NoSuchFileException) { emptyList() }
         logFilesMutex.withLock {
@@ -103,16 +112,20 @@ class ChatLogsObserver(
 
     private suspend fun updateActiveLogFiles() {
         try {
-            val minTime = Instant.now() - Duration.ofDays(60)
+            logger.debug { "Updating active chat log files: ${logFiles.size}" }
+            val minTime = Instant.now() - Duration.ofDays(7)
             val currentActiveLogFiles = logFilesMutex.withLock { logFiles.toList() }
-                .filter { it.file.exists() && it.file.getLastModifiedTime().toInstant() > minTime }
+                .filter { it.dateTime.toInstant(ZoneOffset.UTC).isAfter(minTime) }
                 .groupBy { it.characterId }
                 .flatMap { (characterId, playerLogFiles) ->
                     playerLogFiles
                         .groupBy { it.channelName }
                         .mapNotNull { (channelName, playerChannelLogFiles) ->
                             // Take the latest file for this player / channel combination
-                            val logFile = playerChannelLogFiles.maxBy { it.lastModified }
+                            val logFile = playerChannelLogFiles
+                                .sortedBy { it.lastModified }
+                                .lastOrNull { it.file.exists() }
+                                ?: return@mapNotNull null
                             val existingMetadata = activeLogFiles[logFile.file.name]
                             val metadata = existingMetadata ?: logFileParser.parseHeader(characterId, logFile.file)
                             if (metadata != null) {

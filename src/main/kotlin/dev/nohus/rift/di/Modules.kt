@@ -1,6 +1,7 @@
 package dev.nohus.rift.di
 
 import com.sun.jna.Native
+import dev.nohus.rift.logging.analytics.Analytics
 import dev.nohus.rift.network.EsiErrorLimitInterceptor
 import dev.nohus.rift.network.LoggingInterceptor
 import dev.nohus.rift.network.RequestExecutor
@@ -110,4 +111,5 @@ val factoryModule = module {
     }
     single<RequestExecutor> { RequestExecutorImpl(get(), get(), get()) }
     single<User32> { Native.load("user32", User32::class.java) }
+    single<Analytics> { Analytics() }
 }

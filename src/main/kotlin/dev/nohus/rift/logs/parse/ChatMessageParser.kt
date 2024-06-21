@@ -370,7 +370,7 @@ class ChatMessageParser(
                         }
                         else -> null
                     }
-                    if (number != null) {
+                    if (number != null && number > 0) {
                         val shipWithCount = ship.copy(
                             words = count.words + ship.words,
                             types = ship.types.map { type -> if (type is Ship) type.copy(count = number) else type },

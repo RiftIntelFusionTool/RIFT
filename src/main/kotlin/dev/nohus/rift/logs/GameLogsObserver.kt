@@ -16,6 +16,7 @@ import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
+import java.time.ZoneOffset
 import kotlin.io.path.exists
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
@@ -48,6 +49,7 @@ class GameLogsObserver(
 
         logger.info { "Observing game logs: $directory" }
         reloadLogFiles(directory)
+        logger.debug { "Starting directory observer for game logs: $directory" }
         directoryObserver.observe(directory) { event ->
             when (event) {
                 is FileEvent -> {
@@ -101,13 +103,16 @@ class GameLogsObserver(
 
     private suspend fun updateActiveLogFiles() {
         try {
-            val minTime = Instant.now() - Duration.ofDays(60)
+            val minTime = Instant.now() - Duration.ofDays(7)
             val currentActiveLogFiles = logFilesMutex.withLock { logFiles.toList() }
-                .filter { it.file.exists() && it.lastModified > minTime }
+                .filter { it.dateTime.toInstant(ZoneOffset.UTC).isAfter(minTime) }
                 .groupBy { it.characterId }
                 .mapNotNull { (characterId, playerLogFiles) ->
                     // Take the latest file for this player
-                    val logFile = playerLogFiles.maxBy { it.lastModified }
+                    val logFile = playerLogFiles
+                        .sortedBy { it.lastModified }
+                        .lastOrNull { it.file.exists() }
+                        ?: return@mapNotNull null
                     val existingMetadata = activeLogFiles[logFile.file.name]
                     val metadata = existingMetadata ?: logFileParser.parseHeader(characterId, logFile.file)
                     if (metadata != null) {

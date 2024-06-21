@@ -1,16 +1,22 @@
 package dev.nohus.rift.repositories
 
 import dev.nohus.rift.assets.AssetsRepository
+import dev.nohus.rift.map.MapJumpRangeController
+import dev.nohus.rift.map.MapJumpRangeController.SystemDistance
 import dev.nohus.rift.network.esi.EsiApi
 import dev.nohus.rift.network.esi.FactionWarfareSystem
 import dev.nohus.rift.network.esi.Incursion
 import dev.nohus.rift.network.esi.SovereigntySystem
+import dev.nohus.rift.network.evescout.GetMetaliminalStormsUseCase
+import dev.nohus.rift.network.evescout.GetMetaliminalStormsUseCase.Storm
 import dev.nohus.rift.repositories.StationsRepository.Station
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.Single
 import kotlin.time.Duration.Companion.minutes
@@ -21,6 +27,8 @@ class MapStatusRepository(
     private val assetsRepository: AssetsRepository,
     private val stationsRepository: StationsRepository,
     private val namesRepository: NamesRepository,
+    private val getMetaliminalStormsUseCase: GetMetaliminalStormsUseCase,
+    private val mapJumpRangeController: MapJumpRangeController,
 ) {
 
     private data class UniverseSystemStatus(
@@ -40,12 +48,15 @@ class MapStatusRepository(
         val factionWarfare: FactionWarfareSystem?,
         val sovereignty: SovereigntySystem?,
         val stations: List<Station>,
+        val storms: List<Storm>,
+        val distance: SystemDistance?,
     )
 
     private val universeSystemStatus = MutableStateFlow<Map<Int, UniverseSystemStatus>>(emptyMap())
     private val incursions = MutableStateFlow<Map<Int, Incursion>>(emptyMap())
     private val factionWarfare = MutableStateFlow<Map<Int, FactionWarfareSystem>>(emptyMap())
     private val sovereignty = MutableStateFlow<Map<Int, SovereigntySystem>>(emptyMap())
+    private val storms = MutableStateFlow<Map<Int, List<Storm>>>(emptyMap())
     private val _status = MutableStateFlow<Map<Int, SolarSystemStatus>>(emptyMap())
     val status = _status.asStateFlow()
 
@@ -62,13 +73,15 @@ class MapStatusRepository(
                 incursions,
                 factionWarfare,
                 sovereignty,
+                storms,
                 assetsRepository.assets,
-            ) { universe, incursions, factionWarfare, sovereignty, assets ->
+                mapJumpRangeController.state.map { it.systemDistances },
+            ) { universe, incursions, factionWarfare, sovereignty, storms, assets, distances ->
                 val assetsPerSystem = getAssetCountPerSystem(assets)
                 val stationsPerSystem = stationsRepository.getStations()
                 val systems = (
                     universe.keys + incursions.keys + factionWarfare.keys + sovereignty.keys +
-                        assetsPerSystem.keys + stationsPerSystem.keys
+                        storms.keys + assetsPerSystem.keys + stationsPerSystem.keys + distances.keys
                     ).distinct()
                 systems.associateWith { systemId ->
                     SolarSystemStatus(
@@ -81,6 +94,8 @@ class MapStatusRepository(
                         factionWarfare = factionWarfare[systemId],
                         sovereignty = sovereignty[systemId],
                         stations = stationsPerSystem[systemId] ?: emptyList(),
+                        storms = storms[systemId] ?: emptyList(),
+                        distance = distances[systemId],
                     )
                 }
             }.collect {
@@ -102,6 +117,9 @@ class MapStatusRepository(
             }
             launch {
                 loadSovereignty()
+            }
+            launch {
+                loadMetaliminalStorms()
             }
         }
     }
@@ -160,5 +178,30 @@ class MapStatusRepository(
                 namesRepository.resolveNames(ids)
             }
             .associateBy { it.systemId }
+    }
+
+    private suspend fun loadMetaliminalStorms() {
+        storms.value = getMetaliminalStormsUseCase()
+    }
+
+    private fun <T1, T2, T3, T4, T5, T6, T7, R> combine(
+        flow: Flow<T1>,
+        flow2: Flow<T2>,
+        flow3: Flow<T3>,
+        flow4: Flow<T4>,
+        flow5: Flow<T5>,
+        flow6: Flow<T6>,
+        flow7: Flow<T7>,
+        transform: suspend (T1, T2, T3, T4, T5, T6, T7) -> R,
+    ): Flow<R> = combine(flow, flow2, flow3, flow4, flow5, flow6, flow7) { args: Array<*> ->
+        transform(
+            args[0] as T1,
+            args[1] as T2,
+            args[2] as T3,
+            args[3] as T4,
+            args[4] as T5,
+            args[5] as T6,
+            args[6] as T7,
+        )
     }
 }

@@ -47,8 +47,8 @@ class MapLayoutRepository(
         }
     }
 
-    fun getLayout(regionId: Int): Map<Int, Position> {
-        return systemPositionsByRegionId[regionId] ?: throw IllegalArgumentException("No such region: $regionId")
+    fun getLayout(regionId: Int): Map<Int, Position>? {
+        return systemPositionsByRegionId[regionId]
     }
 
     fun getNewEdenLayout(): Map<Int, Position> {

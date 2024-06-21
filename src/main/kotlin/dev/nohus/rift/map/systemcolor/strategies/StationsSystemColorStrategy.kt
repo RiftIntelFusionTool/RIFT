@@ -13,7 +13,7 @@ class StationsSystemColorStrategy(
     }
 
     override fun getPercentage(system: Int): Float {
-        val jumps = systemStatus[system]?.stations?.size ?: return 0f
-        return log(jumps.toFloat(), 10f).coerceIn(0.05f, 1f)
+        val stations = systemStatus[system]?.stations?.size ?: return 0f
+        return log(stations.toFloat(), 10f).coerceIn(0.05f, 1f)
     }
 }

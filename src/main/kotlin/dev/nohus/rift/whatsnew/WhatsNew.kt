@@ -78,6 +78,29 @@ object WhatsNew {
                 - When there are multiple EVE installations, the newer character settings directory will be detected
                 - Blueprints and skins in the assets window no longer show incorrect icons
             """.trimIndent(),
+            "2.8.0" description """
+                -! More map information
+                - Indicators for selected types of information can now be shown next to systems
+                - Selected types of information can now be shown in the system info boxes
+                - Metaliminal Storms can now be shown on the map
+
+                -! Assets
+                - The total price of items in a location is now visible on the location header
+                - Asset location can now be sorted by total price
+                - Viewing fits from the assets window now includes the cargo contents
+            """.trimIndent(),
+            "2.9.0" description """
+                -! Jump range on the map
+                - The map can now color systems according to jump ranges and show indicators for reachable systems
+                - Range can be shown from a specific system, or follow any of your characters
+                - You can view the distance in light years for each system
+                
+                - The assets window will now show the character owning the asset when viewing assets from all characters
+            """.trimIndent(),
+            "2.10.0" description """
+                - Added the ability to lock windows in place
+                - Optimized jump bridge search
+            """.trimIndent(),
         ).reversed()
     }
 }

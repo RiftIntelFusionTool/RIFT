@@ -38,7 +38,7 @@ class Settings(
         set(value) = update { copy(isLoadOldMessagesEnabled = value) }
 
     var intelMap: IntelMap
-        get() = model.intelMap.copy(mapTypeStarColor = model.intelMap.mapTypeStarColor.withDefault { MapStarColor.Security })
+        get() = model.intelMap
         set(value) = update { copy(intelMap = value) }
 
     var authenticatedCharacters: Map<Int, SsoAuthentication>
@@ -68,6 +68,10 @@ class Settings(
     var alwaysOnTopWindows: Set<RiftWindow>
         get() = model.alwaysOnTopWindows
         set(value) = update { copy(alwaysOnTopWindows = value) }
+
+    var lockedWindows: Set<RiftWindow>
+        get() = model.lockedWindows
+        set(value) = update { copy(lockedWindows = value) }
 
     var notificationEditPosition: Pos?
         get() = model.notificationEditPosition
@@ -155,4 +159,12 @@ class Settings(
     var whatsNewVersion: String?
         get() = model.whatsNewVersion
         set(value) = update { copy(whatsNewVersion = value) }
+
+    var jumpRange: JumpRange?
+        get() = model.jumpRange
+        set(value) = update { copy(jumpRange = value) }
+
+    var installationId: String?
+        get() = model.installationId
+        set(value) = update { copy(installationId = value) }
 }

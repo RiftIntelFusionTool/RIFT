@@ -41,7 +41,7 @@ class FittingController(
         writer.append(eft)
         writer.close()
         val base64 = Base64.Default.encode(byteArrayOutputStream.toByteArray())
-        return "https://eveship.fit/#fit:eft:$base64".toURIOrNull()
+        return "https://eveship.fit/?fit=eft:$base64".toURIOrNull()
     }
 
     private fun getEftFitting(asset: Asset): Fitting? {

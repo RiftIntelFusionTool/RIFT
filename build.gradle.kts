@@ -4,6 +4,7 @@ import java.time.Instant
 plugins {
     kotlin("jvm")
     kotlin("plugin.serialization")
+    id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.compose")
     id("com.diffplug.spotless")
     id("com.google.devtools.ksp")
@@ -22,6 +23,7 @@ buildConfig {
     buildConfigField("long", "buildTimestamp", "${Instant.now().toEpochMilli()}")
     buildConfigField("String", "buildUuid", "\"${properties["rift.buildUuid"]}\"")
     buildConfigField("String", "sentryDsn", "${properties["rift.sentryDsn"]}")
+    buildConfigField("String", "postHogToken", "${properties["rift.postHogToken"]}")
     buildConfigField("String", "focusedLoggers", "${properties["rift.focusedLoggers"]}")
     buildConfigField("String", "logLevel", "${properties["rift.logLevel"]}")
 }
@@ -43,7 +45,7 @@ dependencies {
     @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
     implementation(compose.desktop.components.animatedImage)
     implementation(compose.components.resources)
-    implementation("media.kamel:kamel-image:0.9.4")
+    implementation("media.kamel:kamel-image:0.9.5")
 
     // Logging
     implementation("io.github.oshai:kotlin-logging-jvm:6.0.9")
@@ -56,7 +58,7 @@ dependencies {
     ksp("io.insert-koin:koin-ksp-compiler:1.3.1")
 
     // Other
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.0")
     implementation("org.apache.commons:commons-lang3:3.14.0")
     implementation("org.apache.commons:commons-exec:1.4.0")
     implementation("org.apache.httpcomponents.client5:httpclient5:5.3.1")
@@ -65,7 +67,7 @@ dependencies {
     implementation("org.jsoup:jsoup:1.17.2")
     implementation("org.nibor.autolink:autolink:0.11.0")
     implementation("org.locationtech.jts:jts-core:1.19.0")
-    implementation("dev.chrisbanes.haze:haze:0.7.1")
+    implementation("dev.chrisbanes.haze:haze:0.7.2")
 
     // OpenAL Audio
     implementation("org.jogamp.joal:joal-main:2.5.0")
@@ -93,8 +95,8 @@ dependencies {
     implementation(files("libs/SystemTray.jar"))
 
     // Exposed
-    implementation("org.jetbrains.exposed:exposed-core:0.49.0")
-    implementation("org.jetbrains.exposed:exposed-jdbc:0.49.0")
+    implementation("org.jetbrains.exposed:exposed-core:0.51.1")
+    implementation("org.jetbrains.exposed:exposed-jdbc:0.51.1")
     implementation("org.xerial:sqlite-jdbc:3.45.3.0")
 
     // Retrofit
@@ -115,6 +117,8 @@ dependencies {
     implementation(platform("io.sentry:sentry-bom:7.8.0"))
     implementation("io.sentry:sentry")
     implementation("io.sentry:sentry-logback")
+
+    implementation("com.posthog.java:posthog:1.1.1")
 
     // Testing
     testImplementation("io.kotest:kotest-runner-junit5:5.8.1")

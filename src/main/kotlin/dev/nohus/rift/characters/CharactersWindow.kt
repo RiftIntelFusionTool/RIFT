@@ -41,7 +41,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.nohus.rift.characters.CharactersViewModel.CharacterItem
@@ -230,7 +229,7 @@ private fun TopRow(
 
                 is CopyingState.SelectingDestination -> {
                     Text(
-                        text = "Select character to paste Eve settings to.",
+                        text = "Select characters to paste Eve settings to.",
                         style = RiftTheme.typography.bodyPrimary,
                         modifier = Modifier.weight(1f),
                     )

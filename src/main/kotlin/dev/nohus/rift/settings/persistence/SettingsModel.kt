@@ -1,6 +1,10 @@
 package dev.nohus.rift.settings.persistence
 
 import dev.nohus.rift.alerts.Alert
+import dev.nohus.rift.settings.persistence.MapSystemInfoType.Assets
+import dev.nohus.rift.settings.persistence.MapSystemInfoType.Incursions
+import dev.nohus.rift.settings.persistence.MapSystemInfoType.MetaliminalStorms
+import dev.nohus.rift.settings.persistence.MapSystemInfoType.Security
 import dev.nohus.rift.utils.Pos
 import dev.nohus.rift.utils.Size
 import dev.nohus.rift.windowing.WindowManager.RiftWindow
@@ -19,6 +23,7 @@ data class SettingsModel(
     val openWindows: Set<RiftWindow> = emptySet(),
     val windowPlacements: Map<RiftWindow, WindowPlacement> = emptyMap(),
     val alwaysOnTopWindows: Set<RiftWindow> = emptySet(),
+    val lockedWindows: Set<RiftWindow> = emptySet(),
     val notificationEditPosition: Pos? = null,
     val notificationPosition: Pos? = null,
     val alerts: List<Alert> = emptyList(),
@@ -40,6 +45,8 @@ data class SettingsModel(
     val jumpBridgeNetwork: Map<String, String>? = null,
     val isUsingRiftAutopilotRoute: Boolean = true,
     val whatsNewVersion: String? = null,
+    val jumpRange: JumpRange? = null,
+    val installationId: String? = null,
 )
 
 @Serializable
@@ -48,18 +55,23 @@ enum class MapType {
 }
 
 @Serializable
-enum class MapStarColor {
-    Actual, Security, IntelHostiles, Jumps, Kills, NpcKills, Assets, Incursions, Stations, FactionWarfare, Sovereignty
+enum class MapSystemInfoType {
+    StarColor, Security, IntelHostiles, Jumps, Kills, NpcKills, Assets, Incursions, Stations, FactionWarfare, Sovereignty, MetaliminalStorms, JumpRange
 }
 
 @Serializable
 data class IntelMap(
     val isUsingCompactMode: Boolean = false,
-    val mapTypeStarColor: Map<MapType, MapStarColor> = mapOf(
-        MapType.NewEden to MapStarColor.Security,
-        MapType.Region to MapStarColor.Security,
+    val mapTypeStarInfoTypes: Map<MapType, MapSystemInfoType> = emptyMap(),
+    val mapTypeCellInfoTypes: Map<MapType, MapSystemInfoType?> = emptyMap(),
+    val mapTypeIndicatorInfoTypes: Map<MapType, List<MapSystemInfoType>> = mapOf(
+        MapType.NewEden to listOf(Assets, Incursions, MetaliminalStorms),
+        MapType.Region to listOf(Assets, Incursions, MetaliminalStorms),
     ),
-    val mapTypeCellColor: Map<MapType, MapStarColor?> = emptyMap(),
+    val mapTypeInfoBoxInfoTypes: Map<MapType, List<MapSystemInfoType>> = mapOf(
+        MapType.NewEden to listOf(Security, Assets, Incursions, MetaliminalStorms),
+        MapType.Region to listOf(Security, Assets, Incursions, MetaliminalStorms),
+    ),
     val intelExpireSeconds: Int = 5 * 60,
     val intelPopupTimeoutSeconds: Int = 60,
     val isCharacterFollowing: Boolean = true,
@@ -100,3 +112,9 @@ data class IntelReports(
 enum class ConfigurationPack {
     Imperium,
 }
+
+@Serializable
+data class JumpRange(
+    val fromId: Int,
+    val distanceLy: Double,
+)

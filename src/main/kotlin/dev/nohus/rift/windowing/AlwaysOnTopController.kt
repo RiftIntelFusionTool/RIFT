@@ -21,12 +21,30 @@ class AlwaysOnTopController(
         }
     }
 
+    fun isLocked(window: RiftWindow?) = flow {
+        if (window == null) {
+            emit(false)
+        } else {
+            emit(window in settings.lockedWindows)
+            emitAll(settings.updateFlow.map { window in it.lockedWindows })
+        }
+    }
+
     fun toggleAlwaysOnTop(window: RiftWindow?) {
         window ?: return
         if (window in settings.alwaysOnTopWindows) {
             settings.alwaysOnTopWindows -= window
         } else {
             settings.alwaysOnTopWindows += window
+        }
+    }
+
+    fun toggleLocked(window: RiftWindow?) {
+        window ?: return
+        if (window in settings.lockedWindows) {
+            settings.lockedWindows -= window
+        } else {
+            settings.lockedWindows += window
         }
     }
 }

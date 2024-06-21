@@ -1,10 +1,8 @@
 package dev.nohus.rift.network.zkillboard
 
-import dev.nohus.rift.configurationpack.ConfigurationPackRepository
 import dev.nohus.rift.intel.state.IntelStateController
 import dev.nohus.rift.intel.state.SystemEntity
 import dev.nohus.rift.repositories.CharacterDetailsRepository
-import dev.nohus.rift.repositories.CharactersRepository
 import dev.nohus.rift.repositories.ShipTypesRepository
 import dev.nohus.rift.repositories.SolarSystemsRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -22,9 +20,7 @@ class KillmailProcessor(
     private val solarSystemsRepository: SolarSystemsRepository,
     private val intelStateController: IntelStateController,
     private val shipTypesRepository: ShipTypesRepository,
-    private val charactersRepository: CharactersRepository,
     private val characterDetailsRepository: CharacterDetailsRepository,
-    private val configurationPackRepository: ConfigurationPackRepository,
 ) {
 
     data class ProcessedKillmail(

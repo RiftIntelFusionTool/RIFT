@@ -23,8 +23,6 @@ import org.koin.core.annotation.Factory
 import org.koin.core.annotation.InjectedParam
 import java.time.Instant
 
-private val logger = KotlinLogging.logger {}
-
 @Factory
 class JabberViewModel(
     @InjectedParam private val inputModel: JabberInputModel,

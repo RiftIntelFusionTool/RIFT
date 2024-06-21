@@ -18,7 +18,6 @@ import dev.nohus.rift.utils.openBrowser
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.Single
@@ -56,7 +55,7 @@ class AssetsViewModel(
     )
 
     enum class SortType {
-        Distance, Name, Count
+        Distance, Name, Count, Price
     }
 
     data class UiState(
@@ -125,7 +124,7 @@ class AssetsViewModel(
         when (action) {
             FitAction.Copy -> Clipboard.copy(fitting.eftWithoutCargo)
             FitAction.CopyWithCargo -> Clipboard.copy(fitting.eft)
-            FitAction.Open -> fittingController.getEveShipFitUri(fitting.eftWithoutCargo)?.openBrowser()
+            FitAction.Open -> fittingController.getEveShipFitUri(fitting.eft)?.openBrowser()
         }
     }
 
@@ -179,8 +178,20 @@ class AssetsViewModel(
                     { -it.second.size },
                 ),
             )
+            SortType.Price -> filtered.sortedWith(
+                compareBy(
+                    { it.first.systemId == null },
+                    { -it.second.sumOf { getTotalPrice(it) } },
+                ),
+            )
         }
         return sorted
+    }
+
+    private fun getTotalPrice(asset: Asset): Double {
+        val price = asset.price?.let { it * asset.asset.quantity } ?: 0.0
+        val childrenPrice = asset.children.sumOf { getTotalPrice(it) }
+        return price + childrenPrice
     }
 
     private fun getAssetsByLocation(

@@ -6,7 +6,7 @@ import dev.nohus.rift.repositories.SolarSystemsRepository
 import org.koin.core.annotation.Single
 
 @Single
-class ActualSystemColorStrategy(
+class StarColorSystemColorStrategy(
     private val solarSystemsRepository: SolarSystemsRepository,
 ) : SystemColorStrategy() {
 

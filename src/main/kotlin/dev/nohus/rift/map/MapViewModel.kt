@@ -13,6 +13,7 @@ import dev.nohus.rift.intel.state.SystemEntity
 import dev.nohus.rift.location.GetOnlineCharactersLocationUseCase
 import dev.nohus.rift.location.GetOnlineCharactersLocationUseCase.OnlineCharacterLocation
 import dev.nohus.rift.map.MapExternalControl.MapExternalControlEvent
+import dev.nohus.rift.map.MapJumpRangeController.MapJumpRangeState
 import dev.nohus.rift.map.MapLayoutRepository.Position
 import dev.nohus.rift.map.MapViewModel.MapType.ClusterRegionsMap
 import dev.nohus.rift.map.MapViewModel.MapType.ClusterSystemsMap
@@ -28,7 +29,7 @@ import dev.nohus.rift.repositories.SolarSystemsRepository.MapConstellation
 import dev.nohus.rift.repositories.SolarSystemsRepository.MapRegion
 import dev.nohus.rift.repositories.SolarSystemsRepository.MapSolarSystem
 import dev.nohus.rift.settings.persistence.IntelMap
-import dev.nohus.rift.settings.persistence.MapStarColor
+import dev.nohus.rift.settings.persistence.MapSystemInfoType
 import dev.nohus.rift.settings.persistence.Settings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,6 +61,7 @@ class MapViewModel(
     private val jumpBridgesRepository: JumpBridgesRepository,
     private val autopilotController: AutopilotController,
     private val mapStatusRepository: MapStatusRepository,
+    private val mapJumpRangeController: MapJumpRangeController,
     private val settings: Settings,
 ) : ViewModel() {
 
@@ -95,12 +97,21 @@ class MapViewModel(
         val polygon: List<Position>,
     )
 
+    data class SystemInfoTypes(
+        val starSelected: Map<SettingsMapType, MapSystemInfoType>,
+        val starApplied: Map<SettingsMapType, MapSystemInfoType>,
+        val cellSelected: Map<SettingsMapType, MapSystemInfoType?>,
+        val cellApplied: Map<SettingsMapType, MapSystemInfoType?>,
+        val indicators: Map<SettingsMapType, List<MapSystemInfoType>>,
+        val infoBox: Map<SettingsMapType, List<MapSystemInfoType>>,
+    )
+
     data class UiState(
         val tabs: List<Tab>,
         val selectedTab: Int,
         val search: String?,
-        val starColor: Map<SettingsMapType, MapStarColor>,
-        val cellColor: Map<SettingsMapType, MapStarColor?>,
+        val systemInfoTypes: SystemInfoTypes,
+        val mapJumpRangeState: MapJumpRangeState,
         val cluster: Cluster,
         val mapType: MapType,
         val layout: Map<Int, Layout>,
@@ -119,8 +130,8 @@ class MapViewModel(
             tabs = createTabs(),
             selectedTab = 0,
             search = null,
-            starColor = settings.intelMap.mapTypeStarColor,
-            cellColor = settings.intelMap.mapTypeCellColor,
+            systemInfoTypes = getColorModes(),
+            mapJumpRangeState = mapJumpRangeController.state.value,
             cluster = Cluster(
                 systems = solarSystemsRepository.getSystems(knownSpace = true),
                 constellations = solarSystemsRepository.mapConstellations,
@@ -147,11 +158,13 @@ class MapViewModel(
             mapStatusRepository.status.collect { status -> updateMapState { copy(systemStatus = status) } }
         }
         viewModelScope.launch {
+            mapJumpRangeController.state.collect { state -> _state.update { it.copy(mapJumpRangeState = state) } }
+        }
+        viewModelScope.launch {
             settings.updateFlow.collect {
                 _state.update {
                     it.copy(
-                        starColor = settings.intelMap.mapTypeStarColor,
-                        cellColor = settings.intelMap.mapTypeCellColor,
+                        systemInfoTypes = getColorModes(),
                         settings = settings.intelMap,
                         cluster = it.cluster.copy(jumpBridgeConnections = jumpBridgesRepository.getConnections()),
                     )
@@ -190,6 +203,21 @@ class MapViewModel(
         }
 
         openTab(_state.value.selectedTab, focusedId = null)
+    }
+
+    private fun getColorModes(): SystemInfoTypes {
+        val star = mapOf(
+            SettingsMapType.NewEden to MapSystemInfoType.Security,
+            SettingsMapType.Region to MapSystemInfoType.Security,
+        ) + settings.intelMap.mapTypeStarInfoTypes
+        return SystemInfoTypes(
+            starSelected = star,
+            starApplied = star,
+            cellSelected = settings.intelMap.mapTypeCellInfoTypes,
+            cellApplied = settings.intelMap.mapTypeCellInfoTypes,
+            indicators = settings.intelMap.mapTypeIndicatorInfoTypes,
+            infoBox = settings.intelMap.mapTypeInfoBoxInfoTypes,
+        )
     }
 
     fun onMapHover(offset: Offset, mapScale: Float) {
@@ -293,24 +321,48 @@ class MapViewModel(
         updateMapState { copy(selectedSystem = visibleResultIds[index]) }
     }
 
-    fun onSystemColorChange(mapType: SettingsMapType, selected: MapStarColor) {
-        val new = settings.intelMap.mapTypeStarColor + (mapType to selected)
-        settings.intelMap = settings.intelMap.copy(mapTypeStarColor = new)
+    fun onSystemColorChange(mapType: SettingsMapType, selected: MapSystemInfoType) {
+        val new = settings.intelMap.mapTypeStarInfoTypes + (mapType to selected)
+        settings.intelMap = settings.intelMap.copy(mapTypeStarInfoTypes = new)
     }
 
-    fun onSystemColorHover(mapType: SettingsMapType, selected: MapStarColor, isHovered: Boolean) {
-        val new = if (isHovered) _state.value.starColor + (mapType to selected) else settings.intelMap.mapTypeStarColor
-        _state.update { it.copy(starColor = new) }
+    fun onSystemColorHover(mapType: SettingsMapType, selected: MapSystemInfoType, isHovered: Boolean) {
+        val new = if (isHovered) _state.value.systemInfoTypes.starSelected + (mapType to selected) else getColorModes().starSelected
+        _state.update { it.copy(systemInfoTypes = it.systemInfoTypes.copy(starApplied = new)) }
     }
 
-    fun onCellColorChange(mapType: SettingsMapType, selected: MapStarColor?) {
-        val new = settings.intelMap.mapTypeCellColor + (mapType to selected)
-        settings.intelMap = settings.intelMap.copy(mapTypeCellColor = new)
+    fun onCellColorChange(mapType: SettingsMapType, selected: MapSystemInfoType?) {
+        val new = settings.intelMap.mapTypeCellInfoTypes + (mapType to selected)
+        settings.intelMap = settings.intelMap.copy(mapTypeCellInfoTypes = new)
     }
 
-    fun onCellColorHover(mapType: SettingsMapType, selected: MapStarColor?, isHovered: Boolean) {
-        val new = if (isHovered) _state.value.cellColor + (mapType to selected) else settings.intelMap.mapTypeCellColor
-        _state.update { it.copy(cellColor = new) }
+    fun onCellColorHover(mapType: SettingsMapType, selected: MapSystemInfoType?, isHovered: Boolean) {
+        val new = if (isHovered) _state.value.systemInfoTypes.cellSelected + (mapType to selected) else getColorModes().cellSelected
+        _state.update { it.copy(systemInfoTypes = it.systemInfoTypes.copy(cellApplied = new)) }
+    }
+
+    fun onIndicatorChange(mapType: SettingsMapType, selected: MapSystemInfoType) {
+        val newMap = toggleType(mapType, settings.intelMap.mapTypeIndicatorInfoTypes, selected)
+        settings.intelMap = settings.intelMap.copy(mapTypeIndicatorInfoTypes = newMap)
+    }
+
+    fun onInfoBoxChange(mapType: SettingsMapType, selected: MapSystemInfoType) {
+        val newMap = toggleType(mapType, settings.intelMap.mapTypeInfoBoxInfoTypes, selected)
+        settings.intelMap = settings.intelMap.copy(mapTypeInfoBoxInfoTypes = newMap)
+    }
+
+    private fun toggleType(mapType: SettingsMapType, currentMap: Map<SettingsMapType, List<MapSystemInfoType>>, selected: MapSystemInfoType): Map<SettingsMapType, List<MapSystemInfoType>> {
+        val currentTypes = currentMap[mapType].orEmpty()
+        val newTypes = if (selected in currentTypes) currentTypes - selected else currentTypes + selected
+        return currentMap + (mapType to newTypes.sortedBy { it.ordinal })
+    }
+
+    fun onJumpRangeTargetUpdate(target: String) {
+        mapJumpRangeController.onTargetUpdate(target)
+    }
+
+    fun onJumpRangeDistanceUpdate(distanceLy: Double) {
+        mapJumpRangeController.onRangeUpdate(distanceLy)
     }
 
     private fun openTab(id: Int, focusedId: Int?) {
@@ -319,7 +371,7 @@ class MapViewModel(
         val layout = when (mapType) {
             ClusterSystemsMap -> layoutRepository.getNewEdenLayout()
             ClusterRegionsMap -> layoutRepository.getRegionLayout()
-            is RegionMap -> layoutRepository.getLayout(mapType.regionId)
+            is RegionMap -> layoutRepository.getLayout(mapType.regionId) ?: throw IllegalArgumentException("No such region: ${mapType.regionId}")
         }
         val jumpBridgeAdditionalSystemsLayout = if (mapType is RegionMap) getJumpBridgeDestinationsLayout(layout) else emptyMap()
 
@@ -364,7 +416,7 @@ class MapViewModel(
     private fun getJumpBridgeDestinationsLayout(originsLayout: Map<Int, Position>): Map<Int, Position> {
         val outgoingJumpBridgeConnectionsInLayout = jumpBridgesRepository.getConnections()?.filter {
             (it.from.id in originsLayout.keys) xor (it.to.id in originsLayout.keys)
-        } ?: emptyList()
+        }.orEmpty()
         return outgoingJumpBridgeConnectionsInLayout.fold(emptyMap()) { layout, connection ->
             val (origin, destination) = if (connection.from.id in originsLayout.keys) connection.from to connection.to else connection.to to connection.from
             if (destination.id in layout.keys) return@fold layout // Already in layout
@@ -438,7 +490,9 @@ class MapViewModel(
                         if (mapType.regionId == regionId) {
                             updateMapState { copy(selectedSystem = systemId) }
                         } else {
-                            openRegionMap(regionId, systemId)
+                            if (layoutRepository.getLayout(regionId) != null) {
+                                openRegionMap(regionId, systemId)
+                            }
                         }
                     }
                 }

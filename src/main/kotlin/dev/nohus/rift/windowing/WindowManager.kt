@@ -21,6 +21,7 @@ import dev.nohus.rift.intel.IntelWindow
 import dev.nohus.rift.intel.settings.IntelSettingsWindow
 import dev.nohus.rift.jabber.JabberInputModel
 import dev.nohus.rift.jabber.JabberWindow
+import dev.nohus.rift.logging.analytics.Analytics
 import dev.nohus.rift.map.MapWindow
 import dev.nohus.rift.map.settings.MapSettingsWindow
 import dev.nohus.rift.neocom.NeocomWindow
@@ -42,6 +43,7 @@ import java.time.Instant
 @Single
 class WindowManager(
     private val settings: Settings,
+    private val analytics: Analytics,
 ) {
 
     @Serializable
@@ -116,6 +118,7 @@ class WindowManager(
 
     fun onWindowOpen(window: RiftWindow, inputModel: Any? = null, ifClosed: Boolean = false) {
         if (ifClosed && states.value[window]?.isVisible == true) return
+        if (states.value[window]?.isVisible != true) analytics.windowOpened(window.name)
         val state = states.value[window]?.copy(
             inputModel = inputModel,
             isVisible = true,
@@ -141,6 +144,7 @@ class WindowManager(
     }
 
     fun onWindowClose(window: RiftWindow) {
+        analytics.windowClosed(window.name)
         settings.openWindows -= window
         if (window in persistentWindows) {
             states.value[window]?.let {

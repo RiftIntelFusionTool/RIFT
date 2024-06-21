@@ -6,23 +6,11 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.onClick
-import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -34,26 +22,11 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.times
-import dev.nohus.rift.compose.AsyncPlayerPortrait
-import dev.nohus.rift.compose.ClickablePlayer
-import dev.nohus.rift.compose.ScrollbarColumn
-import dev.nohus.rift.compose.SystemEntities
-import dev.nohus.rift.compose.SystemEntityInfoRow
-import dev.nohus.rift.compose.modifyIf
-import dev.nohus.rift.compose.theme.Cursors
 import dev.nohus.rift.compose.theme.RiftTheme
 import dev.nohus.rift.di.koin
 import dev.nohus.rift.generated.resources.Res
@@ -65,17 +38,10 @@ import dev.nohus.rift.location.GetOnlineCharactersLocationUseCase.OnlineCharacte
 import dev.nohus.rift.map.MapViewModel.MapType
 import dev.nohus.rift.map.MapViewModel.MapType.RegionMap
 import dev.nohus.rift.map.systemcolor.SystemColorStrategy
-import dev.nohus.rift.repositories.MapStatusRepository.SolarSystemStatus
-import dev.nohus.rift.repositories.NamesRepository
 import dev.nohus.rift.repositories.ShipTypesRepository
 import dev.nohus.rift.repositories.SolarSystemsRepository.MapSolarSystem
-import dev.nohus.rift.settings.persistence.MapStarColor
-import dev.nohus.rift.utils.roundSecurity
-import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.imageResource
-import java.time.Duration
-import java.time.Instant
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
@@ -319,267 +285,5 @@ class HostileOrbitPainter {
             val icon = shipTypesRepository.getShipBracketIcon(ship.name) ?: return@mapNotNull null
             List(it.item.count) { icon }
         }.flatten()
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun SystemInfoBox(
-    system: MapSolarSystem,
-    regionName: String?,
-    isHighlightedOrHovered: Boolean,
-    intel: List<Dated<SystemEntity>>?,
-    hasIntelPopup: Boolean,
-    onlineCharacters: List<OnlineCharacterLocation>,
-    systemStatus: SolarSystemStatus?,
-    colors: List<MapStarColor>,
-    onRegionClick: () -> Unit,
-    modifier: Modifier,
-) {
-    val intelInPopup = if (hasIntelPopup || isHighlightedOrHovered) intel else null
-    val borderColor = if (isHighlightedOrHovered) RiftTheme.colors.borderGreyLight else RiftTheme.colors.borderGrey
-    Box(
-        modifier = modifier
-            .background(Color.Black.copy(alpha = 0.8f))
-            .border(1.dp, borderColor)
-            .padding(2.dp),
-    ) {
-        Column {
-            val intelGroups = if (intelInPopup != null) groupIntelByTime(intelInPopup) else null
-            Row {
-                val isShowingSecurity = hasIntelPopup || isHighlightedOrHovered
-                val isShowingIntelTimer = intelGroups?.size == 1
-                val securityColor = SecurityColors[system.security]
-                val systemNameText = buildAnnotatedString {
-                    append(system.name)
-                    if (isShowingSecurity) {
-                        append(" ")
-                        withStyle(SpanStyle(color = securityColor)) {
-                            append(system.security.roundSecurity().toString())
-                        }
-                    }
-                    if (isShowingIntelTimer) append(" ")
-                }
-                val systemNameStyle = RiftTheme.typography.captionBoldPrimary
-                val highlightedSystemNameStyle = RiftTheme.typography.bodyHighlighted.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                val style = if (isHighlightedOrHovered) highlightedSystemNameStyle else systemNameStyle
-                Text(
-                    text = systemNameText,
-                    style = style,
-                )
-                if (isShowingIntelTimer) {
-                    Timer(intelGroups!!.keys.first())
-                }
-            }
-
-            if (regionName != null) {
-                Text(
-                    text = regionName,
-                    style = RiftTheme.typography.captionSecondary,
-                    modifier = Modifier
-                        .pointerHoverIcon(PointerIcon(Cursors.pointerInteractive))
-                        .onClick { onRegionClick() },
-                )
-            }
-
-            if (hasIntelPopup || isHighlightedOrHovered) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(1.dp),
-                    modifier = Modifier.modifyIf(intelGroups != null) { padding(bottom = 1.dp) },
-                ) {
-                    onlineCharacters.forEach { onlineCharacterLocation ->
-                        ClickablePlayer(onlineCharacterLocation.id) {
-                            SystemEntityInfoRow {
-                                AsyncPlayerPortrait(
-                                    characterId = onlineCharacterLocation.id,
-                                    size = 32,
-                                    modifier = Modifier.size(32.dp),
-                                )
-                                Text(
-                                    text = onlineCharacterLocation.name,
-                                    style = RiftTheme.typography.bodyPrimary.copy(color = RiftTheme.colors.onlineGreen),
-                                    modifier = Modifier.padding(4.dp),
-                                )
-                            }
-                        }
-                    }
-                    SystemStatus(colors, systemStatus)
-                }
-            }
-
-            if (intelGroups != null) {
-                Intel(intelGroups, system)
-            }
-        }
-    }
-}
-
-@Composable
-private fun ColumnScope.SystemStatus(
-    colors: List<MapStarColor>,
-    systemStatus: SolarSystemStatus?,
-) {
-    val namesRepository: NamesRepository = koin.get()
-    colors.distinct().forEach { color ->
-        when (color) {
-            MapStarColor.Actual -> {}
-            MapStarColor.Security -> {}
-            MapStarColor.IntelHostiles -> {}
-            MapStarColor.Jumps -> {
-                val jumps = systemStatus?.shipJumps ?: 0
-                Text(
-                    text = "Jumps: $jumps",
-                    style = RiftTheme.typography.bodyPrimary,
-                )
-            }
-
-            MapStarColor.Kills -> {
-                val podKills = systemStatus?.podKills ?: 0
-                val shipKills = systemStatus?.shipKills ?: 0
-                Text(
-                    text = "Pod kills: $podKills\nShip kills: $shipKills",
-                    style = RiftTheme.typography.bodyPrimary,
-                )
-            }
-
-            MapStarColor.NpcKills -> {
-                val npcKills = systemStatus?.npcKills ?: 0
-                Text(
-                    text = "NPC kills: $npcKills",
-                    style = RiftTheme.typography.bodyPrimary,
-                )
-            }
-
-            MapStarColor.Assets -> {
-                val assets = systemStatus?.assetCount ?: 0
-                if (assets > 0) {
-                    Text(
-                        text = "Assets: $assets",
-                        style = RiftTheme.typography.bodyPrimary,
-                    )
-                }
-            }
-
-            MapStarColor.Incursions -> {
-                systemStatus?.incursion?.let { incursion ->
-                    Text(
-                        text = "${incursion.type}: ${incursion.state.name}",
-                        style = RiftTheme.typography.bodyPrimary,
-                    )
-                }
-            }
-            MapStarColor.Stations -> {
-                systemStatus?.stations?.takeIf { it.isNotEmpty() }?.let { stations ->
-                    Text(
-                        text = "Stations: ${stations.size}",
-                        style = RiftTheme.typography.bodyPrimary,
-                    )
-                }
-            }
-            MapStarColor.FactionWarfare -> {
-                systemStatus?.factionWarfare?.let { factionWarfare ->
-                    val owner = namesRepository.getName(factionWarfare.ownerFactionId) ?: "Unknown"
-                    val occupier = namesRepository.getName(factionWarfare.occupierFactionId) ?: "Unknown"
-                    val text = buildString {
-                        appendLine("Faction warfare: ${factionWarfare.contested.name}")
-                        appendLine("Owner: $owner")
-                        if (occupier != owner) {
-                            appendLine("Occupier: $occupier")
-                        }
-                        if (factionWarfare.victoryPoints != 0) {
-                            appendLine("Points: ${factionWarfare.victoryPoints}/${factionWarfare.victoryPointsThreshold}")
-                        }
-                    }.trim()
-                    Text(
-                        text = text,
-                        style = RiftTheme.typography.bodyPrimary,
-                    )
-                }
-            }
-            MapStarColor.Sovereignty -> {
-                systemStatus?.sovereignty?.let {
-                    val id = it.allianceId ?: it.factionId ?: it.corporationId
-                    if (id != null) {
-                        val name = namesRepository.getName(id) ?: "Unknown"
-                        Text(
-                            text = name,
-                            style = RiftTheme.typography.bodyPrimary,
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun Intel(
-    groups: Map<Instant, List<SystemEntity>>,
-    system: MapSolarSystem,
-) {
-    ScrollbarColumn(
-        isScrollbarConditional = true,
-        isFillWidth = false,
-        modifier = Modifier.heightIn(max = 300.dp),
-    ) {
-        for (group in groups.entries.sortedByDescending { it.key }) {
-            val entities = group.value
-            Column(
-                verticalArrangement = Arrangement.spacedBy(1.dp),
-            ) {
-                if (groups.size > 1) {
-                    Timer(group.key)
-                }
-                SystemEntities(entities, system.name)
-            }
-        }
-    }
-}
-
-private fun groupIntelByTime(intel: List<Dated<SystemEntity>>): Map<Instant, List<SystemEntity>> {
-    // Group entities by when they were reported, so they can be displayed with a single timer by group
-    val groups = mutableMapOf<Instant, List<SystemEntity>>()
-    intel.forEach { item ->
-        val group = groups.keys.firstOrNull { Duration.between(item.timestamp, it).abs() < Duration.ofSeconds(10) }
-        if (group != null) {
-            groups[group] = groups.getValue(group) + item.item
-        } else {
-            groups[item.timestamp] = listOf(item.item)
-        }
-    }
-    return groups
-}
-
-@Composable
-private fun Timer(
-    timestamp: Instant,
-    modifier: Modifier = Modifier,
-) {
-    val now by produceState(initialValue = Instant.now()) {
-        while (true) {
-            delay(300)
-            value = Instant.now()
-        }
-    }
-    val duration = Duration.between(timestamp, now)
-    val colorFadePercentage = (duration.toSeconds() / 120f).coerceIn(0f, 1f)
-    val color = lerp(RiftTheme.colors.textSpecialHighlighted, RiftTheme.colors.textSecondary, colorFadePercentage)
-    Text(
-        text = formatDuration(duration),
-        style = RiftTheme.typography.captionBoldPrimary.copy(color = color),
-        modifier = modifier,
-    )
-}
-
-private fun formatDuration(duration: Duration): String {
-    val minutes = duration.toMinutes()
-    return if (minutes < 10) {
-        val seconds = duration.toSecondsPart()
-        String.format("%d:%02d", minutes, seconds)
-    } else if (minutes < 60) {
-        "${minutes}m"
-    } else {
-        val hours = duration.toHours()
-        "${hours}h"
     }
 }

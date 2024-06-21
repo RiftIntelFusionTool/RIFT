@@ -13,7 +13,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -29,6 +28,7 @@ import dev.nohus.rift.compose.RiftButton
 import dev.nohus.rift.compose.RiftDialog
 import dev.nohus.rift.compose.RiftTooltipArea
 import dev.nohus.rift.compose.RiftWindow
+import dev.nohus.rift.compose.ScrollbarColumn
 import dev.nohus.rift.compose.TooltipAnchor
 import dev.nohus.rift.compose.theme.RiftTheme
 import dev.nohus.rift.compose.theme.Spacing
@@ -89,16 +89,18 @@ fun AboutWindow(
 
         if (state.isLegalDialogShown) {
             RiftDialog(
-                title = "Legal notice",
+                title = "Legal & info",
                 icon = Res.drawable.window_concord,
                 parentState = windowState,
-                state = rememberWindowState(width = 400.dp, height = Dp.Unspecified),
+                state = rememberWindowState(width = 400.dp, height = 250.dp),
                 onCloseClick = viewModel::onDialogDismissed,
             ) {
-                Text(
-                    text = getLegalText(),
-                    style = RiftTheme.typography.titlePrimary,
-                )
+                ScrollbarColumn {
+                    Text(
+                        text = getLegalText(),
+                        style = RiftTheme.typography.titlePrimary,
+                    )
+                }
             }
         }
 
@@ -222,7 +224,7 @@ private fun AboutWindowContent(
         Row(
             horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
             modifier = Modifier
-                .padding(top = Spacing.medium)
+                .padding(top = Spacing.large)
                 .align(Alignment.End),
         ) {
             RiftButton(
@@ -232,7 +234,7 @@ private fun AboutWindowContent(
                 onClick = onAppDataClick,
             )
             RiftButton(
-                text = "Legal",
+                text = "Legal & info",
                 type = ButtonType.Secondary,
                 cornerCut = ButtonCornerCut.None,
                 onClick = onLegalClick,
@@ -307,9 +309,20 @@ private fun getUpdateDialogText(
 @Composable
 private fun getLegalText(): AnnotatedString {
     return buildAnnotatedString {
-        append(
+        appendLine(
             "EVE related materials © 2014 CCP hf. All rights reserved. \"EVE\", \"EVE Online\", \"CCP\", " +
                 "and all related logos and images are trademarks or registered trademarks of CCP hf.",
+        )
+        appendLine()
+        append("RIFT collects anonymous statistics, like the number of people using it and popularity of features. This ")
+        withStyle(SpanStyle(color = RiftTheme.colors.textHighlighted)) {
+            append("does not")
+        }
+        appendLine(" include any personal data.")
+        appendLine()
+        appendLine(
+            "These metrics are required by CCP for the EVE Online Partnership Program, as well as helping " +
+                "improve RIFT by focusing work on features used the most.",
         )
     }
 }

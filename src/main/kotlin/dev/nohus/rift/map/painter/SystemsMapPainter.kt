@@ -159,7 +159,7 @@ class SystemsMapPainter(
                 cellGradientRadius,
                 alphaModifier,
                 scale,
-                density
+                density,
             )
 
             translate(offset.x, offset.y) {

@@ -6,7 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
 import dev.nohus.rift.generated.resources.Res
 import dev.nohus.rift.generated.resources.missing
 import dev.nohus.rift.generated.resources.missing_blueprint
