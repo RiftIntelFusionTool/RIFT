@@ -34,6 +34,7 @@ class CharactersViewModel(
         val characterId: Int,
         val settingsFile: Path?,
         val isAuthenticated: Boolean,
+        val isHidden: Boolean,
         val info: AsyncResource<LocalCharactersRepository.CharacterInfo>,
         val walletBalance: Double?,
     )
@@ -72,18 +73,18 @@ class CharactersViewModel(
         viewModelScope.launch {
             localCharactersRepository.load()
             combine(
-                localCharactersRepository.characters,
+                localCharactersRepository.allCharacters,
                 onlineCharactersRepository.onlineCharacters,
                 characterWalletRepository.balances,
                 settings.updateFlow,
             ) { characters, onlineCharacters, balances, _ ->
                 val items = characters
-                    .filter { it.characterId !in settings.hiddenCharacterIds }
                     .map { localCharacter ->
                         CharacterItem(
                             characterId = localCharacter.characterId,
                             settingsFile = localCharacter.settingsFile,
                             isAuthenticated = localCharacter.isAuthenticated,
+                            isHidden = localCharacter.isHidden,
                             info = localCharacter.info,
                             walletBalance = balances[localCharacter.characterId],
                         )
@@ -177,12 +178,12 @@ class CharactersViewModel(
         _state.update { it.copy(dialogMessage = null) }
     }
 
-    fun onHideCharacterClick(characterId: Int) {
+    fun onDisableCharacterClick(characterId: Int) {
         settings.hiddenCharacterIds += characterId
     }
 
-    fun onClearHiddenCharactersClick() {
-        settings.hiddenCharacterIds = emptyList()
+    fun onEnableCharacterClick(characterId: Int) {
+        settings.hiddenCharacterIds -= characterId
     }
 
     private fun observeOnlineCharacters() = viewModelScope.launch {

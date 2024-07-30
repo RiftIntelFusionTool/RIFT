@@ -17,7 +17,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.koin.core.annotation.Single
 import java.io.IOException
-import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
@@ -102,7 +101,10 @@ class ChatLogsObserver(
                     }
                 }.awaitAll().filterNotNull()
             }
-        } catch (e: NoSuchFileException) { emptyList() }
+        } catch (e: FileSystemException) {
+            logger.error(e) { "Failed reloading chat log files" }
+            emptyList()
+        }
         logFilesMutex.withLock {
             this.logFiles.clear()
             this.logFiles.addAll(logFiles)
@@ -116,6 +118,9 @@ class ChatLogsObserver(
             val minTime = Instant.now() - Duration.ofDays(7)
             val currentActiveLogFiles = logFilesMutex.withLock { logFiles.toList() }
                 .filter { it.dateTime.toInstant(ZoneOffset.UTC).isAfter(minTime) }
+                .also {
+                    if (it.isEmpty()) logger.info { "No chat log files within the last week" }
+                }
                 .groupBy { it.characterId }
                 .flatMap { (characterId, playerLogFiles) ->
                     playerLogFiles

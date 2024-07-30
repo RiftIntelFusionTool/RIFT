@@ -101,6 +101,18 @@ object WhatsNew {
                 - Added the ability to lock windows in place
                 - Optimized jump bridge search
             """.trimIndent(),
+            "2.11.0" description """
+                - You can now disable characters that you don't want to use for anything in RIFT
+                - The opened region map is now remembered across restarts
+            """.trimIndent(),
+            "2.12.0" description """
+                -! Planets on the map
+                - You can now enable map indicators for planets
+                - Planet types can be filtered, whether for Skyhook scouting or PI needs
+                
+                - Made it possible to set up combat alerts with no target filters
+                - Added a warning if your EVE client is set to a language other than English
+            """.trimIndent(),
         ).reversed()
     }
 }

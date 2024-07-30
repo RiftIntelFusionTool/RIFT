@@ -1,6 +1,7 @@
 package dev.nohus.rift
 
 import dev.nohus.rift.configurationpack.ShouldShowConfigurationPackReminderUseCase
+import dev.nohus.rift.gamelogs.ShouldShowNonEnglishEveClientWarningUseCase
 import dev.nohus.rift.settings.persistence.Settings
 import dev.nohus.rift.singleinstance.SingleInstanceController
 import dev.nohus.rift.utils.directories.DetectDirectoriesUseCase
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.jetbrains.skiko.MainUIDispatcher
 import org.koin.core.annotation.Single
 
 private val logger = KotlinLogging.logger {}
@@ -26,6 +28,7 @@ class ApplicationViewModel(
     private val windowManager: WindowManager,
     private val singleInstanceController: SingleInstanceController,
     private val shouldShowConfigurationPackReminderUseCase: ShouldShowConfigurationPackReminderUseCase,
+    private val shouldShowNonEnglishEveClientWarningUseCase: ShouldShowNonEnglishEveClientWarningUseCase,
     private val whatsNewController: WhatsNewController,
     private val settings: Settings,
 ) : ViewModel() {
@@ -77,9 +80,13 @@ class ApplicationViewModel(
                 _state.update { it.copy(isTrayIconShown = finished) }
             }
         }
-        viewModelScope.launch {
+        viewModelScope.launch(MainUIDispatcher) {
             val showReminder = shouldShowConfigurationPackReminderUseCase()
             if (showReminder) windowManager.onWindowOpen(RiftWindow.ConfigurationPackReminder)
+        }
+        viewModelScope.launch(MainUIDispatcher) {
+            val showWarning = shouldShowNonEnglishEveClientWarningUseCase()
+            if (showWarning) windowManager.onWindowOpen(RiftWindow.NonEnglishEveClientWarning)
         }
         if (settings.isSetupWizardFinished) {
             whatsNewController.showIfRequired()

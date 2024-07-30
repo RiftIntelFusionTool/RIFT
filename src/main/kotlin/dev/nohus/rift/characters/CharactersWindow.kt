@@ -96,9 +96,6 @@ fun CharactersWindow(
         title = "Characters",
         icon = Res.drawable.window_characters,
         state = windowState,
-        tuneContextMenuItems = listOf(
-            ContextMenuItem.TextItem("Unhide characters", onClick = viewModel::onClearHiddenCharactersClick),
-        ),
         onCloseClick = onCloseRequest,
     ) {
         CharactersWindowContent(
@@ -109,7 +106,8 @@ fun CharactersWindow(
             onCopySourceClick = viewModel::onCopySourceClick,
             onCopyDestinationClick = viewModel::onCopyDestinationClick,
             onCopySettingsConfirmClick = viewModel::onCopySettingsConfirmClick,
-            onHideCharacterClick = viewModel::onHideCharacterClick,
+            onDisableCharacterClick = viewModel::onDisableCharacterClick,
+            onEnableCharacterClick = viewModel::onEnableCharacterClick,
         )
 
         state.dialogMessage?.let {
@@ -140,7 +138,8 @@ private fun CharactersWindowContent(
     onCopySourceClick: (Int) -> Unit,
     onCopyDestinationClick: (Int) -> Unit,
     onCopySettingsConfirmClick: () -> Unit,
-    onHideCharacterClick: (characterId: Int) -> Unit,
+    onDisableCharacterClick: (characterId: Int) -> Unit,
+    onEnableCharacterClick: (characterId: Int) -> Unit,
 ) {
     if (state.characters.isNotEmpty()) {
         Column {
@@ -155,17 +154,47 @@ private fun CharactersWindowContent(
             ScrollbarLazyColumn(
                 modifier = Modifier.weight(1f),
             ) {
-                items(state.characters, key = { it.characterId }) { character ->
-                    CharacterRow(
-                        character = character,
-                        isOnline = character.characterId in state.onlineCharacters,
-                        location = state.locations[character.characterId],
-                        copyingState = state.copying,
-                        onCopySourceClick = { onCopySourceClick(character.characterId) },
-                        onCopyDestinationClick = { onCopyDestinationClick(character.characterId) },
-                        onHideCharacterClick = onHideCharacterClick,
-                        modifier = Modifier.animateItemPlacement(),
-                    )
+                items(state.characters.filterNot { it.isHidden }, key = { it.characterId }) { character ->
+                    Box(modifier = Modifier.animateItemPlacement()) {
+                        CharacterRow(
+                            character = character,
+                            isOnline = character.characterId in state.onlineCharacters,
+                            location = state.locations[character.characterId],
+                            copyingState = state.copying,
+                            onCopySourceClick = { onCopySourceClick(character.characterId) },
+                            onCopyDestinationClick = { onCopyDestinationClick(character.characterId) },
+                            onDisableCharacterClick = onDisableCharacterClick,
+                        )
+                    }
+                }
+                item(key = "disabled characters") {
+                    Box(modifier = Modifier.animateItemPlacement()) {
+                        RiftTooltipArea(
+                            tooltip = "Disabled characters will not be used in RIFT.\nRight-click a character to toggle.",
+                            anchor = TooltipAnchor.BottomStart,
+                            modifier = Modifier.padding(vertical = Spacing.medium),
+                        ) {
+                            if (state.characters.any { it.isHidden }) {
+                                Text(
+                                    text = "Disabled characters",
+                                    style = RiftTheme.typography.titlePrimary,
+                                )
+                            } else {
+                                Text(
+                                    text = "No disabled characters",
+                                    style = RiftTheme.typography.titlePrimary,
+                                )
+                            }
+                        }
+                    }
+                }
+                items(state.characters.filter { it.isHidden }, key = { it.characterId }) { character ->
+                    Box(modifier = Modifier.animateItemPlacement()) {
+                        HiddenCharacterRow(
+                            character = character,
+                            onEnableCharacterClick = onEnableCharacterClick,
+                        )
+                    }
                 }
             }
         }
@@ -295,12 +324,12 @@ private fun CharacterRow(
     copyingState: CopyingState,
     onCopySourceClick: () -> Unit,
     onCopyDestinationClick: () -> Unit,
-    onHideCharacterClick: (characterId: Int) -> Unit,
+    onDisableCharacterClick: (characterId: Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     RiftContextMenuArea(
         items = listOf(
-            ContextMenuItem.TextItem("Hide character", onClick = { onHideCharacterClick(character.characterId) }),
+            ContextMenuItem.TextItem("Disable character", onClick = { onDisableCharacterClick(character.characterId) }),
         ),
     ) {
         Row(
@@ -460,6 +489,71 @@ private fun CharacterRow(
                             }
                         }
                     }
+                }
+
+                is AsyncResource.Error -> {
+                    Text(
+                        text = "Could not load",
+                        style = RiftTheme.typography.bodySecondary.copy(color = RiftTheme.colors.borderError),
+                        modifier = Modifier.padding(horizontal = Spacing.medium),
+                    )
+                }
+
+                AsyncResource.Loading -> {
+                    Text(
+                        text = "Loading…",
+                        style = RiftTheme.typography.bodySecondary,
+                        modifier = Modifier.padding(horizontal = Spacing.medium),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HiddenCharacterRow(
+    character: CharacterItem,
+    onEnableCharacterClick: (characterId: Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    RiftContextMenuArea(
+        items = listOf(
+            ContextMenuItem.TextItem("Enable character", onClick = { onEnableCharacterClick(character.characterId) }),
+        ),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = modifier
+                .fillMaxWidth()
+                .hoverBackground()
+                .padding(Spacing.verySmall),
+        ) {
+            AsyncPlayerPortrait(
+                characterId = character.characterId,
+                size = 32,
+                modifier = Modifier.size(32.dp),
+            )
+            when (character.info) {
+                is AsyncResource.Ready -> {
+                    AsyncCorporationLogo(
+                        corporationId = character.info.value.corporationId,
+                        size = 32,
+                        modifier = Modifier.size(32.dp),
+                    )
+                    if (character.info.value.allianceId != null) {
+                        AsyncAllianceLogo(
+                            allianceId = character.info.value.allianceId,
+                            size = 32,
+                            modifier = Modifier.size(32.dp),
+                        )
+                    }
+                    Text(
+                        text = character.info.value.name,
+                        style = RiftTheme.typography.titleSecondary,
+                        modifier = Modifier
+                            .padding(horizontal = Spacing.medium),
+                    )
                 }
 
                 is AsyncResource.Error -> {

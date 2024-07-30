@@ -123,7 +123,7 @@ class ShipTypesRepository(
      */
     fun getShip(name: String): String? {
         val lowercase = name.lowercase()
-        val isNavy = lowercase.startsWith("navy ") || lowercase.endsWith(" navy")
+        val isNavy = lowercase.startsWith("navy ") xor lowercase.endsWith(" navy")
         val isFleet = lowercase.startsWith("fleet ")
         return when {
             isNavy -> {

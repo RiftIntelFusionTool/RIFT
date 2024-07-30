@@ -48,7 +48,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.InjectedParam
+import java.nio.file.Path
 import java.util.UUID
+import kotlin.io.path.exists
+import kotlin.io.path.extension
+import kotlin.io.path.isDirectory
 
 @Suppress("PrivatePropertyName")
 @Factory
@@ -135,13 +139,44 @@ class CreateAlertViewModel(
             val question = _state.value.formQuestion as? FreeformTextQuestion ?: return
             val isValid = question.allowEmpty || answer.text.isNotBlank()
             _state.update { it.copy(isPendingAnswerValid = isValid) }
+        } else if (answer is SoundAnswer) {
+            when (answer) {
+                is SoundAnswer.BuiltInSound -> _state.update { it.copy(isPendingAnswerValid = true) }
+                is SoundAnswer.CustomSound -> {
+                    if (answer.path.isNotBlank()) {
+                        val path = Path.of(answer.path)
+                        if (path.exists()) {
+                            if (!path.isDirectory()) {
+                                if (path.extension == "wav") {
+                                    _state.update { it.copy(isPendingAnswerValid = true) }
+                                } else {
+                                    _state.update { it.copy(isPendingAnswerValid = false, pendingAnswerInvalidReason = "Must be a WAV file") }
+                                }
+                            } else {
+                                _state.update { it.copy(isPendingAnswerValid = false, pendingAnswerInvalidReason = "Path is a directory") }
+                            }
+                        } else {
+                            _state.update { it.copy(isPendingAnswerValid = false, pendingAnswerInvalidReason = "Path does not exist") }
+                        }
+                    } else {
+                        _state.update { it.copy(isPendingAnswerValid = null) }
+                    }
+                }
+            }
         }
     }
 
     fun onBackClick() {
         if (answers.isNotEmpty()) {
             answers.removeLast()
-            _state.update { it.copy(formQuestion = getNextFormQuestion(), formAnswers = answers) }
+            _state.update {
+                it.copy(
+                    formQuestion = getNextFormQuestion(),
+                    pendingAnswer = null,
+                    isPendingAnswerValid = null,
+                    formAnswers = answers,
+                )
+            }
         } else {
             _state.update { it.copy(dismissEvent = Event()) }
         }

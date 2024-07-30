@@ -29,6 +29,7 @@ class ShipTypesRepositoryTest : FreeSpec({
         "fleet cyclone" to "Cyclone Fleet Issue",
         "Auguror Navy Issue" to null,
         "cyclone fleet" to null,
+        "navy osprey navy" to null,
         "invalid" to null,
         "" to null,
         "Buzzar" to null,

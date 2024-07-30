@@ -47,6 +47,7 @@ import dev.nohus.rift.generated.resources.Res
 import dev.nohus.rift.generated.resources.backicon
 import dev.nohus.rift.generated.resources.expand_more_16px
 import dev.nohus.rift.map.MapJumpRangeController.MapJumpRangeState
+import dev.nohus.rift.map.MapPlanetsController.MapPlanetsState
 import dev.nohus.rift.map.MapViewModel.MapType
 import dev.nohus.rift.map.MapViewModel.MapType.ClusterRegionsMap
 import dev.nohus.rift.map.MapViewModel.MapType.ClusterSystemsMap
@@ -58,7 +59,10 @@ import dev.nohus.rift.map.PanelState.Expanded
 import dev.nohus.rift.map.PanelState.Indicators
 import dev.nohus.rift.map.PanelState.InfoBox
 import dev.nohus.rift.map.PanelState.JumpRange
+import dev.nohus.rift.map.PanelState.Planets
 import dev.nohus.rift.map.PanelState.StarColor
+import dev.nohus.rift.repositories.PlanetTypes
+import dev.nohus.rift.repositories.PlanetTypes.PlanetType
 import dev.nohus.rift.settings.persistence.MapSystemInfoType
 import org.jetbrains.compose.resources.painterResource
 import dev.nohus.rift.settings.persistence.MapType as SettingsMapType
@@ -66,11 +70,12 @@ import dev.nohus.rift.settings.persistence.MapType as SettingsMapType
 enum class PanelState {
     Collapsed, Expanded,
     StarColor, CellColor, Indicators, InfoBox,
-    JumpRange,
+    JumpRange, Planets
 }
 
 private val editableInfoTypes = mapOf(
     MapSystemInfoType.JumpRange to JumpRange,
+    MapSystemInfoType.Planets to Planets,
 )
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -80,6 +85,7 @@ fun MapSettingsPanel(
     mapType: MapType,
     systemInfoTypes: SystemInfoTypes,
     mapJumpRangeState: MapJumpRangeState,
+    mapPlanetsState: MapPlanetsState,
     onSystemColorChange: (SettingsMapType, MapSystemInfoType) -> Unit,
     onSystemColorHover: (SettingsMapType, MapSystemInfoType, Boolean) -> Unit,
     onCellColorChange: (SettingsMapType, MapSystemInfoType?) -> Unit,
@@ -88,6 +94,7 @@ fun MapSettingsPanel(
     onInfoBoxChange: (SettingsMapType, MapSystemInfoType) -> Unit,
     onJumpRangeTargetUpdate: (String) -> Unit,
     onJumpRangeDistanceUpdate: (Double) -> Unit,
+    onPlanetTypesUpdate: (List<PlanetType>) -> Unit,
 ) {
     val settingsMapType = when (mapType) {
         ClusterRegionsMap -> null
@@ -321,6 +328,13 @@ fun MapSettingsPanel(
                             onJumpRangeDistanceUpdate = onJumpRangeDistanceUpdate,
                         )
                     }
+                    Planets -> {
+                        PlanetsPanel(
+                            mapPlanetsState = mapPlanetsState,
+                            onBack = { panelState = previousPanelState },
+                            onPlanetTypesUpdate = onPlanetTypesUpdate,
+                        )
+                    }
                 }
             }
         }
@@ -401,6 +415,45 @@ private fun JumpRangePanel(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun PlanetsPanel(
+    mapPlanetsState: MapPlanetsState,
+    onBack: () -> Unit,
+    onPlanetTypesUpdate: (List<PlanetType>) -> Unit,
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(Spacing.medium),
+        modifier = Modifier.padding(Spacing.medium),
+    ) {
+        SettingsPanelTitle(
+            title = "Planet types",
+            onBack = onBack,
+        )
+        FlowRow(
+            verticalArrangement = Arrangement.spacedBy(Spacing.medium),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
+        ) {
+            PlanetTypes.types.forEach { type ->
+                val isSelected = type in mapPlanetsState.selectedTypes
+                RiftPill(
+                    text = type.name,
+                    icon = type.icon,
+                    isSelected = isSelected,
+                    onClick = {
+                        val new = if (isSelected) {
+                            mapPlanetsState.selectedTypes - type
+                        } else {
+                            mapPlanetsState.selectedTypes + type
+                        }
+                        onPlanetTypesUpdate(new)
+                    },
+                )
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun SettingsPanelTitle(
@@ -437,9 +490,9 @@ private fun SystemColorPills(
     FlowRow(
         verticalArrangement = Arrangement.spacedBy(Spacing.medium),
         horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
-        modifier = Modifier,
     ) {
-        val pills = if (isCellColor) MapSystemInfoType.entries + null else MapSystemInfoType.entries
+        val colorEntries = MapSystemInfoType.entries - listOf(MapSystemInfoType.Planets)
+        val pills = if (isCellColor) colorEntries + null else colorEntries
         pills.filter { isExpanded || selected == it }
             .forEach { type ->
                 val (text, tooltip) = getMapStarInfoTypeColorName(type)
@@ -514,6 +567,7 @@ private fun getMapStarInfoTypeColorName(color: MapSystemInfoType?): Pair<String,
         MapSystemInfoType.Sovereignty -> "Sovereignty" to "Colored according to the\nsovereignty holder"
         MapSystemInfoType.MetaliminalStorms -> "Metaliminal Storms" to "Colored according to the\npresence of metaliminal storms"
         MapSystemInfoType.JumpRange -> "Jump Range" to "Colored according to\njump range"
+        MapSystemInfoType.Planets -> throw IllegalArgumentException("Not used for colors")
         null -> "None" to "No background color"
     }
 }
@@ -533,6 +587,7 @@ private fun getMapStarInfoTypeIndicatorName(color: MapSystemInfoType?): Pair<Str
         MapSystemInfoType.Sovereignty -> "" to ""
         MapSystemInfoType.MetaliminalStorms -> "Metaliminal Storms" to "Indicator for systems with a storm"
         MapSystemInfoType.JumpRange -> "Jump Range" to "Indicator for systems in jump range"
+        MapSystemInfoType.Planets -> "Planets" to "Indicators for planets"
         null -> "None" to "No background color"
     }
 }
@@ -552,6 +607,7 @@ private fun getMapStarInfoTypeInfoBoxName(color: MapSystemInfoType?): Pair<Strin
         MapSystemInfoType.Sovereignty -> "Sovereignty" to "Sovereignty holder"
         MapSystemInfoType.MetaliminalStorms -> "Metaliminal Storms" to "Metaliminal storm type"
         MapSystemInfoType.JumpRange -> "Jump Range" to "Jump distance to system"
+        MapSystemInfoType.Planets -> "Planets" to "Planets information"
         null -> "None" to "No background color"
     }
 }

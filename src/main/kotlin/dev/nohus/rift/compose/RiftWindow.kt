@@ -25,7 +25,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -327,120 +326,167 @@ private fun WindowScope.TitleBar(
         onMinimizeClick = onMinimizeClick,
         onCloseClick = onCloseClick,
     )
-    val titleBar = movableContentOf {
-        val horizontalPadding = when (style) {
-            TitleBarStyle.Full -> Spacing.mediumLarge
-            TitleBarStyle.Small -> Spacing.medium
+    if (isLocked) {
+        TitleBar(
+            style = style,
+            width = width,
+            contextMenuItems = contextMenuItems,
+            icon = icon,
+            titleBarContent = titleBarContent,
+            title = title,
+            onTuneClick = onTuneClick,
+            tuneContextMenuItems = tuneContextMenuItems,
+            onAlwaysOnTopClick = onAlwaysOnTopClick,
+            isAlwaysOnTop = isAlwaysOnTop,
+            onLockClick = onLockClick,
+            isLocked = isLocked,
+            onMinimizeClick = onMinimizeClick,
+            onCloseClick = onCloseClick,
+        )
+    } else {
+        WindowDraggableArea {
+            TitleBar(
+                style = style,
+                width = width,
+                contextMenuItems = contextMenuItems,
+                icon = icon,
+                titleBarContent = titleBarContent,
+                title = title,
+                onTuneClick = onTuneClick,
+                tuneContextMenuItems = tuneContextMenuItems,
+                onAlwaysOnTopClick = onAlwaysOnTopClick,
+                isAlwaysOnTop = isAlwaysOnTop,
+                onLockClick = onLockClick,
+                isLocked = isLocked,
+                onMinimizeClick = onMinimizeClick,
+                onCloseClick = onCloseClick,
+            )
         }
-        val height = when (style) {
-            TitleBarStyle.Full -> 48.dp
-            TitleBarStyle.Small -> 32.dp
+    }
+}
+
+@Composable
+private fun TitleBar(
+    style: TitleBarStyle,
+    width: Dp,
+    contextMenuItems: List<ContextMenuItem>,
+    icon: DrawableResource,
+    titleBarContent: @Composable ((height: Dp) -> Unit)?,
+    title: String,
+    onTuneClick: (() -> Unit)?,
+    tuneContextMenuItems: List<ContextMenuItem>?,
+    onAlwaysOnTopClick: (() -> Unit)?,
+    isAlwaysOnTop: Boolean,
+    onLockClick: (() -> Unit)?,
+    isLocked: Boolean,
+    onMinimizeClick: () -> Unit,
+    onCloseClick: () -> Unit,
+) {
+    val horizontalPadding = when (style) {
+        TitleBarStyle.Full -> Spacing.mediumLarge
+        TitleBarStyle.Small -> Spacing.medium
+    }
+    val height = when (style) {
+        TitleBarStyle.Full -> 48.dp
+        TitleBarStyle.Small -> 32.dp
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .pointerHoverIcon(PointerIcon(Cursors.drag))
+            .size(width, height),
+    ) {
+        RiftContextMenuArea(contextMenuItems) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .padding(start = horizontalPadding),
+            ) {
+                if (style == TitleBarStyle.Full) {
+                    Image(
+                        painter = painterResource(icon),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .padding(end = Spacing.medium)
+                            .padding(vertical = Spacing.medium)
+                            .size(32.dp),
+                    )
+                }
+            }
         }
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .pointerHoverIcon(PointerIcon(Cursors.drag))
-                .size(width, height),
+            modifier = Modifier.weight(1f),
         ) {
-            RiftContextMenuArea(contextMenuItems) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .padding(start = horizontalPadding),
-                ) {
-                    if (style == TitleBarStyle.Full) {
-                        Image(
-                            painter = painterResource(icon),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .padding(end = Spacing.medium)
-                                .padding(vertical = Spacing.medium)
-                                .size(32.dp),
-                        )
-                    }
-                }
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f),
-            ) {
-                if (titleBarContent != null) {
-                    titleBarContent(height)
-                } else {
-                    RiftContextMenuArea(contextMenuItems, modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = title,
-                            style = when (style) {
-                                TitleBarStyle.Full -> RiftTheme.typography.headlineHighlighted
-                                TitleBarStyle.Small -> RiftTheme.typography.titleHighlighted
-                            },
-                            maxLines = 1,
-                        )
-                    }
-                }
-            }
-            RiftContextMenuArea(contextMenuItems) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
-                    modifier = Modifier
-                        .padding(start = Spacing.medium)
-                        .padding(end = Spacing.small)
-                        .padding(vertical = Spacing.medium),
-                ) {
-                    if (onTuneClick != null) {
-                        RiftImageButton(Res.drawable.window_titlebar_tune, 16.dp, onTuneClick)
-                    }
-                    if (tuneContextMenuItems != null) {
-                        RiftContextMenuArea(
-                            items = tuneContextMenuItems,
-                            acceptsLeftClick = true,
-                            acceptsRightClick = false,
-                        ) {
-                            RiftImageButton(Res.drawable.window_titlebar_tune, 16.dp, {})
-                        }
-                    }
-                }
-            }
-            if (contextMenuItems.size > 2) {
-                RiftContextMenuArea(contextMenuItems, acceptsLeftClick = true) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
-                        modifier = Modifier
-                            .padding(horizontal = Spacing.small)
-                            .padding(vertical = Spacing.medium),
-                    ) {
-                        RiftImageButton(Res.drawable.window_titlebar_kebab, 16.dp, {})
-                    }
-                }
-            }
-            RiftContextMenuArea(contextMenuItems) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
-                    modifier = Modifier
-                        .padding(start = Spacing.small)
-                        .padding(vertical = Spacing.medium)
-                        .padding(end = horizontalPadding),
-                ) {
-                    if (onAlwaysOnTopClick != null && isAlwaysOnTop) {
-                        RiftImageButton(Res.drawable.window_overlay_fullscreen_on_16px, 16.dp, onAlwaysOnTopClick)
-                    }
-                    if (onLockClick != null && isLocked) {
-                        RiftImageButton(Res.drawable.window_locked_16px, 16.dp, onLockClick)
-                    }
-                    RiftImageButton(Res.drawable.window_titlebar_minimize, 16.dp, onMinimizeClick)
-                    RiftImageButton(Res.drawable.window_titlebar_close, 16.dp, onCloseClick)
+            if (titleBarContent != null) {
+                titleBarContent(height)
+            } else {
+                RiftContextMenuArea(contextMenuItems, modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        style = when (style) {
+                            TitleBarStyle.Full -> RiftTheme.typography.headlineHighlighted
+                            TitleBarStyle.Small -> RiftTheme.typography.titleHighlighted
+                        },
+                        maxLines = 1,
+                    )
                 }
             }
         }
-    }
-    if (isLocked) {
-        titleBar()
-    } else {
-        WindowDraggableArea {
-            titleBar()
+        RiftContextMenuArea(contextMenuItems) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
+                modifier = Modifier
+                    .padding(start = Spacing.medium)
+                    .padding(end = Spacing.small)
+                    .padding(vertical = Spacing.medium),
+            ) {
+                if (onTuneClick != null) {
+                    RiftImageButton(Res.drawable.window_titlebar_tune, 16.dp, onTuneClick)
+                }
+                if (tuneContextMenuItems != null) {
+                    RiftContextMenuArea(
+                        items = tuneContextMenuItems,
+                        acceptsLeftClick = true,
+                        acceptsRightClick = false,
+                    ) {
+                        RiftImageButton(Res.drawable.window_titlebar_tune, 16.dp, {})
+                    }
+                }
+            }
+        }
+        if (contextMenuItems.size > 2) {
+            RiftContextMenuArea(contextMenuItems, acceptsLeftClick = true) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
+                    modifier = Modifier
+                        .padding(horizontal = Spacing.small)
+                        .padding(vertical = Spacing.medium),
+                ) {
+                    RiftImageButton(Res.drawable.window_titlebar_kebab, 16.dp, {})
+                }
+            }
+        }
+        RiftContextMenuArea(contextMenuItems) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
+                modifier = Modifier
+                    .padding(start = Spacing.small)
+                    .padding(vertical = Spacing.medium)
+                    .padding(end = horizontalPadding),
+            ) {
+                if (onAlwaysOnTopClick != null && isAlwaysOnTop) {
+                    RiftImageButton(Res.drawable.window_overlay_fullscreen_on_16px, 16.dp, onAlwaysOnTopClick)
+                }
+                if (onLockClick != null && isLocked) {
+                    RiftImageButton(Res.drawable.window_locked_16px, 16.dp, onLockClick)
+                }
+                RiftImageButton(Res.drawable.window_titlebar_minimize, 16.dp, onMinimizeClick)
+                RiftImageButton(Res.drawable.window_titlebar_close, 16.dp, onCloseClick)
+            }
         }
     }
 }

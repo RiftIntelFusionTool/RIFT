@@ -10,7 +10,6 @@ import dev.nohus.rift.intel.state.SystemEntity.UnspecifiedCharacter
 import dev.nohus.rift.logs.parse.ChatMessageParser
 import dev.nohus.rift.network.zkillboard.KillmailProcessor.ProcessedKillmail
 import dev.nohus.rift.settings.persistence.Settings
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex

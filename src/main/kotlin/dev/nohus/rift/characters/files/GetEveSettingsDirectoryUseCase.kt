@@ -3,14 +3,16 @@ package dev.nohus.rift.characters.files
 import dev.nohus.rift.utils.OperatingSystem
 import dev.nohus.rift.utils.directories.GetLinuxSteamLibrariesUseCase
 import dev.nohus.rift.utils.osdirectories.OperatingSystemDirectories
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.koin.core.annotation.Single
-import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import kotlin.io.path.exists
 import kotlin.io.path.getLastModifiedTime
 import kotlin.io.path.isDirectory
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
+
+private val logger = KotlinLogging.logger {}
 
 @Single
 class GetEveSettingsDirectoryUseCase(
@@ -36,7 +38,10 @@ class GetEveSettingsDirectoryUseCase(
                     // Choose the directory where the newest character files are
                     getEveCharactersSettingsUseCase(it).maxOfOrNull { it.getLastModifiedTime().toMillis() } ?: 0
                 } ?: return null
-        } catch (e: NoSuchFileException) { null }
+        } catch (e: FileSystemException) {
+            logger.error(e) { "Failed reading EVE settings directory" }
+            null
+        }
     }
 
     private fun getLinuxEveDataDirectory(): Path? {

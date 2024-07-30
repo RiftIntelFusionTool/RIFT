@@ -1,6 +1,7 @@
 package dev.nohus.rift.alerts.create
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.AnimationState
 import androidx.compose.animation.core.animateTo
 import androidx.compose.animation.core.tween
@@ -415,14 +416,27 @@ private fun FormQuestion(
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
-                            modifier = Modifier.padding(top = Spacing.medium),
+                            modifier = Modifier
+                                .padding(top = Spacing.medium)
+                                .heightIn(min = 36.dp),
                         ) {
                             var text by remember { mutableStateOf("") }
                             RiftTextField(
                                 text = text,
-                                onTextChanged = { text = it },
+                                onTextChanged = {
+                                    text = it
+                                    onFormAnswer(SoundAnswer.CustomSound(it))
+                                },
                                 modifier = Modifier.weight(1f),
                             )
+                            AnimatedVisibility(isPendingAnswerValid != null) {
+                                RequirementIcon(
+                                    isFulfilled = isPendingAnswerValid ?: false,
+                                    fulfilledTooltip = "Sound file path valid",
+                                    notFulfilledTooltip = pendingAnswerInvalidReason ?: "Invalid",
+                                    tooltipAnchor = TooltipAnchor.BottomEnd,
+                                )
+                            }
                             RiftFileChooserButton(
                                 typesDescription = "WAV audio files",
                                 extensions = listOf("wav"),

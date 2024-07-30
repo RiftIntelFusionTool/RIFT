@@ -24,12 +24,14 @@ import dev.nohus.rift.compose.theme.RiftTheme
 import dev.nohus.rift.compose.theme.Spacing
 import dev.nohus.rift.generated.resources.Res
 import dev.nohus.rift.generated.resources.settings_16px
+import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun RiftPill(
     text: String,
+    icon: DrawableResource? = null,
     isSelected: Boolean = false,
     onClick: () -> Unit = {},
     onEditClick: (() -> Unit)? = null,
@@ -52,7 +54,7 @@ fun RiftPill(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.height(IntrinsicSize.Min),
             ) {
-                Box(
+                Row(
                     modifier = Modifier
                         .onClick { onClick() }
                         .hoverBackground(
@@ -62,6 +64,7 @@ fun RiftPill(
                         )
                         .padding(start = Spacing.medium, top = Spacing.small, bottom = Spacing.small, end = Spacing.small),
                 ) {
+                    Icon(icon)
                     Text(
                         text = text,
                         style = RiftTheme.typography.bodyPrimary,
@@ -86,7 +89,7 @@ fun RiftPill(
                 }
             }
         } else {
-            Box(
+            Row(
                 modifier = Modifier
                     .onClick { onClick() }
                     .hoverBackground(
@@ -96,11 +99,25 @@ fun RiftPill(
                     )
                     .padding(horizontal = Spacing.medium, vertical = Spacing.small),
             ) {
+                Icon(icon)
                 Text(
                     text = text,
                     style = RiftTheme.typography.bodyPrimary,
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun Icon(icon: DrawableResource?) {
+    if (icon != null) {
+        Image(
+            painter = painterResource(icon),
+            contentDescription = null,
+            modifier = Modifier
+                .padding(end = Spacing.small)
+                .size(16.dp),
+        )
     }
 }

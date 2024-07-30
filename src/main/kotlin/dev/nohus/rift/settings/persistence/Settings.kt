@@ -164,6 +164,10 @@ class Settings(
         get() = model.jumpRange
         set(value) = update { copy(jumpRange = value) }
 
+    var selectedPlanetTypes: List<Int>
+        get() = model.selectedPlanetTypes
+        set(value) = update { copy(selectedPlanetTypes = value) }
+
     var installationId: String?
         get() = model.installationId
         set(value) = update { copy(installationId = value) }

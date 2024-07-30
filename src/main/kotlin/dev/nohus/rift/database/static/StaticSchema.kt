@@ -74,3 +74,11 @@ object Stations : Table() {
     val name = varchar("name", 100)
     override val primaryKey = PrimaryKey(id)
 }
+
+object Planets : Table() {
+    val id = integer("id")
+    val typeId = integer("typeId")
+    val systemId = integer("systemId")
+    val name = varchar("name", 100).nullable()
+    override val primaryKey = PrimaryKey(id)
+}

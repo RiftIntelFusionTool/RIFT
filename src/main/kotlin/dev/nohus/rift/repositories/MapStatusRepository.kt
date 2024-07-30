@@ -3,12 +3,14 @@ package dev.nohus.rift.repositories
 import dev.nohus.rift.assets.AssetsRepository
 import dev.nohus.rift.map.MapJumpRangeController
 import dev.nohus.rift.map.MapJumpRangeController.SystemDistance
+import dev.nohus.rift.map.MapPlanetsController
 import dev.nohus.rift.network.esi.EsiApi
 import dev.nohus.rift.network.esi.FactionWarfareSystem
 import dev.nohus.rift.network.esi.Incursion
 import dev.nohus.rift.network.esi.SovereigntySystem
 import dev.nohus.rift.network.evescout.GetMetaliminalStormsUseCase
 import dev.nohus.rift.network.evescout.GetMetaliminalStormsUseCase.Storm
+import dev.nohus.rift.repositories.PlanetsRepository.Planet
 import dev.nohus.rift.repositories.StationsRepository.Station
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -29,6 +31,7 @@ class MapStatusRepository(
     private val namesRepository: NamesRepository,
     private val getMetaliminalStormsUseCase: GetMetaliminalStormsUseCase,
     private val mapJumpRangeController: MapJumpRangeController,
+    private val mapPlanetsController: MapPlanetsController,
 ) {
 
     private data class UniverseSystemStatus(
@@ -50,6 +53,7 @@ class MapStatusRepository(
         val stations: List<Station>,
         val storms: List<Storm>,
         val distance: SystemDistance?,
+        val planets: List<Planet>,
     )
 
     private val universeSystemStatus = MutableStateFlow<Map<Int, UniverseSystemStatus>>(emptyMap())
@@ -76,7 +80,8 @@ class MapStatusRepository(
                 storms,
                 assetsRepository.assets,
                 mapJumpRangeController.state.map { it.systemDistances },
-            ) { universe, incursions, factionWarfare, sovereignty, storms, assets, distances ->
+                mapPlanetsController.state,
+            ) { universe, incursions, factionWarfare, sovereignty, storms, assets, distances, planets ->
                 val assetsPerSystem = getAssetCountPerSystem(assets)
                 val stationsPerSystem = stationsRepository.getStations()
                 val systems = (
@@ -96,6 +101,7 @@ class MapStatusRepository(
                         stations = stationsPerSystem[systemId] ?: emptyList(),
                         storms = storms[systemId] ?: emptyList(),
                         distance = distances[systemId],
+                        planets = (planets.planets[systemId] ?: emptyList()).filter { it.type in planets.selectedTypes },
                     )
                 }
             }.collect {
@@ -184,7 +190,7 @@ class MapStatusRepository(
         storms.value = getMetaliminalStormsUseCase()
     }
 
-    private fun <T1, T2, T3, T4, T5, T6, T7, R> combine(
+    private fun <T1, T2, T3, T4, T5, T6, T7, T8, R> combine(
         flow: Flow<T1>,
         flow2: Flow<T2>,
         flow3: Flow<T3>,
@@ -192,8 +198,9 @@ class MapStatusRepository(
         flow5: Flow<T5>,
         flow6: Flow<T6>,
         flow7: Flow<T7>,
-        transform: suspend (T1, T2, T3, T4, T5, T6, T7) -> R,
-    ): Flow<R> = combine(flow, flow2, flow3, flow4, flow5, flow6, flow7) { args: Array<*> ->
+        flow8: Flow<T8>,
+        transform: suspend (T1, T2, T3, T4, T5, T6, T7, T8) -> R,
+    ): Flow<R> = combine(flow, flow2, flow3, flow4, flow5, flow6, flow7, flow8) { args: Array<*> ->
         transform(
             args[0] as T1,
             args[1] as T2,
@@ -202,6 +209,7 @@ class MapStatusRepository(
             args[4] as T5,
             args[5] as T6,
             args[6] as T7,
+            args[7] as T8,
         )
     }
 }

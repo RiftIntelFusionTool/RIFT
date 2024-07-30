@@ -5,11 +5,13 @@ import dev.nohus.rift.network.AsyncResource
 import dev.nohus.rift.network.esi.EsiApi
 import dev.nohus.rift.network.toResource
 import dev.nohus.rift.settings.persistence.Settings
+import dev.nohus.rift.utils.stateFlow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.skiko.MainUIDispatcher
@@ -30,6 +32,7 @@ class LocalCharactersRepository(
         val settingsFile: Path?,
         val isAuthenticated: Boolean,
         val info: AsyncResource<CharacterInfo>,
+        val isHidden: Boolean,
     )
 
     data class CharacterInfo(
@@ -41,7 +44,15 @@ class LocalCharactersRepository(
     )
 
     private val _characters = MutableStateFlow<List<LocalCharacter>>(emptyList())
-    val characters = _characters.asStateFlow()
+    val characters = stateFlow(
+        getValue = { _characters.value.filterNot(LocalCharacter::isHidden) },
+        flow = _characters.map { it.filterNot(LocalCharacter::isHidden) },
+    )
+
+    /**
+     * Includes hidden characters
+     */
+    val allCharacters = _characters.asStateFlow()
 
     /**
      * Watch settings, in case the list of authenticated characters changes.
@@ -51,8 +62,12 @@ class LocalCharactersRepository(
     suspend fun start() {
         settings.updateFlow.collect { model ->
             val authenticatedIds = model.authenticatedCharacters.map { it.key }
+            val hiddenCharacterIds = model.hiddenCharacterIds.toSet()
             _characters.value = _characters.value.mapNotNull { character ->
-                val newCharacter = character.copy(isAuthenticated = character.characterId in authenticatedIds)
+                val newCharacter = character.copy(
+                    isAuthenticated = character.characterId in authenticatedIds,
+                    isHidden = character.characterId in hiddenCharacterIds,
+                )
                 if (!newCharacter.isAuthenticated && newCharacter.settingsFile == null) return@mapNotNull null
                 newCharacter
             }
@@ -67,6 +82,7 @@ class LocalCharactersRepository(
     private fun loadLocalCharacters() {
         val directory = settings.eveSettingsDirectory
         val authenticatedCharacterIds = settings.authenticatedCharacters.keys
+        val hiddenCharacterIds = settings.hiddenCharacterIds.toSet()
         val charactersFromFiles = if (directory != null) {
             getEveCharactersSettingsUseCase(directory)
                 .mapNotNull { file ->
@@ -77,6 +93,7 @@ class LocalCharactersRepository(
                         settingsFile = file,
                         isAuthenticated = characterId in authenticatedCharacterIds,
                         info = AsyncResource.Loading,
+                        isHidden = characterId in hiddenCharacterIds,
                     )
                 }
         } else {
@@ -92,6 +109,7 @@ class LocalCharactersRepository(
                     settingsFile = null,
                     isAuthenticated = true,
                     info = AsyncResource.Loading,
+                    isHidden = characterId in hiddenCharacterIds,
                 )
             }
 

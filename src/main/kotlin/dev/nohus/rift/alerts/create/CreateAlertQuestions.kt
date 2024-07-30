@@ -144,7 +144,7 @@ class CreateAlertQuestions(
     val GAME_ACTION_TYPE_COMBAT_TARGET_QUESTION = FreeformTextQuestion(
         title = "And the combat target name contains:",
         placeholder = "Dark Blood",
-        allowEmpty = false,
+        allowEmpty = true,
     )
 
     // Game action type, decloak exceptions

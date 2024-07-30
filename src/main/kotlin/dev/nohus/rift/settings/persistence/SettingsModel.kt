@@ -46,6 +46,7 @@ data class SettingsModel(
     val isUsingRiftAutopilotRoute: Boolean = true,
     val whatsNewVersion: String? = null,
     val jumpRange: JumpRange? = null,
+    val selectedPlanetTypes: List<Int> = emptyList(),
     val installationId: String? = null,
 )
 
@@ -56,7 +57,8 @@ enum class MapType {
 
 @Serializable
 enum class MapSystemInfoType {
-    StarColor, Security, IntelHostiles, Jumps, Kills, NpcKills, Assets, Incursions, Stations, FactionWarfare, Sovereignty, MetaliminalStorms, JumpRange
+    StarColor, Security, IntelHostiles, Jumps, Kills, NpcKills, Assets, Incursions, Stations, FactionWarfare,
+    Sovereignty, MetaliminalStorms, JumpRange, Planets
 }
 
 @Serializable
@@ -78,6 +80,7 @@ data class IntelMap(
     val isInvertZoom: Boolean = false,
     val isJumpBridgeNetworkShown: Boolean = true,
     val jumpBridgeNetworkOpacity: Int = 100,
+    val openedRegionId: Int? = null,
 )
 
 @Serializable

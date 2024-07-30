@@ -2,7 +2,6 @@ package dev.nohus.rift.settings.persistence
 
 import dev.nohus.rift.utils.directories.AppDirectories
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.sentry.Sentry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -45,9 +44,14 @@ class SettingsPersistence(
         } catch (e: NoSuchFileException) {
             logger.info { "Settings file not found" }
             SettingsModel()
+        } catch (e: FileSystemException) {
+            logger.error(e) { "Settings file could not be read" }
+            backupSettingsFile()
+            SettingsModel(
+                isSettingsReadFailure = true,
+            )
         } catch (e: SerializationException) {
             logger.error(e) { "Could not deserialize settings" }
-            Sentry.captureException(e)
             backupSettingsFile()
             SettingsModel(
                 isSettingsReadFailure = true,

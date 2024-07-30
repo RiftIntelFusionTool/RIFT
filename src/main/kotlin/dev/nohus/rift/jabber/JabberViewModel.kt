@@ -10,7 +10,6 @@ import dev.nohus.rift.jabber.client.StartJabberUseCase
 import dev.nohus.rift.jabber.client.UserChatController
 import dev.nohus.rift.jabber.client.UserChatController.UserChat
 import dev.nohus.rift.settings.persistence.Settings
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map

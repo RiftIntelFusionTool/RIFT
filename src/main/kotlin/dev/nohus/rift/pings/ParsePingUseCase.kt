@@ -136,6 +136,7 @@ class ParsePingUseCase(
             "thrasher fleet issue" to "https://goonfleet.com/index.php/topic/349435-active-peacetime-tfis/",
             "ENI" to "https://goonfleet.com/index.php/topic/349390-active-peacetime-eni-fleet/",
             "Void Rays" to "https://goonfleet.com/index.php/topic/345055-active-strat-void-rays-mwd-kikis/",
+            "FNI" to "https://goonfleet.com/index.php/topic/357801-active-strat-hammerfleet-fni/",
             "Mallet" to "https://goonfleet.com/index.php/topic/295651-active%E2%80%94strat%E2%80%94malletfleet-feroxes/",
             "Ferox" to "https://goonfleet.com/index.php/topic/295651-active%E2%80%94strat%E2%80%94malletfleet-feroxes/",
             "Leshaks" to "https://goonfleet.com/index.php/topic/337953-active-strat-leshaks-the-electric-heat-gun/",

@@ -629,6 +629,22 @@ class ChatMessageParserTest : FreeSpec({
             "Jita Alt 1".token(Player(0)),
         )
     }
+
+    "successive navy ships" {
+        every { mockShipTypesRepository.getShip("caracal navy") } returns "Caracal Navy Issue"
+        every { mockShipTypesRepository.getShip("osprey navy") } returns "Osprey Navy Issue"
+        every { mockShipTypesRepository.getShip("navy caracal") } returns "Caracal Navy Issue"
+        every { mockShipTypesRepository.getShip("navy osprey") } returns "Osprey Navy Issue"
+        every { mockShipTypesRepository.getShip("caracal") } returns "Caracal"
+        every { mockShipTypesRepository.getShip("osprey") } returns "Osprey"
+
+        val actual = target.parse("caracal navy osprey navy", "Delve")
+
+        actual shouldContain listOf(
+            "caracal navy".token(Ship("Caracal Navy Issue")),
+            "osprey navy".token(Ship("Osprey Navy Issue")),
+        )
+    }
 })
 
 private fun String.token(vararg types: TokenType): Token {

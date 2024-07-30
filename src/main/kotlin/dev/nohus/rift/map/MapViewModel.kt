@@ -15,6 +15,7 @@ import dev.nohus.rift.location.GetOnlineCharactersLocationUseCase.OnlineCharacte
 import dev.nohus.rift.map.MapExternalControl.MapExternalControlEvent
 import dev.nohus.rift.map.MapJumpRangeController.MapJumpRangeState
 import dev.nohus.rift.map.MapLayoutRepository.Position
+import dev.nohus.rift.map.MapPlanetsController.MapPlanetsState
 import dev.nohus.rift.map.MapViewModel.MapType.ClusterRegionsMap
 import dev.nohus.rift.map.MapViewModel.MapType.ClusterSystemsMap
 import dev.nohus.rift.map.MapViewModel.MapType.RegionMap
@@ -24,6 +25,7 @@ import dev.nohus.rift.repositories.MapGateConnectionsRepository
 import dev.nohus.rift.repositories.MapGateConnectionsRepository.GateConnection
 import dev.nohus.rift.repositories.MapStatusRepository
 import dev.nohus.rift.repositories.MapStatusRepository.SolarSystemStatus
+import dev.nohus.rift.repositories.PlanetTypes.PlanetType
 import dev.nohus.rift.repositories.SolarSystemsRepository
 import dev.nohus.rift.repositories.SolarSystemsRepository.MapConstellation
 import dev.nohus.rift.repositories.SolarSystemsRepository.MapRegion
@@ -62,6 +64,7 @@ class MapViewModel(
     private val autopilotController: AutopilotController,
     private val mapStatusRepository: MapStatusRepository,
     private val mapJumpRangeController: MapJumpRangeController,
+    private val mapPlanetsController: MapPlanetsController,
     private val settings: Settings,
 ) : ViewModel() {
 
@@ -112,6 +115,7 @@ class MapViewModel(
         val search: String?,
         val systemInfoTypes: SystemInfoTypes,
         val mapJumpRangeState: MapJumpRangeState,
+        val mapPlanetsState: MapPlanetsState,
         val cluster: Cluster,
         val mapType: MapType,
         val layout: Map<Int, Layout>,
@@ -132,6 +136,7 @@ class MapViewModel(
             search = null,
             systemInfoTypes = getColorModes(),
             mapJumpRangeState = mapJumpRangeController.state.value,
+            mapPlanetsState = mapPlanetsController.state.value,
             cluster = Cluster(
                 systems = solarSystemsRepository.getSystems(knownSpace = true),
                 constellations = solarSystemsRepository.mapConstellations,
@@ -159,6 +164,9 @@ class MapViewModel(
         }
         viewModelScope.launch {
             mapJumpRangeController.state.collect { state -> _state.update { it.copy(mapJumpRangeState = state) } }
+        }
+        viewModelScope.launch {
+            mapPlanetsController.state.collect { state -> _state.update { it.copy(mapPlanetsState = state) } }
         }
         viewModelScope.launch {
             settings.updateFlow.collect {
@@ -202,7 +210,16 @@ class MapViewModel(
             }
         }
 
-        openTab(_state.value.selectedTab, focusedId = null)
+        openInitialTab()
+    }
+
+    private fun openInitialTab() {
+        val openedRegionId = settings.intelMap.openedRegionId
+        if (openedRegionId != null) {
+            openRegionMap(openedRegionId, focusedId = null)
+        } else {
+            openTab(_state.value.selectedTab, focusedId = null)
+        }
     }
 
     private fun getColorModes(): SystemInfoTypes {
@@ -365,9 +382,15 @@ class MapViewModel(
         mapJumpRangeController.onRangeUpdate(distanceLy)
     }
 
+    fun onPlanetTypesUpdate(types: List<PlanetType>) {
+        mapPlanetsController.onPlanetTypesUpdate(types)
+    }
+
     private fun openTab(id: Int, focusedId: Int?) {
         val tab = _state.value.tabs.firstOrNull { it.id == id } ?: return
         val mapType = tab.payload as? MapType ?: return
+        rememberOpenedRegion(mapType)
+
         val layout = when (mapType) {
             ClusterSystemsMap -> layoutRepository.getNewEdenLayout()
             ClusterRegionsMap -> layoutRepository.getRegionLayout()
@@ -390,6 +413,11 @@ class MapViewModel(
                 jumpBridgeAdditionalSystems = jumpBridgeAdditionalSystemsLayout.keys,
             )
         }
+    }
+
+    private fun rememberOpenedRegion(mapType: MapType) {
+        val openedRegionId = if (mapType is RegionMap) mapType.regionId else null
+        settings.intelMap = settings.intelMap.copy(openedRegionId = openedRegionId)
     }
 
     private fun calculateVoronoi(systems: Map<Int, Position>): Map<Int, Layout> {

@@ -12,7 +12,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.koin.core.annotation.Single
 import java.io.IOException
-import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
@@ -93,7 +92,10 @@ class GameLogsObserver(
             directory.listDirectoryEntries().mapNotNull { file ->
                 matchGameLogFilenameUseCase(file)
             }
-        } catch (e: NoSuchFileException) { emptyList() }
+        } catch (e: FileSystemException) {
+            logger.error(e) { "Failed reloading game log files" }
+            emptyList()
+        }
         logFilesMutex.withLock {
             this.logFiles.clear()
             this.logFiles.addAll(logFiles)

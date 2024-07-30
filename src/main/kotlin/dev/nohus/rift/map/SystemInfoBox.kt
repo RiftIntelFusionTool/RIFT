@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -31,9 +33,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.nohus.rift.compose.AsyncPlayerPortrait
 import dev.nohus.rift.compose.ClickablePlayer
+import dev.nohus.rift.compose.RiftTooltipArea
 import dev.nohus.rift.compose.ScrollbarColumn
 import dev.nohus.rift.compose.SystemEntities
 import dev.nohus.rift.compose.SystemEntityInfoRow
+import dev.nohus.rift.compose.TooltipAnchor
 import dev.nohus.rift.compose.modifyIf
 import dev.nohus.rift.compose.theme.Cursors
 import dev.nohus.rift.compose.theme.RiftTheme
@@ -167,6 +171,7 @@ fun SystemInfoBox(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ColumnScope.SystemInfoTypes(
     infoTypes: List<MapSystemInfoType>,
@@ -187,7 +192,6 @@ private fun ColumnScope.SystemInfoTypes(
                     )
                 }
             }
-
             MapSystemInfoType.Kills -> {
                 val podKills = systemStatus?.podKills ?: 0
                 val shipKills = systemStatus?.shipKills ?: 0
@@ -198,7 +202,6 @@ private fun ColumnScope.SystemInfoTypes(
                     )
                 }
             }
-
             MapSystemInfoType.NpcKills -> {
                 val npcKills = systemStatus?.npcKills ?: 0
                 if (npcKills > 0) {
@@ -208,7 +211,6 @@ private fun ColumnScope.SystemInfoTypes(
                     )
                 }
             }
-
             MapSystemInfoType.Assets -> {
                 val assets = systemStatus?.assetCount ?: 0
                 if (assets > 0) {
@@ -218,7 +220,6 @@ private fun ColumnScope.SystemInfoTypes(
                     )
                 }
             }
-
             MapSystemInfoType.Incursions -> {
                 systemStatus?.incursion?.let { incursion ->
                     Text(
@@ -267,7 +268,6 @@ private fun ColumnScope.SystemInfoTypes(
                     }
                 }
             }
-
             MapSystemInfoType.MetaliminalStorms -> {
                 systemStatus?.storms?.let {
                     it.forEach { storm ->
@@ -278,7 +278,6 @@ private fun ColumnScope.SystemInfoTypes(
                     }
                 }
             }
-
             MapSystemInfoType.JumpRange -> {
                 systemStatus?.distance?.let {
                     val lightYears = String.format("%.1fly", it.distanceLy)
@@ -292,10 +291,31 @@ private fun ColumnScope.SystemInfoTypes(
                     )
                 }
             }
+            MapSystemInfoType.Planets -> {
+                systemStatus?.planets?.let {
+                    FlowRow(
+                        maxItemsInEachRow = 5,
+                    ) {
+                        it.sortedWith(compareBy({ it.type.typeId }, { it.name })).forEach { planet ->
+                            RiftTooltipArea(
+                                tooltip = "${planet.name} – ${planet.type.name}",
+                                anchor = TooltipAnchor.BottomCenter,
+                            ) {
+                                Image(
+                                    painter = painterResource(planet.type.icon),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SystemInfoTypesIndicators(
     infoTypes: List<MapSystemInfoType>,
@@ -351,6 +371,26 @@ private fun SystemInfoTypesIndicators(
                         InfoTypeIndicator(lightYears, Res.drawable.indicator_jump_drive)
                     }
                 }
+            MapSystemInfoType.Planets -> {
+                systemStatus?.planets?.let {
+                    FlowRow(
+                        maxItemsInEachRow = 5,
+                    ) {
+                        it.sortedWith(compareBy({ it.type.typeId }, { it.name })).forEach { planet ->
+                            RiftTooltipArea(
+                                tooltip = "${planet.name} – ${planet.type.name}",
+                                anchor = TooltipAnchor.BottomCenter,
+                            ) {
+                                Image(
+                                    painter = painterResource(planet.type.icon),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

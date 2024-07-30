@@ -98,6 +98,7 @@ import dev.nohus.rift.map.systemcolor.strategies.SecuritySystemColorStrategy
 import dev.nohus.rift.map.systemcolor.strategies.SovereigntySystemColorStrategy
 import dev.nohus.rift.map.systemcolor.strategies.StarColorSystemColorStrategy
 import dev.nohus.rift.map.systemcolor.strategies.StationsSystemColorStrategy
+import dev.nohus.rift.repositories.PlanetTypes.PlanetType
 import dev.nohus.rift.repositories.SolarSystemsRepository
 import dev.nohus.rift.settings.persistence.MapSystemInfoType
 import dev.nohus.rift.utils.viewModel
@@ -151,6 +152,7 @@ fun MapWindow(
             onInfoBoxChange = viewModel::onInfoBoxChange,
             onJumpRangeTargetUpdate = viewModel::onJumpRangeTargetUpdate,
             onJumpRangeDistanceUpdate = viewModel::onJumpRangeDistanceUpdate,
+            onPlanetTypesUpdate = viewModel::onPlanetTypesUpdate,
         )
     }
 }
@@ -177,6 +179,7 @@ private fun MapWindowContent(
     onInfoBoxChange: (SettingsMapType, MapSystemInfoType) -> Unit,
     onJumpRangeTargetUpdate: (String) -> Unit,
     onJumpRangeDistanceUpdate: (Double) -> Unit,
+    onPlanetTypesUpdate: (List<PlanetType>) -> Unit,
 ) {
     Box {
         val hazeState = remember { HazeState() }
@@ -205,6 +208,7 @@ private fun MapWindowContent(
             mapType = state.mapType,
             systemInfoTypes = state.systemInfoTypes,
             mapJumpRangeState = state.mapJumpRangeState,
+            mapPlanetsState = state.mapPlanetsState,
             onSystemColorChange = onSystemColorChange,
             onSystemColorHover = onSystemColorHover,
             onCellColorChange = onCellColorChange,
@@ -213,6 +217,7 @@ private fun MapWindowContent(
             onInfoBoxChange = onInfoBoxChange,
             onJumpRangeTargetUpdate = onJumpRangeTargetUpdate,
             onJumpRangeDistanceUpdate = onJumpRangeDistanceUpdate,
+            onPlanetTypesUpdate = onPlanetTypesUpdate,
         )
     }
 }
@@ -538,6 +543,7 @@ fun getSolarSystemColorStrategy(
         MapSystemInfoType.Sovereignty -> systemStatusColorStrategies.sovereignty
         MapSystemInfoType.MetaliminalStorms -> systemStatusColorStrategies.storms
         MapSystemInfoType.JumpRange -> systemStatusColorStrategies.jumpRange
+        MapSystemInfoType.Planets -> throw IllegalArgumentException("Not used for coloring")
     }
 }
 
