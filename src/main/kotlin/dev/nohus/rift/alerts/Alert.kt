@@ -151,6 +151,13 @@ sealed interface GameActionType {
     data class Decloaked(
         val ignoredKeywords: List<String> = emptyList(),
     ) : GameActionType
+
+    @Serializable
+    @SerialName("CombatStopped")
+    data class CombatStopped(
+        val nameContaining: String?,
+        val durationSeconds: Int,
+    ) : GameActionType
 }
 
 @Serializable

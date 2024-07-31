@@ -19,6 +19,9 @@ import java.nio.file.Files
 import java.nio.file.NoSuchFileException
 import java.time.Instant
 import kotlin.io.path.createParentDirectories
+import kotlin.io.path.deleteExisting
+import kotlin.io.path.listDirectoryEntries
+import kotlin.io.path.moveTo
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
@@ -36,6 +39,7 @@ class SettingsPersistence(
 
     init {
         configFile.createParentDirectories()
+        cleanupTempFiles()
     }
 
     fun load(): SettingsModel {
@@ -61,10 +65,18 @@ class SettingsPersistence(
     }
 
     fun save(model: SettingsModel) = scope.launch(Dispatchers.IO) {
-        val serialized = json.encodeToString(model)
         mutex.withLock {
             try {
-                configFile.writeText(serialized)
+                val serialized = json.encodeToString(model)
+                val temp = configFile.parent.resolve("settings-${Instant.now().toEpochMilli()}.tmp")
+                temp.writeText(serialized)
+                val readBack = temp.readText()
+                json.decodeFromString<SettingsModel>(readBack)
+                temp.moveTo(configFile, overwrite = true)
+            } catch (e: SerializationException) {
+                logger.error { "Could not write settings, reading back validation failed to deserialize: $e" }
+            } catch (e: FileSystemException) {
+                logger.error { "Could not write settings: $e" }
             } catch (e: IOException) {
                 logger.error { "Could not write settings: $e" }
             }
@@ -74,5 +86,15 @@ class SettingsPersistence(
     private fun backupSettingsFile() {
         val target = configFile.parent.resolve("settingsBackup-${Instant.now().toEpochMilli()}.json")
         Files.move(configFile, target)
+    }
+
+    private fun cleanupTempFiles() {
+        try {
+            configFile.parent.listDirectoryEntries("*.tmp").forEach { path ->
+                path.deleteExisting()
+            }
+        } catch (e: FileSystemException) {
+            logger.error { "Could not delete temporary settings file: $e" }
+        }
     }
 }

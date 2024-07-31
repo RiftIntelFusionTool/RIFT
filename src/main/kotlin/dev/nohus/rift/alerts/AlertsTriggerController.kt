@@ -47,11 +47,17 @@ class AlertsTriggerController(
     private val lastSeenMessagePerChannel = mutableMapOf<String, Instant>()
     private val alertedInactiveChannels = mutableSetOf<String>()
     private var loggedInTimestamp: Instant? = null
+    private val combatStoppedTriggerController = CombatStoppedTriggerController { alert: Alert, action: GameLogAction, characterId: Int ->
+        withCooldown(alert) {
+            alertsActionController.triggerGameActionAlert(alert, action, characterId)
+        }
+    }
 
     suspend fun start() = coroutineScope {
         launch {
             while (true) {
                 checkChannelActivity()
+                combatStoppedTriggerController.checkPendingAlerts()
                 delay(1000)
             }
         }
@@ -133,6 +139,16 @@ class AlertsTriggerController(
                         GameActionType.BeingWarpScrambled -> action is GameLogAction.BeingWarpScrambled
                         is GameActionType.Decloaked -> {
                             action is GameLogAction.Decloaked && trigger.ignoredKeywords.none { it.lowercase() in action.by.lowercase() }
+                        }
+                        is GameActionType.CombatStopped -> {
+                            if (action is GameLogAction.UnderAttack && action.target.containsNonNull(trigger.nameContaining)) {
+                                combatStoppedTriggerController.onCombatAction(alert, trigger.durationSeconds, action.target, characterId)
+                            } else if (action is GameLogAction.Attacking && action.target.containsNonNull(trigger.nameContaining)) {
+                                combatStoppedTriggerController.onCombatAction(alert, trigger.durationSeconds, action.target, characterId)
+                            } else if (action is GameLogAction.BeingWarpScrambled && action.target.containsNonNull(trigger.nameContaining)) {
+                                combatStoppedTriggerController.onCombatAction(alert, trigger.durationSeconds, action.target, characterId)
+                            }
+                            false // Alert will be triggered after duration
                         }
                     }
                 }

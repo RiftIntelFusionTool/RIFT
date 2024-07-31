@@ -241,12 +241,16 @@ class CreateAlertViewModel(
                             GAME_ACTION_TYPE_IN_COMBAT.id,
                             GAME_ACTION_TYPE_UNDER_ATTACK.id,
                             GAME_ACTION_TYPE_ATTACKING.id,
+                            GAME_ACTION_TYPE_COMBAT_STOPPED.id,
                         ).any { it in GAME_ACTION_TYPE_QUESTION.answer!!.ids }
                     ) {
                         GAME_ACTION_TYPE_COMBAT_TARGET_QUESTION.answer ?: return GAME_ACTION_TYPE_COMBAT_TARGET_QUESTION
                     }
                     if (GAME_ACTION_TYPE_DECLOAKED.id in GAME_ACTION_TYPE_QUESTION.answer!!.ids) {
                         GAME_ACTION_TYPE_DECLOAKED_EXCEPTIONS_QUESTION.answer ?: return GAME_ACTION_TYPE_DECLOAKED_EXCEPTIONS_QUESTION
+                    }
+                    if (GAME_ACTION_TYPE_COMBAT_STOPPED.id in GAME_ACTION_TYPE_QUESTION.answer!!.ids) {
+                        GAME_ACTION_TYPE_COMBAT_STOPPED_DURATION_QUESTION.answer ?: return GAME_ACTION_TYPE_COMBAT_STOPPED_DURATION_QUESTION
                     }
                 }
 
@@ -395,6 +399,19 @@ class CreateAlertViewModel(
                                     val ignoredKeywords = answer.text.split(",")
                                         .map(String::trim).filter(String::isNotBlank).distinct()
                                     GameActionType.Decloaked(ignoredKeywords = ignoredKeywords)
+                                }
+                                GAME_ACTION_TYPE_COMBAT_STOPPED.id -> {
+                                    val target = GAME_ACTION_TYPE_COMBAT_TARGET_QUESTION.answer ?: return null
+                                    val durationSeconds = when (GAME_ACTION_TYPE_COMBAT_STOPPED_DURATION_QUESTION.answer?.id ?: return null) {
+                                        GAME_ACTION_TYPE_COMBAT_STOPPED_DURATION_10_SECONDS.id -> 10
+                                        GAME_ACTION_TYPE_COMBAT_STOPPED_DURATION_20_SECONDS.id -> 20
+                                        GAME_ACTION_TYPE_COMBAT_STOPPED_DURATION_30_SECONDS.id -> 30
+                                        GAME_ACTION_TYPE_COMBAT_STOPPED_DURATION_1_MINUTE.id -> 60
+                                        GAME_ACTION_TYPE_COMBAT_STOPPED_DURATION_2_MINUTES.id -> 60 * 2
+                                        GAME_ACTION_TYPE_COMBAT_STOPPED_DURATION_5_MINUTES.id -> 60 * 5
+                                        else -> throw IllegalStateException()
+                                    }
+                                    GameActionType.CombatStopped(target.text.takeIf { it.isNotBlank() }, durationSeconds)
                                 }
                                 else -> throw IllegalStateException()
                             }

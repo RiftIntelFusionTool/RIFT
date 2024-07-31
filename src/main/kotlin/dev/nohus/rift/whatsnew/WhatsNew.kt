@@ -122,6 +122,12 @@ object WhatsNew {
                 - Added support for jump bridge list parsing when copying from Firefox
                 - Updated assets browser with new hangar types
             """.trimIndent(),
+            "2.14.0" description """
+                -! Combat finished alert
+                - Added new alert type for when you are no longer in combat. Useful for ratting when AFK.
+                
+                - Updated settings file saving to be more resilient to filesystem failures
+            """.trimIndent(),
         ).reversed()
     }
 }

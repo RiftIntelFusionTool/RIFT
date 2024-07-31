@@ -203,6 +203,7 @@ class AlertsActionController(
             is GameLogAction.Attacking -> "Attacking"
             is GameLogAction.BeingWarpScrambled -> "Warp scrambled"
             is GameLogAction.Decloaked -> "Decloaked"
+            is GameLogAction.CombatStopped -> "Combat stopped"
         }
     }
 
@@ -235,6 +236,12 @@ class AlertsActionController(
                 }
                 append(" is too close")
             }
+            is GameLogAction.CombatStopped -> buildAnnotatedString {
+                append("Last target was ")
+                withAnnotation(styleTag, styleValue) {
+                    append(action.target)
+                }
+            }
         }
     }
 
@@ -244,6 +251,7 @@ class AlertsActionController(
             is GameLogAction.Attacking -> typesRepository.getTypeId(action.target)
             is GameLogAction.BeingWarpScrambled -> typesRepository.getTypeId(action.target)
             is GameLogAction.Decloaked -> typesRepository.getTypeId(action.by)
+            is GameLogAction.CombatStopped -> typesRepository.getTypeId(action.target)
         }
     }
 

@@ -620,6 +620,25 @@ private fun getAlertText(
                                     append(" with exceptions")
                                 }
                             }
+                            is GameActionType.CombatStopped -> {
+                                append("you are ")
+                                withStyle(primary) { append("no longer in combat") }
+                                if (type.nameContaining != null) {
+                                    append(" with ")
+                                    withStyle(primary) { append(type.nameContaining) }
+                                }
+                                append(" for ")
+                                val minutes = type.durationSeconds / 60
+                                withStyle(primary) {
+                                    if (minutes == 1) {
+                                        append("$minutes minute")
+                                    } else if (minutes > 1) {
+                                        append("$minutes minutes")
+                                    } else {
+                                        append("${type.durationSeconds} seconds")
+                                    }
+                                }
+                            }
                         }
                     }
                 }

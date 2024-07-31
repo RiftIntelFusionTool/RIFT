@@ -101,9 +101,10 @@ class ParsePingUseCase(
     }
 
     private fun parseFormupLocations(text: String): List<FormupLocation> {
-        return if (text.any { it.isWhitespace() }) { // Multiple systems
-            text.split("""\s""".toRegex()).filterNot {
-                it.lowercase() in listOf("and", "or")
+        val splitRegex = """[\s/]""".toRegex()
+        return if (splitRegex in text) { // Multiple systems
+            text.split(splitRegex).filterNot {
+                it.lowercase() in listOf("and", "or", "-")
             }.map(::parseFormupLocation)
         } else {
             listOf(parseFormupLocation(text))

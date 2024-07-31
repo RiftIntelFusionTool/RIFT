@@ -129,6 +129,11 @@ class CreateAlertQuestions(
         id = id++,
         text = "You have been decloaked by a nearby object",
     )
+    val GAME_ACTION_TYPE_COMBAT_STOPPED = FormChoiceItem(
+        id = id++,
+        text = "You are no longer in combat",
+        description = "Includes both being under attack and attacking",
+    )
     val GAME_ACTION_TYPE_QUESTION = MultipleChoiceQuestion(
         title = "If any of the following happens:",
         items = listOf(
@@ -137,6 +142,7 @@ class CreateAlertQuestions(
             GAME_ACTION_TYPE_ATTACKING,
             GAME_ACTION_TYPE_BEING_WARP_SCRAMBLED,
             GAME_ACTION_TYPE_DECLOAKED,
+            GAME_ACTION_TYPE_COMBAT_STOPPED,
         ),
     )
 
@@ -152,6 +158,25 @@ class CreateAlertQuestions(
         title = "Ignore being decloaked by objects containing:",
         placeholder = "Comma-separated list of keywords, e.g. gate",
         allowEmpty = true,
+    )
+
+    // Game action type, combat stopped, duration
+    val GAME_ACTION_TYPE_COMBAT_STOPPED_DURATION_10_SECONDS = FormChoiceItem(id = id++, text = "10 seconds")
+    val GAME_ACTION_TYPE_COMBAT_STOPPED_DURATION_20_SECONDS = FormChoiceItem(id = id++, text = "20 seconds")
+    val GAME_ACTION_TYPE_COMBAT_STOPPED_DURATION_30_SECONDS = FormChoiceItem(id = id++, text = "30 seconds")
+    val GAME_ACTION_TYPE_COMBAT_STOPPED_DURATION_1_MINUTE = FormChoiceItem(id = id++, text = "1 minute")
+    val GAME_ACTION_TYPE_COMBAT_STOPPED_DURATION_2_MINUTES = FormChoiceItem(id = id++, text = "2 minutes")
+    val GAME_ACTION_TYPE_COMBAT_STOPPED_DURATION_5_MINUTES = FormChoiceItem(id = id++, text = "5 minutes")
+    val GAME_ACTION_TYPE_COMBAT_STOPPED_DURATION_QUESTION = SingleChoiceQuestion(
+        title = "Not in combat for:",
+        items = listOf(
+            GAME_ACTION_TYPE_COMBAT_STOPPED_DURATION_10_SECONDS,
+            GAME_ACTION_TYPE_COMBAT_STOPPED_DURATION_20_SECONDS,
+            GAME_ACTION_TYPE_COMBAT_STOPPED_DURATION_30_SECONDS,
+            GAME_ACTION_TYPE_COMBAT_STOPPED_DURATION_1_MINUTE,
+            GAME_ACTION_TYPE_COMBAT_STOPPED_DURATION_2_MINUTES,
+            GAME_ACTION_TYPE_COMBAT_STOPPED_DURATION_5_MINUTES,
+        ),
     )
 
     // Chat message, channel type
