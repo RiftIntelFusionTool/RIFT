@@ -1,12 +1,9 @@
 package dev.nohus.rift.database
 
-import dev.nohus.rift.utils.OperatingSystem
-import dev.nohus.rift.utils.OperatingSystem.Windows
-import dev.nohus.rift.utils.directories.AppDirectories
+import dev.nohus.rift.utils.HasNonAsciiWindowsUsernameUseCase
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.koin.core.annotation.Single
 import java.io.IOException
-import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.createDirectories
@@ -17,8 +14,7 @@ private val logger = KotlinLogging.logger {}
 
 @Single
 class SqliteInitializer(
-    operatingSystem: OperatingSystem,
-    appDirectories: AppDirectories,
+    hasNonAsciiWindowsUsernameUseCase: HasNonAsciiWindowsUsernameUseCase,
 ) {
 
     /**
@@ -30,18 +26,13 @@ class SqliteInitializer(
      * without the username in the path.
      */
     init {
-        if (operatingSystem == Windows) {
-            val cache = appDirectories.getAppCacheDirectory().absolutePathString()
-            val isAscii = StandardCharsets.US_ASCII.newEncoder().canEncode(cache)
-            if (!isAscii) {
-                logger.info { "Cache directory contains non-ASCII characters: $cache" }
-                val temp = getTempDirectory()
-                if (temp != null) {
-                    logger.info { "Setting SQLite temp directory to: ${temp.absolutePathString()}" }
-                    System.setProperty("org.sqlite.tmpdir", temp.absolutePathString())
-                } else {
-                    logger.error { "Temp directory could not be created" }
-                }
+        if (hasNonAsciiWindowsUsernameUseCase()) {
+            val temp = getTempDirectory()
+            if (temp != null) {
+                logger.info { "Setting SQLite temp directory to: ${temp.absolutePathString()}" }
+                System.setProperty("org.sqlite.tmpdir", temp.absolutePathString())
+            } else {
+                logger.error { "Temp directory could not be created" }
             }
         }
     }

@@ -14,6 +14,7 @@ import kotlinx.serialization.json.Json
 import org.koin.core.annotation.Named
 import org.koin.core.annotation.Single
 import java.io.IOException
+import java.nio.file.FileSystemException
 import java.nio.file.Files
 import java.nio.file.NoSuchFileException
 import java.time.Instant

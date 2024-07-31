@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.time.delay
 import org.koin.core.annotation.Single
+import java.nio.file.InvalidPathException
 import java.nio.file.Path
 import java.time.Duration
 import kotlin.io.path.pathString
@@ -134,7 +135,11 @@ class SettingsViewModel(
     }
 
     fun onLogsDirectoryChanged(text: String) {
-        val directory = Path.of(text)
+        val directory = try {
+            Path.of(text)
+        } catch (e: InvalidPathException) {
+            null
+        }
         settings.eveLogsDirectory = directory
         _state.update {
             it.copy(

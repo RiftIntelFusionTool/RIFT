@@ -4,6 +4,7 @@ import dev.nohus.rift.settings.persistence.Settings
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.koin.core.annotation.Single
 import java.io.IOException
+import java.nio.file.FileSystemException
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.isDirectory
 import kotlin.io.path.isRegularFile

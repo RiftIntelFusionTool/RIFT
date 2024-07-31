@@ -19,7 +19,7 @@ sealed class PingModel(
         val description: String,
         val fleetCommander: FleetCommander,
         val fleet: String?,
-        val formupSystem: FormupLocation?,
+        val formupLocations: List<FormupLocation>,
         val papType: PapType?,
         val comms: Comms?,
         val doctrine: Doctrine?,

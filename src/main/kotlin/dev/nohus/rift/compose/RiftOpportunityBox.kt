@@ -122,7 +122,7 @@ data class RiftOpportunityBoxButton(
 fun RiftOpportunityBox(
     category: RiftOpportunityBoxCategory,
     type: AnnotatedString,
-    location: SolarSystemPillState?,
+    locations: List<SolarSystemPillState>,
     character: RiftOpportunityBoxCharacter?,
     title: String?,
     timestamp: Instant,
@@ -204,8 +204,12 @@ fun RiftOpportunityBox(
                                         style = RiftTheme.typography.titleSecondary,
                                     )
                                 }
-                                if (location != null) {
-                                    SolarSystemPill(location)
+                                Column(
+                                    verticalArrangement = Arrangement.spacedBy(Spacing.small),
+                                ) {
+                                    for (location in locations) {
+                                        SolarSystemPill(location)
+                                    }
                                 }
                             }
                             if (character?.id != null) {

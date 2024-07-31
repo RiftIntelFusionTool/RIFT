@@ -114,6 +114,7 @@ data class IntelReports(
 @Serializable
 enum class ConfigurationPack {
     Imperium,
+    TheInitiative,
 }
 
 @Serializable

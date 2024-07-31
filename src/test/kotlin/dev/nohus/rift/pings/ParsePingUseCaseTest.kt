@@ -1,6 +1,8 @@
 package dev.nohus.rift.pings
 
+import dev.nohus.rift.configurationpack.ConfigurationPackRepository
 import dev.nohus.rift.repositories.CharactersRepository
+import dev.nohus.rift.repositories.MapStatusRepository
 import dev.nohus.rift.repositories.SolarSystemsRepository
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.FreeSpec
@@ -19,9 +21,13 @@ class ParsePingUseCaseTest : FreeSpec({
     val timestamp = Instant.now()
     val mockCharactersRepository: CharactersRepository = mockk()
     val mockSolarSystemsRepository: SolarSystemsRepository = mockk()
+    val mockConfigurationPackRepository: ConfigurationPackRepository = mockk()
+    val mockMapStatusRepository: MapStatusRepository = mockk()
     val target = ParsePingUseCase(
         charactersRepository = mockCharactersRepository,
         solarSystemsRepository = mockSolarSystemsRepository,
+        configurationPackRepository = mockConfigurationPackRepository,
+        mapStatusRepository = mockMapStatusRepository,
     )
 
     coEvery { mockCharactersRepository.getCharacterId("Havish Montak") } returns 1
@@ -29,6 +35,23 @@ class ParsePingUseCaseTest : FreeSpec({
     coEvery { mockCharactersRepository.getCharacterId("Mist Amatin") } returns 3
     coEvery { mockCharactersRepository.getCharacterId("Asher Elias") } returns 4
     every { mockSolarSystemsRepository.getSystemName("1DQ1-A", null) } returns "1DQ1-A"
+    every { mockSolarSystemsRepository.getSystemName("U-Q", null) } returns null
+    every { mockSolarSystemsRepository.getSystemName("U-Q", null, listOf(30000629)) } returns "U-QMOA"
+    every { mockConfigurationPackRepository.getFriendlyAllianceIds() } returns listOf(1)
+    every { mockMapStatusRepository.status } returns mockk {
+        every { value } returns mapOf(
+            30000629 to mockk { // U-QMOA
+                every { sovereignty } returns mockk {
+                    every { allianceId } returns 1
+                }
+            },
+            30001155 to mockk { // U-QVWD
+                every { sovereignty } returns mockk {
+                    every { allianceId } returns 2
+                }
+            },
+        )
+    }
 
     listOf(
         """
@@ -78,7 +101,7 @@ class ParsePingUseCaseTest : FreeSpec({
             description = "Hostiles need some time to dock and spin ships. Bring tackle and hunters. NEUTS on sentinels too.",
             fleetCommander = FleetCommander("Havish Montak", 1),
             fleet = null,
-            formupSystem = FormupLocation.System("1DQ1-A"),
+            formupLocations = FormupLocation.System("1DQ1-A"),
             papType = PapType.Strategic,
             comms = Comms.Mumble("Op 4", "https://gnf.lt/2eMgwE2.html"),
             doctrine = Doctrine(
@@ -108,7 +131,7 @@ class ParsePingUseCaseTest : FreeSpec({
             description = "WTF 205 - Command Destroyers\n\nWhat mindlink do you need to boost? How the hell does booshing work? Why do I have a combat timer on this gate? Find the answers to all these questions and more in this class.\n\nPlease note there is no SRP for Gooniversity Classes. Our 200 series covers advanced topics, so bring your own ships at your own risk.",
             fleetCommander = FleetCommander("Mrbluff343", 2),
             fleet = "WTF 205",
-            formupSystem = FormupLocation.System("1DQ1-A"),
+            formupLocations = FormupLocation.System("1DQ1-A"),
             papType = PapType.Peacetime,
             comms = Comms.Text("General"),
             doctrine = Doctrine(
@@ -135,7 +158,7 @@ class ParsePingUseCaseTest : FreeSpec({
             description = "I found an absolutely amazing wh rout of awesome. Getin, im itching for some blood!",
             fleetCommander = FleetCommander("Mist Amatin", 3),
             fleet = null,
-            formupSystem = FormupLocation.System("1DQ1-A"),
+            formupLocations = FormupLocation.System("1DQ1-A"),
             papType = PapType.Strategic,
             comms = Comms.Mumble("Op 3", "https://gnf.lt/NOH1FNH.html"),
             doctrine = Doctrine(
@@ -160,9 +183,29 @@ class ParsePingUseCaseTest : FreeSpec({
             description = "Fleet up on Asher\n\nSun Tzu quote: Optional",
             fleetCommander = FleetCommander("Asher Elias", 4),
             fleet = "Asher's big time fun fleet #1 sir",
-            formupSystem = null,
+            formupLocations = null,
             papType = null,
             comms = Comms.Text("Op 1"),
+            doctrine = null,
+            broadcastSource = null,
+            target = "discord",
+        ),
+        """
+            Fleet up on Asher
+            
+            FC: Asher Elias
+            Formup Location: U-Q
+            
+            ~~~ This was a broadcast from asher_elias to discord at 2024-01-31 00:17:02.533642 EVE ~~~
+        """.trimIndent() to PingModel.FleetPing(
+            timestamp = timestamp,
+            sourceText = "",
+            description = "Fleet up on Asher",
+            fleetCommander = FleetCommander("Asher Elias", 4),
+            fleet = null,
+            formupLocations = FormupLocation.System("U-QMOA"),
+            papType = null,
+            comms = null,
             doctrine = null,
             broadcastSource = null,
             target = "discord",

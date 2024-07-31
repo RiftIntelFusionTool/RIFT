@@ -17,6 +17,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.koin.core.annotation.Single
 import java.io.IOException
+import java.nio.file.FileSystemException
 import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant

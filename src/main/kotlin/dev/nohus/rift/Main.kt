@@ -12,6 +12,7 @@ import androidx.compose.ui.window.application
 import dev.nohus.rift.compose.kamelConfig
 import dev.nohus.rift.compose.theme.RiftTheme
 import dev.nohus.rift.crash.RiftExceptionHandlerFactory
+import dev.nohus.rift.crash.handleFatalException
 import dev.nohus.rift.di.koin
 import dev.nohus.rift.di.startKoin
 import dev.nohus.rift.logging.initializeLogging
@@ -22,7 +23,6 @@ import dev.nohus.rift.utils.viewModel
 import dev.nohus.rift.windowing.WindowManager
 import dev.nohus.rift.wizard.WizardWindowWrapper
 import io.kamel.image.config.LocalKamelConfig
-import io.sentry.Sentry
 
 fun main() {
     try {
@@ -32,8 +32,7 @@ fun main() {
             riftApplication()
         }
     } catch (e: Throwable) {
-        val id = Sentry.captureException(e)
-        println("RIFT has encountered a fatal issue: $id")
+        handleFatalException(e)
         throw e
     }
 }

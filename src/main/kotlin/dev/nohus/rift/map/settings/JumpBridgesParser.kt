@@ -25,7 +25,7 @@ class JumpBridgesParser(
     }
 
     private fun parseGoonswarmWikiJumpBridges(text: String): JumpBridgeNetwork? {
-        val regex = """^[^\t]*\t(?<from>[A-z0-9-]+) @[^\t]*\t(?<to>[A-z0-9-]+) @[^\t]*\t(?<online>[^\t]+)\t.*$""".toRegex()
+        val regex = """^[^\t]*\t(?<from>[A-z0-9-]+) @[^\t]*\t(?<to>[A-z0-9-]+) @[^\t]*\t(?<online>\S+)\s.*${'$'}""".toRegex()
         val connections = text.lines().mapNotNull { regex.find(it) }.mapNotNull { match ->
             val from = match["from"]
             val to = match["to"]

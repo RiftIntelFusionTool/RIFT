@@ -140,17 +140,26 @@ class SolarSystemsRepository(
 
     /**
      * @param name Potential system name
-     * @param regionHint Region the system is expected to be in
+     * @param regionHint Region the system is expected to be in, to prioritise ambiguous names
+     * @param systemHints System IDs to prioritise for ambiguous names
      * @return Full name of the system or null if it's not a system name
      */
-    fun getSystemName(name: String, regionHint: String?): String? {
-        getSystemWithoutTypos(name, regionHint)?.let { return it }
-        if ('0' in name) getSystemWithoutTypos(name.replace('0', 'O'), regionHint)?.let { return it }
-        if ('O' in name) getSystemWithoutTypos(name.replace('O', '0'), regionHint)?.let { return it }
+    fun getSystemName(
+        name: String,
+        regionHint: String?,
+        systemHints: List<Int> = emptyList(),
+    ): String? {
+        getSystemWithoutTypos(name, regionHint, systemHints)?.let { return it }
+        if ('0' in name) getSystemWithoutTypos(name.replace('0', 'O'), regionHint, systemHints)?.let { return it }
+        if ('O' in name) getSystemWithoutTypos(name.replace('O', '0'), regionHint, systemHints)?.let { return it }
         return null
     }
 
-    private fun getSystemWithoutTypos(name: String, regionHint: String? = null): String? {
+    private fun getSystemWithoutTypos(
+        name: String,
+        regionHint: String?,
+        systemHints: List<Int>,
+    ): String? {
         if (name in systemNames) return name
         lowercaseSystemNames[name.lowercase()]?.let { return it }
         val candidates = when (name.length) {
@@ -162,6 +171,9 @@ class SolarSystemsRepository(
         return if (candidates.size > 1) {
             candidates.singleOrNull { candidate ->
                 regionNamesBySystemName[candidate] == regionHint
+            } ?: candidates.singleOrNull { candidate ->
+                val systemId = systemIdsByName[candidate]
+                systemId in systemHints
             }
         } else {
             candidates.firstOrNull()

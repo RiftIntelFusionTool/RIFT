@@ -88,7 +88,7 @@ class PingsViewModel(
                 description = description,
                 fleetCommander = fleetCommander.toUiModel(),
                 fleet = fleet,
-                formupSystem = formupSystem?.toUiModel(),
+                formupLocations = formupLocations.map { it.toUiModel() },
                 papType = papType,
                 comms = comms,
                 doctrine = doctrine,
@@ -103,7 +103,7 @@ class PingsViewModel(
             is FormupLocation.System -> {
                 val id = solarSystemsRepository.getSystemId(name) ?: return FormupLocationUiModel.Text(name)
                 val security = solarSystemsRepository.getSystemSecurity(id) ?: return FormupLocationUiModel.Text(name)
-                val distance = getSystemDistanceFromCharacterUseCase(id)
+                val distance = getSystemDistanceFromCharacterUseCase(id, maxDistance = 9, withJumpBridges = true)
                 FormupLocationUiModel.System(name, security, distance)
             }
         }

@@ -355,7 +355,7 @@ private fun SystemDistanceIndicator(
     height: Dp,
 ) {
     val getDistance: GetSystemDistanceFromCharacterUseCase by koin.inject()
-    val distance = getDistance(systemId)
+    val distance = getDistance(systemId, maxDistance = 5, withJumpBridges = false)
     if (distance > 5) return
     val distanceColor = getDistanceColor(distance)
     Column(

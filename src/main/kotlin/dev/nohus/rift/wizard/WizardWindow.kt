@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.onClick
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -47,7 +48,9 @@ import dev.nohus.rift.compose.RiftMessageDialog
 import dev.nohus.rift.compose.RiftWindow
 import dev.nohus.rift.compose.theme.RiftTheme
 import dev.nohus.rift.compose.theme.Spacing
+import dev.nohus.rift.configurationpack.displayName
 import dev.nohus.rift.generated.resources.Res
+import dev.nohus.rift.generated.resources.partner_400
 import dev.nohus.rift.generated.resources.tray_tray_64
 import dev.nohus.rift.generated.resources.window_agent
 import dev.nohus.rift.get
@@ -117,13 +120,24 @@ private fun WizardWindowContent(
             .focusable()
             .onClick { focusRequester.requestFocus() },
     ) {
-        AnimatedImage(
-            resource = "files/aura.gif",
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                .padding(end = Spacing.large)
-                .size(200.dp)
-                .border(2.dp, RiftTheme.colors.borderPrimary),
-        )
+                .padding(end = Spacing.large),
+        ) {
+            AnimatedImage(
+                resource = "files/aura.gif",
+                modifier = Modifier
+                    .size(200.dp)
+                    .border(2.dp, RiftTheme.colors.borderPrimary),
+            )
+            Image(
+                painter = painterResource(Res.drawable.partner_400),
+                contentDescription = null,
+                modifier = Modifier
+                    .width(200.dp),
+            )
+        }
         when (val step = state.step) {
             WizardStep.Welcome -> WelcomeStep(
                 onContinueClick = onContinueClick,
@@ -331,12 +345,7 @@ private fun ConfigurationPacksStep(
     onContinueClick: () -> Unit,
 ) {
     var hasFinishedTyping by remember { mutableStateOf(false) }
-    val getPackName: (ConfigurationPack?) -> String = {
-        when (it) {
-            ConfigurationPack.Imperium -> "The Imperium"
-            null -> "Default"
-        }
-    }
+    val getPackName: (ConfigurationPack?) -> String = { it.displayName }
     StepContent(
         onContinueClick = onContinueClick,
     ) {

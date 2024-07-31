@@ -5,6 +5,7 @@ import dev.nohus.rift.utils.directories.GetLinuxSteamLibrariesUseCase
 import dev.nohus.rift.utils.osdirectories.OperatingSystemDirectories
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.koin.core.annotation.Single
+import java.nio.file.FileSystemException
 import java.nio.file.Path
 import kotlin.io.path.exists
 import kotlin.io.path.getLastModifiedTime

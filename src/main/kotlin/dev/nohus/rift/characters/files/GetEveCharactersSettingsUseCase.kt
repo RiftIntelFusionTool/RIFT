@@ -2,6 +2,7 @@ package dev.nohus.rift.characters.files
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.koin.core.annotation.Single
+import java.nio.file.FileSystemException
 import java.nio.file.Path
 import kotlin.io.path.extension
 import kotlin.io.path.isDirectory

@@ -211,10 +211,11 @@ class AlertsTriggerController(
                             val isFormupSystemMatching = if (fleetPingAlert.formupSystem == null) {
                                 true
                             } else {
-                                when (ping.formupSystem) {
-                                    is FormupLocation.System -> ping.formupSystem.name == fleetPingAlert.formupSystem
-                                    is FormupLocation.Text -> false
-                                    null -> false
+                                ping.formupLocations.any { location ->
+                                    when (location) {
+                                        is FormupLocation.System -> location.name == fleetPingAlert.formupSystem
+                                        is FormupLocation.Text -> false
+                                    }
                                 }
                             }
                             val isPapTypeMatching = when (fleetPingAlert.papType) {

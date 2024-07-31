@@ -27,6 +27,7 @@ object RiftExceptionHandlerFactory : WindowExceptionHandlerFactory {
 
 fun handleFatalException(throwable: Throwable, window: Window? = null) {
     val sentryId = Sentry.captureException(throwable)
+    println("RIFT has encountered a fatal issue: $sentryId")
     SwingUtilities.invokeLater {
         showErrorDialog(throwable, sentryId.toString())
         window?.dispatchEvent(WindowEvent(window, WindowEvent.WINDOW_CLOSING))

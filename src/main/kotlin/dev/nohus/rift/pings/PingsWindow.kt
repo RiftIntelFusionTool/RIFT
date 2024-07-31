@@ -154,7 +154,7 @@ private fun PlainTextPing(
     RiftOpportunityBox(
         category = RiftOpportunityBoxCategory.Unclassified,
         type = type,
-        location = null,
+        locations = emptyList(),
         character = null,
         title = null,
         timestamp = ping.timestamp,
@@ -230,7 +230,7 @@ private fun FleetPing(
     RiftOpportunityBox(
         category = ping.opportunityCategory,
         type = type,
-        location = ping.formupSystem?.let { getSolarSystemPillState(it) },
+        locations = ping.formupLocations.map { getSolarSystemPillState(it) },
         character = ping.fleetCommander,
         title = title,
         timestamp = ping.timestamp,
@@ -281,8 +281,8 @@ private fun getSolarSystemPillState(location: FormupLocationUiModel): SolarSyste
             val distance = when (location.distance) {
                 0 -> "Current System"
                 1 -> "1 jump"
-                in 2..5 -> "${location.distance} jumps"
-                else -> "6+ jumps"
+                in 2..9 -> "${location.distance} jumps"
+                else -> "10+ jumps"
             }
             SolarSystemPillState(distance = distance, name = location.name, security = location.security)
         }

@@ -88,6 +88,8 @@ object LocationFlags {
             "SubSystemSlot7" to "Subsystem 7",
             "Unlocked" to null, // Inside an unlocked container
             "Wardrobe" to "Wardrobe",
+            "InfrastructureHangar" to "Infrastructure Hangar",
+            "MoonMaterialBay" to "Moon Materials Hold",
         )[flag]
     }
 }

@@ -1,6 +1,8 @@
 package dev.nohus.rift.pings
 
+import dev.nohus.rift.configurationpack.ConfigurationPackRepository
 import dev.nohus.rift.repositories.CharactersRepository
+import dev.nohus.rift.repositories.MapStatusRepository
 import dev.nohus.rift.repositories.SolarSystemsRepository
 import org.koin.core.annotation.Single
 import java.time.Instant
@@ -9,6 +11,8 @@ import java.time.Instant
 class ParsePingUseCase(
     private val charactersRepository: CharactersRepository,
     private val solarSystemsRepository: SolarSystemsRepository,
+    private val configurationPackRepository: ConfigurationPackRepository,
+    private val mapStatusRepository: MapStatusRepository,
 ) {
     suspend operator fun invoke(
         timestamp: Instant,
@@ -32,7 +36,7 @@ class ParsePingUseCase(
 
         val fleetCommander = getValue(cleanText, fleetCommanderKeys)?.let { parseFleetCommander(it) }
         val fleet = getValue(cleanText, fleetKeys)
-        val formupLocation = getValue(cleanText, formupKeys)?.let { parseFormupLocation(it) }
+        val formupLocations = getValue(cleanText, formupKeys)?.let { parseFormupLocations(it) } ?: emptyList()
         val papType = getValue(cleanText, papKeys)?.let { parsePapType(it) }
         val comms = getValue(cleanText, commsKeys)?.let { parseComms(it) }
         val doctrine = getValue(cleanText, doctrineKeys)?.let { parseDoctrine(it) }
@@ -69,7 +73,7 @@ class ParsePingUseCase(
                 description = description,
                 fleetCommander = fleetCommander,
                 fleet = fleet,
-                formupSystem = formupLocation,
+                formupLocations = formupLocations,
                 papType = papType,
                 comms = comms,
                 doctrine = doctrine,
@@ -96,8 +100,25 @@ class ParsePingUseCase(
         return FleetCommander(text, characterId)
     }
 
+    private fun parseFormupLocations(text: String): List<FormupLocation> {
+        return if (text.any { it.isWhitespace() }) { // Multiple systems
+            text.split("""\s""".toRegex()).filterNot {
+                it.lowercase() in listOf("and", "or")
+            }.map(::parseFormupLocation)
+        } else {
+            listOf(parseFormupLocation(text))
+        }
+    }
+
     private fun parseFormupLocation(text: String): FormupLocation {
-        val system = solarSystemsRepository.getSystemName(text, regionHint = null)
+        var system = solarSystemsRepository.getSystemName(text, regionHint = null) // Fast path
+        if (system == null) { // System not found, try with system hints
+            val friendlyAllianceIds = configurationPackRepository.getFriendlyAllianceIds()
+            val friendlySystems = mapStatusRepository.status.value.mapNotNull {
+                if (it.value.sovereignty?.allianceId in friendlyAllianceIds) it.key else null
+            }
+            system = solarSystemsRepository.getSystemName(text, regionHint = null, systemHints = friendlySystems)
+        }
         return if (system != null) FormupLocation.System(system) else FormupLocation.Text(text)
     }
 
@@ -152,6 +173,11 @@ class ParsePingUseCase(
             "Caracal" to "https://goonfleet.com/index.php/topic/293358-active-peacetime-caracals/",
             "Cormorant" to "https://goonfleet.com/index.php/topic/299033-active-peacetime-cormorants/",
             "Tornado" to "https://goonfleet.com/index.php/topic/296788-active-peacetime-windrunners-tornados/",
+            "Retri" to "https://goonfleet.com/index.php/topic/354268-active-strat-retributions/",
+            "goof" to "https://goonfleet.com/index.php/topic/358839-active-war-goof-redeemers/",
+            "Redeem" to "https://goonfleet.com/index.php/topic/358839-active-war-goof-redeemers/",
+            "TOMAHAWK" to "https://goonfleet.com/index.php/topic/355156-active-strat-tomahawks-raven-navy-issues/",
+            "Raven" to "https://goonfleet.com/index.php/topic/355156-active-strat-tomahawks-raven-navy-issues/",
         )
         if (text.contains("(")) {
             val name = text.substringBefore("(")

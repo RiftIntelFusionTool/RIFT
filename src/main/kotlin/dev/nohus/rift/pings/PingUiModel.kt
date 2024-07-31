@@ -22,7 +22,7 @@ sealed class PingUiModel(
         val description: String,
         val fleetCommander: RiftOpportunityBoxCharacter,
         val fleet: String?,
-        val formupSystem: FormupLocationUiModel?,
+        val formupLocations: List<FormupLocationUiModel>,
         val papType: PapType?,
         val comms: Comms?,
         val doctrine: Doctrine?,

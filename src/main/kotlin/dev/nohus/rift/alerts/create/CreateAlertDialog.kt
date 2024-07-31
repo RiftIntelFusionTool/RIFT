@@ -310,7 +310,7 @@ private fun FormQuestion(
                         style = RiftTheme.typography.titlePrimary,
                     )
                     RiftDropdown(
-                        items = List(6 - min) { it },
+                        items = List(6 - min) { min + it },
                         selectedItem = max,
                         onItemSelected = {
                             max = it

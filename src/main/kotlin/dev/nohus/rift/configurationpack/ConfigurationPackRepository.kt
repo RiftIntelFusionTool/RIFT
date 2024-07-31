@@ -3,6 +3,7 @@ package dev.nohus.rift.configurationpack
 import dev.nohus.rift.characters.repositories.LocalCharactersRepository
 import dev.nohus.rift.settings.persistence.ConfigurationPack
 import dev.nohus.rift.settings.persistence.ConfigurationPack.Imperium
+import dev.nohus.rift.settings.persistence.ConfigurationPack.TheInitiative
 import dev.nohus.rift.settings.persistence.IntelChannel
 import dev.nohus.rift.settings.persistence.Settings
 import org.koin.core.annotation.Single
@@ -50,6 +51,9 @@ class ConfigurationPackRepository(
                 99011223, // Sigma Grindset
                 99010931, // WE FORM BL0B
             )
+            TheInitiative -> listOf(
+                1900696668, // The Initiative.
+            )
             null -> emptyList()
         }
     }
@@ -73,6 +77,18 @@ class ConfigurationPackRepository(
                     IntelChannel("aridia.imperium", "Aridia"),
                 ),
             )
+            TheInitiative -> SuggestedIntelChannels(
+                promptTitleText = "Would you like intel channels of The Initiative. to be configured automatically?",
+                promptButtonText = "Add Init channels",
+                channels = listOf(
+                    IntelChannel("I. Ftn Intel", "Fountain"),
+                    IntelChannel("I. OR Intel", "Outer Ring"),
+                    IntelChannel("I. Aridia Intel", "Aridia"),
+                    IntelChannel("I. Curse Intel", "Curse"),
+                    IntelChannel("I. Poch Intel", "Pochven"),
+                    IntelChannel("I. C Ring Intel", "Cloud Ring"),
+                ),
+            )
             null -> null
         }
     }
@@ -80,6 +96,7 @@ class ConfigurationPackRepository(
     fun isJabberEnabled(): Boolean {
         return when (settings.configurationPack) {
             Imperium -> true
+            TheInitiative -> false
             null -> false
         }
     }
@@ -88,9 +105,14 @@ class ConfigurationPackRepository(
         return allianceId in getFriendlyAllianceIds(settings.configurationPack)
     }
 
+    fun getFriendlyAllianceIds(): List<Int> {
+        return getFriendlyAllianceIds(settings.configurationPack)
+    }
+
     fun getJumpBridgeNetworkUrl(): String? {
         return when (settings.configurationPack) {
             Imperium -> "https://wiki.goonswarm.org/w/Alliance:Stargate"
+            TheInitiative -> null
             null -> null
         }
     }

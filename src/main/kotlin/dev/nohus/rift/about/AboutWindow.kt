@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -33,6 +34,7 @@ import dev.nohus.rift.compose.TooltipAnchor
 import dev.nohus.rift.compose.theme.RiftTheme
 import dev.nohus.rift.compose.theme.Spacing
 import dev.nohus.rift.generated.resources.Res
+import dev.nohus.rift.generated.resources.partner_384
 import dev.nohus.rift.generated.resources.window_achievements
 import dev.nohus.rift.generated.resources.window_concord
 import dev.nohus.rift.generated.resources.window_evemailtag
@@ -132,26 +134,60 @@ private fun AboutWindowContent(
 ) {
     Column {
         Row(
+            verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.large),
         ) {
-            Image(
-                painter = painterResource(Res.drawable.window_rift_128),
-                contentDescription = null,
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(Spacing.small),
                 modifier = Modifier
-                    .padding(Spacing.small)
-                    .size(128.dp),
-            )
+                    .padding(Spacing.small),
+            ) {
+                Image(
+                    painter = painterResource(Res.drawable.window_rift_128),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(128.dp),
+                )
+                Image(
+                    painter = painterResource(Res.drawable.partner_384),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .width(192.dp),
+                )
+            }
             Column(
                 modifier = Modifier.weight(1f),
             ) {
+                val highlight = SpanStyle(color = RiftTheme.colors.textSpecialHighlighted)
+                val riftText = buildAnnotatedString {
+                    withStyle(style = highlight) {
+                        append("R")
+                    }
+                    append("IFT ")
+                    withStyle(style = highlight) {
+                        append("I")
+                    }
+                    append("ntel ")
+                    withStyle(style = highlight) {
+                        append("F")
+                    }
+                    append("usion ")
+                    withStyle(style = highlight) {
+                        append("T")
+                    }
+                    append("ool")
+                }
                 Text(
-                    text = "RIFT Intel Fusion Tool",
+                    text = riftText,
                     style = RiftTheme.typography.headlineHighlighted,
                 )
+
                 RiftTooltipArea(
                     tooltip = state.buildTime,
                     anchor = TooltipAnchor.TopStart,
                     contentAnchor = Alignment.BottomStart,
+                    modifier = Modifier.padding(top = Spacing.medium),
                 ) {
                     Text(
                         text = state.version,
@@ -223,9 +259,7 @@ private fun AboutWindowContent(
         }
         Row(
             horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
-            modifier = Modifier
-                .padding(top = Spacing.large)
-                .align(Alignment.End),
+            modifier = Modifier.align(Alignment.End),
         ) {
             RiftButton(
                 text = "App data",

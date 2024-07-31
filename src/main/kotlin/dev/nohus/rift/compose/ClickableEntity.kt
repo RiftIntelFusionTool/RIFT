@@ -52,7 +52,10 @@ fun ClickableSystem(
     content: @Composable () -> Unit,
 ) {
     val repository: SolarSystemsRepository = remember { koin.get() }
-    val systemId = repository.getSystemId(system) ?: return
+    val systemId = repository.getSystemId(system) ?: run {
+        content()
+        return
+    }
     val dotlanUrl = "https://evemaps.dotlan.net/system/$system"
     RiftContextMenuArea(
         items = GetSystemContextMenuItems(systemId),

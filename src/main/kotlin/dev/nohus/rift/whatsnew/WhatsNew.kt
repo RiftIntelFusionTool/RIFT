@@ -113,6 +113,15 @@ object WhatsNew {
                 - Made it possible to set up combat alerts with no target filters
                 - Added a warning if your EVE client is set to a language other than English
             """.trimIndent(),
+            "2.13.0" description """
+                - Added EVE Online Partner badge
+                - Added prioritisation of ambiguous system names in fleet pings, to choose systems with friendly sovereignty
+                - Added support for multiple fleet formup locations in pings
+                - Updated formup location distance counter to consider jump bridges
+                - Added configuration pack with intel channels for The Initiative.
+                - Added support for jump bridge list parsing when copying from Firefox
+                - Updated assets browser with new hangar types
+            """.trimIndent(),
         ).reversed()
     }
 }

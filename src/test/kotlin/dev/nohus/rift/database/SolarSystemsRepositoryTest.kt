@@ -10,7 +10,9 @@ import io.kotest.matchers.shouldBe
 
 class SolarSystemsRepositoryTest : FreeSpec({
 
-    val target = SolarSystemsRepository(StaticDatabase(SqliteInitializer(OperatingSystem.Linux, AppDirectories(LinuxDirectories()))))
+    val target = SolarSystemsRepository(
+        staticDatabase = StaticDatabase(SqliteInitializer(OperatingSystem.Linux, AppDirectories(LinuxDirectories()))),
+    )
 
     listOf(
         Triple("Jita", null, "Jita"),
@@ -50,6 +52,20 @@ class SolarSystemsRepositoryTest : FreeSpec({
     ).forEach { (input, regionHint, expected) ->
         "for input \"$input\" with region hint \"$regionHint\" getSystem() returns \"$expected\"" {
             val actual = target.getSystemName(input, regionHint)
+            actual shouldBe expected
+        }
+    }
+
+    listOf(
+        Triple("U-Q", listOf(30000629), "U-QMOA"),
+        Triple("U-Q", listOf(30001155), "U-QVWD"),
+        Triple("U-Q", listOf(), null),
+        Triple("U-Q", listOf(30000629, 30001155), null),
+        Triple("EX6-AO", listOf(), "EX6-AO"),
+        Triple("AND", listOf(), null),
+    ).forEach { (input, systemHints, expected) ->
+        "for input \"$input\" with system hints \"$systemHints\" getSystem() returns \"$expected\"" {
+            val actual = target.getSystemName(input, null, systemHints)
             actual shouldBe expected
         }
     }
