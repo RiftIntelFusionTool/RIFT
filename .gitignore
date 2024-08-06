@@ -49,3 +49,4 @@ scripts/**/Local.kt
 website/download
 website/download.html
 output
+.kotlin/sessions/

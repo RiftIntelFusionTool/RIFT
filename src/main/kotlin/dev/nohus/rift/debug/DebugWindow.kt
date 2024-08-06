@@ -69,6 +69,12 @@ private fun DebugWindowContent(
     state: UiState,
 ) {
     Column {
+        Text(
+            text = "${state.version}, ${state.vmVersion}",
+            style = RiftTheme.typography.bodyPrimary,
+            modifier = Modifier.padding(bottom = Spacing.medium),
+        )
+
         var minLevel by remember { mutableStateOf(Level.ALL) }
         var isAutoScrolling by remember { mutableStateOf(true) }
         Row(

@@ -45,6 +45,7 @@ class SolarSystemsRepository(
         val z: Double,
         val security: Double,
         val sunTypeId: Int,
+        val hasJoveObservatory: Boolean,
     )
 
     data class MapConstellation(
@@ -96,6 +97,7 @@ class SolarSystemsRepository(
                 z = -it[SolarSystems.z],
                 security = it[SolarSystems.security],
                 sunTypeId = it[SolarSystems.sunTypeId],
+                hasJoveObservatory = it[SolarSystems.hasJoveObservatory],
             )
         }
         systemsById = mapSolarSystems.associateBy { it.id }

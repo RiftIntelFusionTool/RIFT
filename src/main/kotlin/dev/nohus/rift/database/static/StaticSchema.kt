@@ -12,6 +12,7 @@ object SolarSystems : Table() {
     val y = double("y")
     val z = double("z")
     val security = double("security")
+    val hasJoveObservatory = bool("hasJoveObservatory")
     override val primaryKey = PrimaryKey(solarSystemId)
 }
 

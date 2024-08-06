@@ -2,6 +2,7 @@ package dev.nohus.rift.database
 
 import dev.nohus.rift.database.static.StaticDatabase
 import dev.nohus.rift.repositories.ShipTypesRepository
+import dev.nohus.rift.utils.HasNonAsciiWindowsUsernameUseCase
 import dev.nohus.rift.utils.OperatingSystem
 import dev.nohus.rift.utils.directories.AppDirectories
 import dev.nohus.rift.utils.osdirectories.LinuxDirectories
@@ -10,7 +11,7 @@ import io.kotest.matchers.shouldBe
 
 class ShipTypesRepositoryTest : FreeSpec({
 
-    val target = ShipTypesRepository(StaticDatabase(SqliteInitializer(OperatingSystem.Linux, AppDirectories(LinuxDirectories()))))
+    val target = ShipTypesRepository(StaticDatabase(SqliteInitializer(HasNonAsciiWindowsUsernameUseCase(OperatingSystem.Linux, AppDirectories(LinuxDirectories())))))
 
     listOf(
         "Buzzard" to "Buzzard",

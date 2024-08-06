@@ -132,6 +132,10 @@ object WhatsNew {
                 - Added Debug window to view logs, accessible from the About window
                 - Added option to skip selecting the EVE installation during the setup wizard
             """.trimIndent(),
+            "2.16.0" description """
+                -! Jove Observatories
+                - You can now enable map indicators for Jove Observatories, to see systems where Unidentified Wormholes can spawn
+            """.trimIndent(),
         ).reversed()
     }
 }

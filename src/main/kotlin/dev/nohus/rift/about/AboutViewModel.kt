@@ -37,6 +37,7 @@ class AboutViewModel(
     operatingSystem: OperatingSystem,
     private val appDirectories: AppDirectories,
     private val windowManager: WindowManager,
+    getVersionUseCase: GetVersionUseCase,
 ) : ViewModel() {
 
     data class UiState(
@@ -57,7 +58,7 @@ class AboutViewModel(
 
     private val _state = MutableStateFlow(
         UiState(
-            version = getVersionText(),
+            version = getVersionUseCase(),
             buildTime = getBuildTime(),
             latestVersion = null,
             isUpdateAvailable = Loading,
@@ -145,12 +146,6 @@ class AboutViewModel(
         } catch (e: Exception) {
             return null
         }
-    }
-
-    private fun getVersionText(): String {
-        @Suppress("KotlinConstantConditions")
-        val suffix = BuildConfig.environment.let { if (it != "prod") "-$it" else "" }
-        return "Version ${BuildConfig.version}$suffix"
     }
 
     private fun getBuildTime(): String {

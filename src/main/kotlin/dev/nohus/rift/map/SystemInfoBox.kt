@@ -46,6 +46,7 @@ import dev.nohus.rift.di.koin
 import dev.nohus.rift.generated.resources.Res
 import dev.nohus.rift.generated.resources.indicator_assets
 import dev.nohus.rift.generated.resources.indicator_incursion
+import dev.nohus.rift.generated.resources.indicator_jove
 import dev.nohus.rift.generated.resources.indicator_jump_drive
 import dev.nohus.rift.generated.resources.indicator_jumps
 import dev.nohus.rift.generated.resources.indicator_kills
@@ -153,7 +154,7 @@ fun SystemInfoBox(
                                 }
                             }
                         }
-                        SystemInfoTypes(infoTypes, systemStatus)
+                        SystemInfoTypes(system, infoTypes, systemStatus)
                     }
                 }
 
@@ -166,7 +167,7 @@ fun SystemInfoBox(
             modifier = Modifier.padding(start = 2.dp, top = Spacing.verySmall),
         ) {
             val shownIndicatorsInfoTypes = if (isExpanded) indicatorsInfoTypes - infoTypes.toSet() else indicatorsInfoTypes
-            SystemInfoTypesIndicators(shownIndicatorsInfoTypes, systemStatus)
+            SystemInfoTypesIndicators(system, shownIndicatorsInfoTypes, systemStatus)
         }
     }
 }
@@ -174,6 +175,7 @@ fun SystemInfoBox(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ColumnScope.SystemInfoTypes(
+    system: MapSolarSystem,
     infoTypes: List<MapSystemInfoType>,
     systemStatus: SolarSystemStatus?,
 ) {
@@ -311,6 +313,14 @@ private fun ColumnScope.SystemInfoTypes(
                     }
                 }
             }
+            MapSystemInfoType.JoveObservatories -> {
+                if (system.hasJoveObservatory) {
+                    Text(
+                        text = "Jove Observatory",
+                        style = RiftTheme.typography.bodyPrimary,
+                    )
+                }
+            }
         }
     }
 }
@@ -318,6 +328,7 @@ private fun ColumnScope.SystemInfoTypes(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SystemInfoTypesIndicators(
+    system: MapSolarSystem,
     infoTypes: List<MapSystemInfoType>,
     systemStatus: SolarSystemStatus?,
 ) {
@@ -330,7 +341,6 @@ private fun SystemInfoTypesIndicators(
                 val jumps = systemStatus?.shipJumps?.takeIf { it > 0 }?.toString()
                 InfoTypeIndicator(jumps, Res.drawable.indicator_jumps)
             }
-
             MapSystemInfoType.Kills -> {
                 val podKills = systemStatus?.podKills ?: 0
                 val shipKills = systemStatus?.shipKills ?: 0
@@ -347,7 +357,6 @@ private fun SystemInfoTypesIndicators(
                 val assets = systemStatus?.assetCount?.takeIf { it > 0 }?.toString()
                 InfoTypeIndicator(assets, Res.drawable.indicator_assets)
             }
-
             MapSystemInfoType.Incursions -> {
                 systemStatus?.incursion?.let {
                     InfoTypeIndicator("", Res.drawable.indicator_incursion)
@@ -389,6 +398,11 @@ private fun SystemInfoTypesIndicators(
                             }
                         }
                     }
+                }
+            }
+            MapSystemInfoType.JoveObservatories -> {
+                if (system.hasJoveObservatory) {
+                    InfoTypeIndicator("", Res.drawable.indicator_jove)
                 }
             }
         }

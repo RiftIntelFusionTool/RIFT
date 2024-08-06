@@ -58,7 +58,7 @@ enum class MapType {
 @Serializable
 enum class MapSystemInfoType {
     StarColor, Security, IntelHostiles, Jumps, Kills, NpcKills, Assets, Incursions, Stations, FactionWarfare,
-    Sovereignty, MetaliminalStorms, JumpRange, Planets
+    Sovereignty, MetaliminalStorms, JumpRange, Planets, JoveObservatories
 }
 
 @Serializable

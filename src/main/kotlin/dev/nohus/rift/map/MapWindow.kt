@@ -89,6 +89,7 @@ import dev.nohus.rift.map.systemcolor.strategies.AssetsSystemColorStrategy
 import dev.nohus.rift.map.systemcolor.strategies.FactionWarfareSystemColorStrategy
 import dev.nohus.rift.map.systemcolor.strategies.HostileEntitiesSystemColorStrategy
 import dev.nohus.rift.map.systemcolor.strategies.IncursionsSystemColorStrategy
+import dev.nohus.rift.map.systemcolor.strategies.JoveObservatorySystemColorStrategy
 import dev.nohus.rift.map.systemcolor.strategies.JumpRangeSystemColorStrategy
 import dev.nohus.rift.map.systemcolor.strategies.JumpsSystemColorStrategy
 import dev.nohus.rift.map.systemcolor.strategies.KillsSystemColorStrategy
@@ -544,6 +545,7 @@ fun getSolarSystemColorStrategy(
         MapSystemInfoType.MetaliminalStorms -> systemStatusColorStrategies.storms
         MapSystemInfoType.JumpRange -> systemStatusColorStrategies.jumpRange
         MapSystemInfoType.Planets -> throw IllegalArgumentException("Not used for coloring")
+        MapSystemInfoType.JoveObservatories -> koin.get<JoveObservatorySystemColorStrategy>()
     }
 }
 
