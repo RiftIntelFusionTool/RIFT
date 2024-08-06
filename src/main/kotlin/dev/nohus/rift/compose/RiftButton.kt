@@ -107,6 +107,7 @@ fun RiftButton(
                 text = text,
                 color = contentColor,
                 style = RiftTheme.typography.bodyPrimary.copy(shadow = Shadow(offset = Offset(0f, 0f), blurRadius = 3f)),
+                maxLines = 1,
                 modifier = Modifier.padding(horizontal = 15.dp),
             )
         },

@@ -80,6 +80,8 @@ class LogbackAppender : AppenderBase<ILoggingEvent>() {
         scope.launch(MainUIDispatcher) {
             Sentry.addBreadcrumb(breadcrumb)
         }
+
+        LoggingRepository.append(event)
         writeDiagnostics(formatted)
     }
 

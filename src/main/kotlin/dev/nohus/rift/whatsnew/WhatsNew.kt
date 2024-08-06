@@ -128,6 +128,10 @@ object WhatsNew {
                 
                 - Updated settings file saving to be more resilient to filesystem failures
             """.trimIndent(),
+            "2.15.0" description """
+                - Added Debug window to view logs, accessible from the About window
+                - Added option to skip selecting the EVE installation during the setup wizard
+            """.trimIndent(),
         ).reversed()
     }
 }

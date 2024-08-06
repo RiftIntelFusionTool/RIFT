@@ -78,6 +78,10 @@ class AboutViewModel(
         _state.update { it.copy(isUpdateDialogShown = true) }
     }
 
+    fun onDebugClick() {
+        windowManager.onWindowOpen(RiftWindow.Debug)
+    }
+
     fun onAppDataClick() {
         appDirectories.getAppDataDirectory().openFileManager()
     }

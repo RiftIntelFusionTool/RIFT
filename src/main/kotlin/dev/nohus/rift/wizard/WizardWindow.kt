@@ -202,13 +202,18 @@ private fun EveInstallationStep(
     onSetEveInstallationClick: () -> Unit,
     onContinueClick: () -> Unit,
 ) {
-    val isContinueVisible = when (step.state) {
-        EveInstallationState.None -> false
-        EveInstallationState.Detected -> true
-        EveInstallationState.Set -> true
+    val isContinueWarning = when (step.state) {
+        EveInstallationState.None -> true
+        EveInstallationState.Detected -> false
+        EveInstallationState.Set -> false
     }
     var hasFinishedTyping by remember { mutableStateOf(false) }
-    StepContent(onContinueClick = onContinueClick, isContinueVisible = isContinueVisible && hasFinishedTyping) {
+
+    StepContent(
+        onContinueClick = onContinueClick,
+        isContinueVisible = hasFinishedTyping,
+        isWarning = isContinueWarning,
+    ) {
         val text = buildAnnotatedString {
             when (step.state) {
                 EveInstallationState.None -> {

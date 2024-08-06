@@ -3,6 +3,7 @@ package dev.nohus.rift.about
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -68,6 +69,7 @@ fun AboutWindow(
         AboutWindowContent(
             state = state,
             onUpdateClick = viewModel::onUpdateClick,
+            onDebugClick = viewModel::onDebugClick,
             onAppDataClick = viewModel::onAppDataClick,
             onLegalClick = viewModel::onLegalClick,
             onCreditsClick = viewModel::onCreditsClick,
@@ -127,6 +129,7 @@ fun AboutWindow(
 private fun AboutWindowContent(
     state: UiState,
     onUpdateClick: () -> Unit,
+    onDebugClick: () -> Unit,
     onAppDataClick: () -> Unit,
     onLegalClick: () -> Unit,
     onCreditsClick: () -> Unit,
@@ -156,111 +159,120 @@ private fun AboutWindowContent(
                         .width(192.dp),
                 )
             }
-            Column(
+            Box(
+                contentAlignment = Alignment.Center,
                 modifier = Modifier.weight(1f),
             ) {
-                val highlight = SpanStyle(color = RiftTheme.colors.textSpecialHighlighted)
-                val riftText = buildAnnotatedString {
-                    withStyle(style = highlight) {
-                        append("R")
+                Column {
+                    val highlight = SpanStyle(color = RiftTheme.colors.textSpecialHighlighted)
+                    val riftText = buildAnnotatedString {
+                        withStyle(style = highlight) {
+                            append("R")
+                        }
+                        append("IFT ")
+                        withStyle(style = highlight) {
+                            append("I")
+                        }
+                        append("ntel ")
+                        withStyle(style = highlight) {
+                            append("F")
+                        }
+                        append("usion ")
+                        withStyle(style = highlight) {
+                            append("T")
+                        }
+                        append("ool")
                     }
-                    append("IFT ")
-                    withStyle(style = highlight) {
-                        append("I")
-                    }
-                    append("ntel ")
-                    withStyle(style = highlight) {
-                        append("F")
-                    }
-                    append("usion ")
-                    withStyle(style = highlight) {
-                        append("T")
-                    }
-                    append("ool")
-                }
-                Text(
-                    text = riftText,
-                    style = RiftTheme.typography.headlineHighlighted,
-                )
-
-                RiftTooltipArea(
-                    tooltip = state.buildTime,
-                    anchor = TooltipAnchor.TopStart,
-                    contentAnchor = Alignment.BottomStart,
-                    modifier = Modifier.padding(top = Spacing.medium),
-                ) {
                     Text(
-                        text = state.version,
-                        style = RiftTheme.typography.titlePrimary,
+                        text = riftText,
+                        style = RiftTheme.typography.headlineHighlighted,
                     )
-                }
-                AnimatedContent(state.isUpdateAvailable) { isUpdateAvailable ->
-                    when (isUpdateAvailable) {
-                        is AsyncResource.Error -> {
-                            Text(
-                                text = "Could not check for updates",
-                                style = RiftTheme.typography.bodySecondary,
-                            )
-                        }
 
-                        AsyncResource.Loading -> {
-                            Text(
-                                text = "Checking for updates…",
-                                style = RiftTheme.typography.bodySecondary,
-                            )
-                        }
+                    RiftTooltipArea(
+                        tooltip = state.buildTime,
+                        anchor = TooltipAnchor.TopStart,
+                        contentAnchor = Alignment.BottomStart,
+                        modifier = Modifier.padding(top = Spacing.medium),
+                    ) {
+                        Text(
+                            text = state.version,
+                            style = RiftTheme.typography.titlePrimary,
+                        )
+                    }
+                    AnimatedContent(state.isUpdateAvailable) { isUpdateAvailable ->
+                        when (isUpdateAvailable) {
+                            is AsyncResource.Error -> {
+                                Text(
+                                    text = "Could not check for updates",
+                                    style = RiftTheme.typography.bodySecondary,
+                                )
+                            }
 
-                        is AsyncResource.Ready -> {
-                            when (isUpdateAvailable.value) {
-                                true -> {
-                                    LinkText(
-                                        text = "Update available: ${state.latestVersion}",
-                                        onClick = onUpdateClick,
-                                    )
-                                }
+                            AsyncResource.Loading -> {
+                                Text(
+                                    text = "Checking for updates…",
+                                    style = RiftTheme.typography.bodySecondary,
+                                )
+                            }
 
-                                false -> {
-                                    Text(
-                                        text = "Up to date",
-                                        style = RiftTheme.typography.bodySecondary,
-                                    )
+                            is AsyncResource.Ready -> {
+                                when (isUpdateAvailable.value) {
+                                    true -> {
+                                        LinkText(
+                                            text = "Update available: ${state.latestVersion}",
+                                            onClick = onUpdateClick,
+                                        )
+                                    }
+
+                                    false -> {
+                                        Text(
+                                            text = "Up to date",
+                                            style = RiftTheme.typography.bodySecondary,
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
+
+                    Text(
+                        text = "Developed by Nohus",
+                        style = RiftTheme.typography.titlePrimary,
+                        modifier = Modifier.padding(top = Spacing.medium),
+                    )
+                    LinkText(
+                        text = "https://riftforeve.online/",
+                        onClick = { "https://riftforeve.online/".toURIOrNull()?.openBrowser() },
+                    )
+
+                    Text(
+                        text = "Join the Discord!",
+                        style = RiftTheme.typography.titlePrimary,
+                        modifier = Modifier.padding(top = Spacing.medium),
+                    )
+                    LinkText(
+                        text = "Invite link",
+                        onClick = { "https://discord.gg/FQPVs5hnaZ".toURIOrNull()?.openBrowser() },
+                    )
+
+                    Text(
+                        text = "© 2023–2024 Nohus",
+                        style = RiftTheme.typography.bodySecondary,
+                        modifier = Modifier.padding(top = Spacing.medium),
+                    )
                 }
-
-                Text(
-                    text = "Developed by Nohus",
-                    style = RiftTheme.typography.titlePrimary,
-                    modifier = Modifier.padding(top = Spacing.medium),
-                )
-                LinkText(
-                    text = "https://riftforeve.online/",
-                    onClick = { "https://riftforeve.online/".toURIOrNull()?.openBrowser() },
-                )
-
-                Text(
-                    text = "Join the Discord!",
-                    style = RiftTheme.typography.titlePrimary,
-                    modifier = Modifier.padding(top = Spacing.medium),
-                )
-                LinkText(
-                    text = "Invite link",
-                    onClick = { "https://discord.gg/FQPVs5hnaZ".toURIOrNull()?.openBrowser() },
-                )
-
-                Text(
-                    text = "© 2023–2024 Nohus",
-                    style = RiftTheme.typography.bodySecondary,
-                    modifier = Modifier.padding(top = Spacing.medium),
-                )
             }
         }
         Row(
             horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
             modifier = Modifier.align(Alignment.End),
         ) {
+            RiftButton(
+                text = "Debug",
+                type = ButtonType.Secondary,
+                cornerCut = ButtonCornerCut.None,
+                onClick = onDebugClick,
+            )
             RiftButton(
                 text = "App data",
                 type = ButtonType.Secondary,

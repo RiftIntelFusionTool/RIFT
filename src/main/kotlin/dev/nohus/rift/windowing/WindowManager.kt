@@ -17,6 +17,7 @@ import dev.nohus.rift.alerts.list.AlertsWindow
 import dev.nohus.rift.assets.AssetsWindow
 import dev.nohus.rift.characters.CharactersWindow
 import dev.nohus.rift.configurationpack.ConfigurationPackReminderWindow
+import dev.nohus.rift.debug.DebugWindow
 import dev.nohus.rift.gamelogs.NonEnglishEveClientWarningWindow
 import dev.nohus.rift.intel.IntelWindow
 import dev.nohus.rift.intel.settings.IntelSettingsWindow
@@ -50,7 +51,7 @@ class WindowManager(
     @Serializable
     enum class RiftWindow {
         Neocom, Intel, IntelSettings, Settings, Map, MapSettings, Characters, Pings, Alerts, About, Jabber,
-        ConfigurationPackReminder, NonEnglishEveClientWarning, Assets, WhatsNew
+        ConfigurationPackReminder, NonEnglishEveClientWarning, Assets, WhatsNew, Debug
     }
 
     data class RiftWindowState(
@@ -113,6 +114,7 @@ class WindowManager(
                     RiftWindow.NonEnglishEveClientWarning -> NonEnglishEveClientWarningWindow(state, onCloseRequest = { onWindowClose(RiftWindow.NonEnglishEveClientWarning) })
                     RiftWindow.Assets -> AssetsWindow(state, onCloseRequest = { onWindowClose(RiftWindow.Assets) })
                     RiftWindow.WhatsNew -> WhatsNewWindow(state, onCloseRequest = { onWindowClose(RiftWindow.WhatsNew) })
+                    RiftWindow.Debug -> DebugWindow(state, onCloseRequest = { onWindowClose(RiftWindow.Debug) })
                 }
             }
         }
@@ -172,13 +174,14 @@ class WindowManager(
             RiftWindow.MapSettings -> WindowSizing(defaultSize = (400 to 450), minimumSize = 400 to 450)
             RiftWindow.Characters -> WindowSizing(defaultSize = saved ?: (420 to 400), minimumSize = 350 to 300)
             RiftWindow.Alerts -> WindowSizing(defaultSize = saved ?: (500 to 500), minimumSize = 500 to 500)
-            RiftWindow.About -> WindowSizing(defaultSize = (450 to null), minimumSize = (450 to null))
+            RiftWindow.About -> WindowSizing(defaultSize = (500 to null), minimumSize = (500 to null))
             RiftWindow.Jabber -> WindowSizing(defaultSize = saved ?: (400 to 500), minimumSize = (200 to 200))
             RiftWindow.Pings -> WindowSizing(defaultSize = saved ?: (440 to 500), minimumSize = (440 to 300))
             RiftWindow.ConfigurationPackReminder -> WindowSizing(defaultSize = (450 to null), minimumSize = (450 to null))
             RiftWindow.NonEnglishEveClientWarning -> WindowSizing(defaultSize = (450 to null), minimumSize = (450 to null))
             RiftWindow.Assets -> WindowSizing(defaultSize = saved ?: (500 to 500), minimumSize = (500 to 300))
             RiftWindow.WhatsNew -> WindowSizing(defaultSize = saved ?: (450 to 500), minimumSize = (450 to 500))
+            RiftWindow.Debug -> WindowSizing(defaultSize = saved ?: (450 to 500), minimumSize = (450 to 500))
         }
     }
 
