@@ -4,7 +4,10 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.onClick
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
@@ -21,6 +24,7 @@ import dev.nohus.rift.generated.resources.menu_zkillboard
 import dev.nohus.rift.map.MapExternalControl
 import dev.nohus.rift.map.MapViewModel.MapType
 import dev.nohus.rift.repositories.SolarSystemsRepository
+import dev.nohus.rift.settings.persistence.Settings
 import dev.nohus.rift.utils.Clipboard
 import dev.nohus.rift.utils.openBrowser
 import dev.nohus.rift.utils.toURIOrNull
@@ -80,9 +84,11 @@ fun GetSystemContextMenuItems(
     val autopilotController: AutopilotController = remember { koin.get() }
     val mapExternalControl: MapExternalControl = remember { koin.get() }
     val solarSystemsRepository: SolarSystemsRepository = remember { koin.get() }
+    val settings: Settings = remember { koin.get() }
     val system = solarSystemsRepository.getSystemName(systemId) ?: return emptyList()
     val dotlanUrl = "https://evemaps.dotlan.net/system/$system"
     val zkillboardUrl = "https://zkillboard.com/system/$systemId/"
+    var isSettingAutopilotToAll by remember { mutableStateOf(settings.isSettingAutopilotToAll) }
     return buildList {
         add(
             ContextMenuItem.TextItem(
@@ -106,6 +112,16 @@ fun GetSystemContextMenuItems(
                 text = "Clear Autopilot",
                 onClick = {
                     autopilotController.clearRoute()
+                },
+            ),
+        )
+        add(
+            ContextMenuItem.CheckboxItem(
+                text = "All Characters",
+                isSelected = isSettingAutopilotToAll,
+                onClick = {
+                    isSettingAutopilotToAll = !isSettingAutopilotToAll
+                    settings.isSettingAutopilotToAll = isSettingAutopilotToAll
                 },
             ),
         )

@@ -36,12 +36,12 @@ import org.jetbrains.compose.resources.painterResource
 fun RiftCheckbox(
     isChecked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
+    pointerInteractionStateHolder: PointerInteractionStateHolder = remember { PointerInteractionStateHolder() },
     modifier: Modifier = Modifier,
 ) {
     val checkboxColor = RiftTheme.colors.primary
     val shape = CutCornerShape(2.dp)
 
-    val pointerInteractionStateHolder = remember { PointerInteractionStateHolder() }
     val transition = updateTransition(pointerInteractionStateHolder.current)
     val shadowColor by transition.animateColor(getTransitionSpec()) {
         if (it == PointerInteractionState.Normal) Color.Transparent else checkboxColor

@@ -46,6 +46,7 @@ import dev.nohus.rift.alerts.create.FormAnswer.SystemAnswer
 import dev.nohus.rift.characters.repositories.LocalCharactersRepository.LocalCharacter
 import dev.nohus.rift.compose.ButtonCornerCut
 import dev.nohus.rift.compose.ButtonType
+import dev.nohus.rift.compose.PointerInteractionStateHolder
 import dev.nohus.rift.compose.RequirementIcon
 import dev.nohus.rift.compose.RiftButton
 import dev.nohus.rift.compose.RiftCheckbox
@@ -539,12 +540,13 @@ private fun ListSelectorRow(
     onSelect: () -> Unit,
     rightContent: @Composable () -> Unit = {},
 ) {
+    val pointerInteractionStateHolder = remember { PointerInteractionStateHolder() }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
         modifier = Modifier
             .fillMaxWidth()
-            .hoverBackground()
+            .hoverBackground(pointerInteractionStateHolder = pointerInteractionStateHolder)
             .onClick { onSelect() }
             .padding(Spacing.medium),
     ) {
@@ -552,6 +554,7 @@ private fun ListSelectorRow(
             RiftCheckbox(
                 isChecked = isSelected,
                 onCheckedChange = { onSelect() },
+                pointerInteractionStateHolder = pointerInteractionStateHolder,
             )
         } else {
             RiftRadioButton(

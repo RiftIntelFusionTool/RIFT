@@ -4,6 +4,7 @@ import dev.nohus.rift.configurationpack.ShouldShowConfigurationPackReminderUseCa
 import dev.nohus.rift.gamelogs.ShouldShowNonEnglishEveClientWarningUseCase
 import dev.nohus.rift.settings.persistence.Settings
 import dev.nohus.rift.singleinstance.SingleInstanceController
+import dev.nohus.rift.utils.OperatingSystem
 import dev.nohus.rift.utils.directories.DetectDirectoriesUseCase
 import dev.nohus.rift.whatsnew.WhatsNewController
 import dev.nohus.rift.windowing.WindowManager
@@ -30,6 +31,7 @@ class ApplicationViewModel(
     private val shouldShowConfigurationPackReminderUseCase: ShouldShowConfigurationPackReminderUseCase,
     private val shouldShowNonEnglishEveClientWarningUseCase: ShouldShowNonEnglishEveClientWarningUseCase,
     private val whatsNewController: WhatsNewController,
+    private val operatingSystem: OperatingSystem,
     private val settings: Settings,
 ) : ViewModel() {
 
@@ -65,6 +67,7 @@ class ApplicationViewModel(
     }
 
     private fun initializeApplication() {
+        logger.info { "Initializing RIFT ${BuildConfig.version} on $operatingSystem" }
         detectDirectoriesUseCase()
         viewModelScope.launch {
             backgroundProcesses.start()

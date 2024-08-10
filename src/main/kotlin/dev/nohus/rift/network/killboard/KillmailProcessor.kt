@@ -3,6 +3,7 @@ package dev.nohus.rift.network.killboard
 import dev.nohus.rift.intel.state.IntelStateController
 import dev.nohus.rift.intel.state.SystemEntity
 import dev.nohus.rift.repositories.CharacterDetailsRepository
+import dev.nohus.rift.repositories.ShipTypesRepository
 import dev.nohus.rift.repositories.SolarSystemsRepository
 import dev.nohus.rift.repositories.TypesRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -23,6 +24,7 @@ class KillmailProcessor(
     private val solarSystemsRepository: SolarSystemsRepository,
     private val intelStateController: IntelStateController,
     private val typeRepository: TypesRepository,
+    private val shipTypesRepository: ShipTypesRepository,
     private val characterDetailsRepository: CharacterDetailsRepository,
 ) {
 
@@ -46,7 +48,8 @@ class KillmailProcessor(
 
             val killmail = SystemEntity.Killmail(
                 url = message.url,
-                ship = message.victim.shipTypeId?.let { typeRepository.getTypeName(it) },
+                ship = shipTypesRepository.getShipName(message.victim.shipTypeId),
+                typeName = message.victim.shipTypeId?.let { typeRepository.getTypeName(it) },
             )
             val deferredVictim = message.victim.characterId
                 ?.let { async { characterDetailsRepository.getCharacterDetails(it) } }
@@ -62,7 +65,7 @@ class KillmailProcessor(
             }
             val ships = message.attackers
                 .mapNotNull { attacker ->
-                    val shipName = attacker.shipTypeId?.let { typeRepository.getTypeName(it) } ?: return@mapNotNull null
+                    val shipName = shipTypesRepository.getShipName(attacker.shipTypeId) ?: return@mapNotNull null
                     val isFriendly = attackers.firstOrNull { it.characterId == attacker.characterId }?.details?.isFriendly ?: false
                     isFriendly to shipName
                 }

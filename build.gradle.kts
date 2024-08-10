@@ -61,6 +61,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.0")
     implementation("org.apache.commons:commons-lang3:3.14.0")
     implementation("org.apache.commons:commons-exec:1.4.0")
+    implementation("org.apache.commons:commons-math3:3.6.1")
     implementation("org.apache.httpcomponents.client5:httpclient5:5.3.1")
     implementation("org.bitbucket.b_c:jose4j:0.9.6")
     implementation("com.formdev:flatlaf:3.4.1")

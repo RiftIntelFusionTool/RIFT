@@ -143,6 +143,15 @@ object WhatsNew {
                 - Added the EVE-KILL.com killmail stream to populate kills on the map along with the existing zKillboard integration
                 - The Debug window now shows zKillboard, EVE-KILL, and Jabber connection status
             """.trimIndent(),
+            "2.18.0" description """
+                -! Sovereignty logos and colors
+                - You can now enable sovereignty indicators on the map, which will display sovereignty owner logos under systems
+                - The logos will also display when viewing sovereignty in the system info box
+                - System colors and backgrounds can now display the sovereignty using the dominant color from the owner's logo
+                
+                -! Autopilot for all
+                - When setting the autopilot route, you can now set it for all your online characters at once
+            """.trimIndent(),
         ).reversed()
     }
 }

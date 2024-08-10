@@ -288,7 +288,7 @@ fun MapSettingsPanel(
                                 onBack = { panelState = Expanded },
                             )
                             SystemIndicatorsPills(
-                                hidden = setOf(MapSystemInfoType.StarColor, MapSystemInfoType.IntelHostiles, MapSystemInfoType.FactionWarfare, MapSystemInfoType.Sovereignty),
+                                hidden = setOf(MapSystemInfoType.StarColor, MapSystemInfoType.IntelHostiles, MapSystemInfoType.FactionWarfare),
                                 getInfoTypeNames = ::getMapStarInfoTypeIndicatorName,
                                 selected = systemInfoTypes.indicators[settingsMapType].orEmpty(),
                                 onPillClick = { onIndicatorChange(settingsMapType, it) },
@@ -585,7 +585,7 @@ private fun getMapStarInfoTypeIndicatorName(color: MapSystemInfoType?): Pair<Str
         MapSystemInfoType.Incursions -> "Incursions" to "Indicator for systems with an incursion"
         MapSystemInfoType.Stations -> "Stations" to "Number of stations"
         MapSystemInfoType.FactionWarfare -> "" to ""
-        MapSystemInfoType.Sovereignty -> "" to ""
+        MapSystemInfoType.Sovereignty -> "Sovereignty" to "Sovereignty holder logo"
         MapSystemInfoType.MetaliminalStorms -> "Metaliminal Storms" to "Indicator for systems with a storm"
         MapSystemInfoType.JumpRange -> "Jump Range" to "Indicator for systems in jump range"
         MapSystemInfoType.Planets -> "Planets" to "Indicators for planets"

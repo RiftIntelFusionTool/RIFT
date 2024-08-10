@@ -31,6 +31,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.nohus.rift.compose.AsyncAllianceLogo
+import dev.nohus.rift.compose.AsyncCorporationLogo
 import dev.nohus.rift.compose.AsyncPlayerPortrait
 import dev.nohus.rift.compose.ClickablePlayer
 import dev.nohus.rift.compose.RiftTooltipArea
@@ -56,6 +58,7 @@ import dev.nohus.rift.generated.resources.indicator_storm
 import dev.nohus.rift.intel.state.IntelStateController.Dated
 import dev.nohus.rift.intel.state.SystemEntity
 import dev.nohus.rift.location.GetOnlineCharactersLocationUseCase
+import dev.nohus.rift.network.esi.SovereigntySystem
 import dev.nohus.rift.repositories.MapStatusRepository.SolarSystemStatus
 import dev.nohus.rift.repositories.NamesRepository
 import dev.nohus.rift.repositories.SolarSystemsRepository.MapSolarSystem
@@ -180,149 +183,161 @@ private fun ColumnScope.SystemInfoTypes(
     systemStatus: SolarSystemStatus?,
 ) {
     val namesRepository: NamesRepository = koin.get()
-    infoTypes.distinct().forEach { color ->
-        when (color) {
-            MapSystemInfoType.StarColor -> {}
-            MapSystemInfoType.Security -> {}
-            MapSystemInfoType.IntelHostiles -> {}
-            MapSystemInfoType.Jumps -> {
-                val jumps = systemStatus?.shipJumps ?: 0
-                if (jumps > 0) {
-                    Text(
-                        text = "Jumps: $jumps",
-                        style = RiftTheme.typography.bodyPrimary,
-                    )
-                }
-            }
-            MapSystemInfoType.Kills -> {
-                val podKills = systemStatus?.podKills ?: 0
-                val shipKills = systemStatus?.shipKills ?: 0
-                if (podKills > 0 || shipKills > 0) {
-                    Text(
-                        text = "Pod kills: $podKills\nShip kills: $shipKills",
-                        style = RiftTheme.typography.bodyPrimary,
-                    )
-                }
-            }
-            MapSystemInfoType.NpcKills -> {
-                val npcKills = systemStatus?.npcKills ?: 0
-                if (npcKills > 0) {
-                    Text(
-                        text = "NPC kills: $npcKills",
-                        style = RiftTheme.typography.bodyPrimary,
-                    )
-                }
-            }
-            MapSystemInfoType.Assets -> {
-                val assets = systemStatus?.assetCount ?: 0
-                if (assets > 0) {
-                    Text(
-                        text = "Assets: $assets",
-                        style = RiftTheme.typography.bodyPrimary,
-                    )
-                }
-            }
-            MapSystemInfoType.Incursions -> {
-                systemStatus?.incursion?.let { incursion ->
-                    Text(
-                        text = "${incursion.type}: ${incursion.state.name}",
-                        style = RiftTheme.typography.bodyPrimary,
-                    )
-                }
-            }
-            MapSystemInfoType.Stations -> {
-                systemStatus?.stations?.takeIf { it.isNotEmpty() }?.let { stations ->
-                    Text(
-                        text = "Stations: ${stations.size}",
-                        style = RiftTheme.typography.bodyPrimary,
-                    )
-                }
-            }
-            MapSystemInfoType.FactionWarfare -> {
-                systemStatus?.factionWarfare?.let { factionWarfare ->
-                    val owner = namesRepository.getName(factionWarfare.ownerFactionId) ?: "Unknown"
-                    val occupier = namesRepository.getName(factionWarfare.occupierFactionId) ?: "Unknown"
-                    val text = buildString {
-                        appendLine("Faction warfare: ${factionWarfare.contested.name}")
-                        appendLine("Owner: $owner")
-                        if (occupier != owner) {
-                            appendLine("Occupier: $occupier")
-                        }
-                        if (factionWarfare.victoryPoints != 0) {
-                            appendLine("Points: ${factionWarfare.victoryPoints}/${factionWarfare.victoryPointsThreshold}")
-                        }
-                    }.trim()
-                    Text(
-                        text = text,
-                        style = RiftTheme.typography.bodyPrimary,
-                    )
-                }
-            }
-            MapSystemInfoType.Sovereignty -> {
-                systemStatus?.sovereignty?.let {
-                    val id = it.allianceId ?: it.factionId ?: it.corporationId
-                    if (id != null) {
-                        val name = namesRepository.getName(id) ?: "Unknown"
+    infoTypes.distinct()
+        .sortedByDescending { listOf(MapSystemInfoType.Sovereignty).indexOf(it) }
+        .forEach { color ->
+            when (color) {
+                MapSystemInfoType.StarColor -> {}
+                MapSystemInfoType.Security -> {}
+                MapSystemInfoType.IntelHostiles -> {}
+                MapSystemInfoType.Jumps -> {
+                    val jumps = systemStatus?.shipJumps ?: 0
+                    if (jumps > 0) {
                         Text(
-                            text = name,
+                            text = "Jumps: $jumps",
                             style = RiftTheme.typography.bodyPrimary,
                         )
                     }
                 }
-            }
-            MapSystemInfoType.MetaliminalStorms -> {
-                systemStatus?.storms?.let {
-                    it.forEach { storm ->
+                MapSystemInfoType.Kills -> {
+                    val podKills = systemStatus?.podKills ?: 0
+                    val shipKills = systemStatus?.shipKills ?: 0
+                    if (podKills > 0 || shipKills > 0) {
                         Text(
-                            text = "Storm: ${storm.strength.name} ${storm.type.name}",
+                            text = "Kills: $podKills pod${podKills.plural}, $shipKills ship${shipKills.plural}",
                             style = RiftTheme.typography.bodyPrimary,
                         )
                     }
                 }
-            }
-            MapSystemInfoType.JumpRange -> {
-                systemStatus?.distance?.let {
-                    val lightYears = String.format("%.1fly", it.distanceLy)
-                    val text = buildString {
-                        append(lightYears)
-                        if (it.isInJumpRange) append(" – in range")
+                MapSystemInfoType.NpcKills -> {
+                    val npcKills = systemStatus?.npcKills ?: 0
+                    if (npcKills > 0) {
+                        Text(
+                            text = "NPC kills: $npcKills",
+                            style = RiftTheme.typography.bodyPrimary,
+                        )
                     }
-                    Text(
-                        text = text,
-                        style = RiftTheme.typography.bodyPrimary,
-                    )
                 }
-            }
-            MapSystemInfoType.Planets -> {
-                systemStatus?.planets?.let {
-                    FlowRow(
-                        maxItemsInEachRow = 5,
-                    ) {
-                        it.sortedWith(compareBy({ it.type.typeId }, { it.name })).forEach { planet ->
-                            RiftTooltipArea(
-                                tooltip = "${planet.name} – ${planet.type.name}",
-                                anchor = TooltipAnchor.BottomCenter,
-                            ) {
-                                Image(
-                                    painter = painterResource(planet.type.icon),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
+                MapSystemInfoType.Assets -> {
+                    val assets = systemStatus?.assetCount ?: 0
+                    if (assets > 0) {
+                        Text(
+                            text = "Assets: $assets",
+                            style = RiftTheme.typography.bodyPrimary,
+                        )
+                    }
+                }
+                MapSystemInfoType.Incursions -> {
+                    systemStatus?.incursion?.let { incursion ->
+                        Text(
+                            text = "${incursion.type}: ${incursion.state.name}",
+                            style = RiftTheme.typography.bodyPrimary,
+                        )
+                    }
+                }
+                MapSystemInfoType.Stations -> {
+                    systemStatus?.stations?.takeIf { it.isNotEmpty() }?.let { stations ->
+                        Text(
+                            text = "Stations: ${stations.size}",
+                            style = RiftTheme.typography.bodyPrimary,
+                        )
+                    }
+                }
+                MapSystemInfoType.FactionWarfare -> {
+                    systemStatus?.factionWarfare?.let { factionWarfare ->
+                        val owner = namesRepository.getName(factionWarfare.ownerFactionId) ?: "Unknown"
+                        val occupier = namesRepository.getName(factionWarfare.occupierFactionId) ?: "Unknown"
+                        val text = buildString {
+                            appendLine("Faction warfare: ${factionWarfare.contested.name}")
+                            appendLine("Owner: $owner")
+                            if (occupier != owner) {
+                                appendLine("Occupier: $occupier")
+                            }
+                            if (factionWarfare.victoryPoints != 0) {
+                                appendLine("Points: ${factionWarfare.victoryPoints}/${factionWarfare.victoryPointsThreshold}")
+                            }
+                        }.trim()
+                        Text(
+                            text = text,
+                            style = RiftTheme.typography.bodyPrimary,
+                        )
+                    }
+                }
+                MapSystemInfoType.Sovereignty -> {
+                    systemStatus?.sovereignty?.let {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.small),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            val id = it.allianceId ?: it.factionId ?: it.corporationId
+                            if (id != null) {
+                                SovereigntyLogo(it)
+                                val name = namesRepository.getName(id) ?: "Unknown"
+                                Text(
+                                    text = name,
+                                    style = RiftTheme.typography.bodyPrimary,
                                 )
                             }
                         }
                     }
                 }
-            }
-            MapSystemInfoType.JoveObservatories -> {
-                if (system.hasJoveObservatory) {
-                    Text(
-                        text = "Jove Observatory",
-                        style = RiftTheme.typography.bodyPrimary,
-                    )
+                MapSystemInfoType.MetaliminalStorms -> {
+                    systemStatus?.storms?.let {
+                        it.forEach { storm ->
+                            Text(
+                                text = "Storm: ${storm.strength.name} ${storm.type.name}",
+                                style = RiftTheme.typography.bodyPrimary,
+                            )
+                        }
+                    }
+                }
+                MapSystemInfoType.JumpRange -> {
+                    systemStatus?.distance?.let {
+                        val lightYears = String.format("%.1fly", it.distanceLy)
+                        val text = buildString {
+                            append(lightYears)
+                            if (it.isInJumpRange) append(" – in range")
+                        }
+                        Text(
+                            text = text,
+                            style = RiftTheme.typography.bodyPrimary,
+                        )
+                    }
+                }
+                MapSystemInfoType.Planets -> {
+                    systemStatus?.planets?.let {
+                        FlowRow(
+                            maxItemsInEachRow = 5,
+                        ) {
+                            it.sortedWith(compareBy({ it.type.typeId }, { it.name })).forEach { planet ->
+                                RiftTooltipArea(
+                                    tooltip = "${planet.name} – ${planet.type.name}",
+                                    anchor = TooltipAnchor.BottomCenter,
+                                ) {
+                                    Image(
+                                        painter = painterResource(planet.type.icon),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                MapSystemInfoType.JoveObservatories -> {
+                    if (system.hasJoveObservatory) {
+                        Text(
+                            text = "Jove Observatory",
+                            style = RiftTheme.typography.bodyPrimary,
+                        )
+                    }
                 }
             }
         }
-    }
+}
+
+private val Int.plural: String get() {
+    return if (this != 1) "s" else ""
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -367,7 +382,11 @@ private fun SystemInfoTypesIndicators(
                 InfoTypeIndicator(stations, Res.drawable.indicator_stations)
             }
             MapSystemInfoType.FactionWarfare -> {}
-            MapSystemInfoType.Sovereignty -> {}
+            MapSystemInfoType.Sovereignty -> {
+                systemStatus?.sovereignty?.let {
+                    SovereigntyLogo(it)
+                }
+            }
             MapSystemInfoType.MetaliminalStorms -> {
                 systemStatus?.storms?.takeIf { it.isNotEmpty() }?.let {
                     InfoTypeIndicator("", Res.drawable.indicator_storm)
@@ -406,6 +425,25 @@ private fun SystemInfoTypesIndicators(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SovereigntyLogo(sovereignty: SovereigntySystem) {
+    val requestSize = 32
+    val size = 24
+    if (sovereignty.allianceId != null) {
+        AsyncAllianceLogo(
+            allianceId = sovereignty.allianceId,
+            size = requestSize,
+            modifier = Modifier.size(size.dp),
+        )
+    } else if (sovereignty.factionId != null || sovereignty.corporationId != null) {
+        AsyncCorporationLogo(
+            corporationId = sovereignty.factionId ?: sovereignty.corporationId,
+            size = requestSize,
+            modifier = Modifier.size(size.dp),
+        )
     }
 }
 

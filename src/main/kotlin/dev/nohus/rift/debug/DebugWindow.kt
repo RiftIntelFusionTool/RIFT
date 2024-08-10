@@ -70,7 +70,7 @@ private fun DebugWindowContent(
 ) {
     Column {
         Text(
-            text = "${state.version}, ${state.vmVersion}",
+            text = "${state.version} (${state.operatingSystem}), ${state.vmVersion}",
             style = RiftTheme.typography.bodyPrimary,
             modifier = Modifier.padding(bottom = Spacing.medium),
         )

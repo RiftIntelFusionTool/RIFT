@@ -141,13 +141,14 @@ private fun RiftContextMenuPopup(
                     .padding(1.dp)
                     .padding(vertical = 7.dp),
             ) {
-                val hasIconSpace = items.any { it is ContextMenuItem.TextItem && it.iconResource != null }
+                val hasIconSpace = items.any { it is ContextMenuItem.TextItem && it.iconResource != null || it is ContextMenuItem.CheckboxItem }
                 for (item in items) {
                     when (item) {
-                        is ContextMenuItem.TextItem -> ContextMenuRow(item.text, item.iconResource, hasIconSpace) {
+                        is ContextMenuItem.TextItem -> ContextMenuRow(item.text, item.iconResource, hasIconSpace, null) {
                             onDismissRequest()
                             item.onClick()
                         }
+                        is ContextMenuItem.CheckboxItem -> ContextMenuRow(item.text, null, hasIconSpace, item.isSelected, item.onClick)
                         ContextMenuItem.DividerItem -> ContextMenuDivider()
                     }
                 }
@@ -163,6 +164,12 @@ sealed interface ContextMenuItem {
         val onClick: () -> Unit,
     ) : ContextMenuItem
 
+    data class CheckboxItem(
+        val text: String,
+        val isSelected: Boolean,
+        val onClick: () -> Unit,
+    ) : ContextMenuItem
+
     data object DividerItem : ContextMenuItem
 }
 
@@ -172,6 +179,7 @@ private fun ContextMenuRow(
     text: String,
     iconResource: DrawableResource?,
     hasIconSpace: Boolean,
+    isSelected: Boolean?,
     onClick: () -> Unit,
 ) {
     val pointerState = remember { PointerInteractionStateHolder() }
@@ -211,6 +219,18 @@ private fun ContextMenuRow(
                     contentDescription = null,
                     contentScale = ContentScale.FillHeight,
                     modifier = Modifier.size(painter.intrinsicSize.height.dp),
+                )
+            }
+        }
+        if (isSelected != null) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.requiredSize(iconAreaSize),
+            ) {
+                RiftCheckbox(
+                    isChecked = isSelected,
+                    onCheckedChange = { onClick() },
+                    pointerInteractionStateHolder = pointerState,
                 )
             }
         }

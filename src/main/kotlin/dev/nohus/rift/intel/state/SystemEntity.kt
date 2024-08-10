@@ -30,6 +30,7 @@ sealed interface SystemEntity {
     data class Killmail(
         val url: String,
         val ship: String?,
+        val typeName: String?,
     ) : SystemEntity, Clearable
 
     data object Wormhole : SystemEntity

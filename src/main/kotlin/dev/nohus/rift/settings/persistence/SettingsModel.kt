@@ -44,6 +44,7 @@ data class SettingsModel(
     val hiddenCharacterIds: List<Int> = emptyList(),
     val jumpBridgeNetwork: Map<String, String>? = null,
     val isUsingRiftAutopilotRoute: Boolean = true,
+    val isSettingAutopilotToAll: Boolean = false,
     val whatsNewVersion: String? = null,
     val jumpRange: JumpRange? = null,
     val selectedPlanetTypes: List<Int> = emptyList(),

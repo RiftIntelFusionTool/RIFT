@@ -58,9 +58,9 @@ fun ColumnScope.SystemEntities(
         ) {
             val text = buildString {
                 append("Kill")
-                if (killmail.ship != null) {
+                if (killmail.ship != null || killmail.typeName != null) {
                     append(": ")
-                    append(killmail.ship)
+                    append(killmail.ship ?: killmail.typeName)
                 }
             }
             IconInfoRow(

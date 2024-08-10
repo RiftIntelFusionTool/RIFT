@@ -86,8 +86,9 @@ fun Modifier.hoverBackground(
     hoverColor: Color? = null,
     pressColor: Color? = null,
     shape: Shape = RectangleShape,
+    pointerInteractionStateHolder: PointerInteractionStateHolder? = null,
 ): Modifier = composed {
-    val pointerInteractionStateHolder = remember { PointerInteractionStateHolder() }
+    val pointerInteractionStateHolder = pointerInteractionStateHolder ?: remember { PointerInteractionStateHolder() }
     val colorTransitionSpec = getStandardTransitionSpec<Color>()
     val floatTransitionSpec = getStandardTransitionSpec<Float>()
     val transition = updateTransition(pointerInteractionStateHolder.current)

@@ -7,6 +7,7 @@ import dev.nohus.rift.jabber.client.JabberClient
 import dev.nohus.rift.logging.LoggingRepository
 import dev.nohus.rift.network.killboard.KillboardObserver
 import dev.nohus.rift.settings.persistence.Settings
+import dev.nohus.rift.utils.OperatingSystem
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,6 +22,7 @@ class DebugViewModel(
     getVersionUseCase: GetVersionUseCase,
     private val killboardObserver: KillboardObserver,
     private val jabberClient: JabberClient,
+    operatingSystem: OperatingSystem,
 ) : ViewModel() {
 
     data class UiState(
@@ -28,6 +30,7 @@ class DebugViewModel(
         val displayTimezone: ZoneId,
         val version: String,
         val vmVersion: String,
+        val operatingSystem: OperatingSystem,
         val isZkillboardConnected: Boolean,
         val isEveKillConnected: Boolean,
         val isJabberConnected: Boolean,
@@ -38,6 +41,7 @@ class DebugViewModel(
             displayTimezone = settings.displayTimeZone,
             version = getVersionUseCase(),
             vmVersion = getVmVersion(),
+            operatingSystem = operatingSystem,
             isZkillboardConnected = killboardObserver.isZkillboardConnected,
             isEveKillConnected = killboardObserver.isEveKillConnected,
             isJabberConnected = jabberClient.state.value.isConnected,

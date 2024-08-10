@@ -20,6 +20,8 @@ class OpenAlPlayer {
             openAl = initializeOpenAl()
         } catch (e: ALException) {
             logger.error(e) { "Could not initialize OpenAL, sound playback won't work" }
+        } catch (e: Throwable) {
+            logger.error(e) { "Could not initialize OpenAL: $e" }
         }
     }
 

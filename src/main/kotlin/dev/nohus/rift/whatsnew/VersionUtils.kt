@@ -9,8 +9,8 @@ object VersionUtils {
         val bParts = test.split(".")
         if (aParts.size < SEGMENTS || bParts.size < SEGMENTS) return false
         repeat(SEGMENTS) {
-            if (bParts[it] > aParts[it]) return true
-            if (bParts[it] < aParts[it]) return false
+            if (bParts[it].toInt() > aParts[it].toInt()) return true
+            if (bParts[it].toInt() < aParts[it].toInt()) return false
         }
         return false
     }

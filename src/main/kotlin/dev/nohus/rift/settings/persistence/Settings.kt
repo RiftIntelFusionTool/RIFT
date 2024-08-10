@@ -156,6 +156,10 @@ class Settings(
         get() = model.isUsingRiftAutopilotRoute
         set(value) = update { copy(isUsingRiftAutopilotRoute = value) }
 
+    var isSettingAutopilotToAll: Boolean
+        get() = model.isSettingAutopilotToAll
+        set(value) = update { copy(isSettingAutopilotToAll = value) }
+
     var whatsNewVersion: String?
         get() = model.whatsNewVersion
         set(value) = update { copy(whatsNewVersion = value) }
