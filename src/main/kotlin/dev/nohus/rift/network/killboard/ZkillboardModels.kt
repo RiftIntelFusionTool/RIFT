@@ -1,12 +1,12 @@
-package dev.nohus.rift.network.zkillboard
+package dev.nohus.rift.network.killboard
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.time.Instant
 
 @Serializable
-data class KillboardMessage(
+data class ZkillboardKillmail(
     @SerialName("attackers")
-    val attackers: List<Attacker>,
+    val attackers: List<ZkillboardAttacker>,
     @SerialName("killmail_id")
     val killmailId: Int,
     @SerialName("killmail_time")
@@ -17,7 +17,7 @@ data class KillboardMessage(
     @SerialName("solar_system_id")
     val solarSystemId: Int,
     @SerialName("victim")
-    val victim: Victim,
+    val victim: ZkillboardVictim,
     @SerialName("war_id")
     val warId: Int? = null,
     @SerialName("zkb")
@@ -25,7 +25,7 @@ data class KillboardMessage(
 )
 
 @Serializable
-data class Attacker(
+data class ZkillboardAttacker(
     @SerialName("alliance_id")
     val allianceId: Int? = null,
     @SerialName("character_id")
@@ -47,7 +47,7 @@ data class Attacker(
 )
 
 @Serializable
-data class Victim(
+data class ZkillboardVictim(
     @SerialName("alliance_id")
     val allianceId: Int? = null,
     @SerialName("character_id")
@@ -59,7 +59,7 @@ data class Victim(
     @SerialName("faction_id")
     val factionId: Int? = null,
     @SerialName("items")
-    val items: List<Item>? = null,
+    val items: List<ZkillboardItem>? = null,
     @SerialName("position")
     val position: Position? = null,
     @SerialName("ship_type_id")
@@ -67,13 +67,13 @@ data class Victim(
 )
 
 @Serializable
-data class Item(
+data class ZkillboardItem(
     @SerialName("flag")
     val flag: Int,
     @SerialName("item_type_id")
     val itemTypeId: Int,
     @SerialName("items")
-    val items: List<Item>? = null,
+    val items: List<ZkillboardItem>? = null,
     @SerialName("quantity_destroyed")
     val quantityDestroyed: Int? = null,
     @SerialName("quantity_dropped")

@@ -3,8 +3,11 @@ package dev.nohus.rift.debug
 import ch.qos.logback.classic.spi.ILoggingEvent
 import dev.nohus.rift.ViewModel
 import dev.nohus.rift.about.GetVersionUseCase
+import dev.nohus.rift.jabber.client.JabberClient
 import dev.nohus.rift.logging.LoggingRepository
+import dev.nohus.rift.network.killboard.KillboardObserver
 import dev.nohus.rift.settings.persistence.Settings
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -16,6 +19,8 @@ import java.time.ZoneId
 class DebugViewModel(
     private val settings: Settings,
     getVersionUseCase: GetVersionUseCase,
+    private val killboardObserver: KillboardObserver,
+    private val jabberClient: JabberClient,
 ) : ViewModel() {
 
     data class UiState(
@@ -23,6 +28,9 @@ class DebugViewModel(
         val displayTimezone: ZoneId,
         val version: String,
         val vmVersion: String,
+        val isZkillboardConnected: Boolean,
+        val isEveKillConnected: Boolean,
+        val isJabberConnected: Boolean,
     )
 
     private val _state = MutableStateFlow(
@@ -30,6 +38,9 @@ class DebugViewModel(
             displayTimezone = settings.displayTimeZone,
             version = getVersionUseCase(),
             vmVersion = getVmVersion(),
+            isZkillboardConnected = killboardObserver.isZkillboardConnected,
+            isEveKillConnected = killboardObserver.isEveKillConnected,
+            isJabberConnected = jabberClient.state.value.isConnected,
         ),
     )
     val state = _state.asStateFlow()
@@ -45,6 +56,18 @@ class DebugViewModel(
                 _state.update {
                     it.copy(
                         displayTimezone = settings.displayTimeZone,
+                    )
+                }
+            }
+        }
+        viewModelScope.launch {
+            while (true) {
+                delay(1000)
+                _state.update {
+                    it.copy(
+                        isZkillboardConnected = killboardObserver.isZkillboardConnected,
+                        isEveKillConnected = killboardObserver.isEveKillConnected,
+                        isJabberConnected = jabberClient.state.value.isConnected,
                     )
                 }
             }

@@ -75,6 +75,12 @@ private fun DebugWindowContent(
             modifier = Modifier.padding(bottom = Spacing.medium),
         )
 
+        Text(
+            text = "zKillboard ${state.isZkillboardConnected.connected}, EVE-KILL ${state.isEveKillConnected.connected}, Jabber ${state.isJabberConnected.connected}",
+            style = RiftTheme.typography.bodyPrimary,
+            modifier = Modifier.padding(bottom = Spacing.medium),
+        )
+
         var minLevel by remember { mutableStateOf(Level.ALL) }
         var isAutoScrolling by remember { mutableStateOf(true) }
         Row(
@@ -115,6 +121,8 @@ private fun DebugWindowContent(
         LogsView(state, minLevel, isAutoScrolling)
     }
 }
+
+private val Boolean.connected: String get() = if (this) "connected" else "disconnected"
 
 @Composable
 private fun LogsView(

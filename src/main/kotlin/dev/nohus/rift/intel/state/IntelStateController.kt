@@ -8,7 +8,7 @@ import dev.nohus.rift.intel.state.SystemEntity.NoVisual
 import dev.nohus.rift.intel.state.SystemEntity.Ship
 import dev.nohus.rift.intel.state.SystemEntity.UnspecifiedCharacter
 import dev.nohus.rift.logs.parse.ChatMessageParser
-import dev.nohus.rift.network.zkillboard.KillmailProcessor.ProcessedKillmail
+import dev.nohus.rift.network.killboard.KillmailProcessor.ProcessedKillmail
 import dev.nohus.rift.settings.persistence.Settings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,13 +38,16 @@ class IntelStateController(
     suspend fun submitKillmail(
         killmail: ProcessedKillmail,
     ) = mutex.withLock {
-        killmail.victim?.let {
-            removeKilledCharacters(listOf(it.name))
-        }
-        val entities: List<SystemEntity> = killmail.attackers + killmail.ships + killmail.killmail
+        if (killmail.timestamp.isAfter(Instant.now() - Duration.ofMinutes(15))) {
+            killmail.victim?.let {
+                removeKilledCharacters(listOf(it.name))
+            }
 
-        updateSystemEntities(killmail.timestamp, killmail.system, removeExisting = false, entities)
-        _state.value = systemContents.toMap()
+            val entities: List<SystemEntity> = killmail.attackers + killmail.ships + killmail.killmail
+            updateSystemEntities(killmail.timestamp, killmail.system, removeExisting = false, entities)
+
+            _state.value = systemContents.toMap()
+        }
     }
 
     suspend fun submitMessage(

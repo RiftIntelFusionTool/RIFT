@@ -1,4 +1,4 @@
-package dev.nohus.rift.network.zkillboard
+package dev.nohus.rift.network.killboard
 
 import okhttp3.Response
 import okhttp3.WebSocket

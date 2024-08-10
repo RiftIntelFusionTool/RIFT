@@ -68,6 +68,7 @@ dependencies {
     implementation("org.nibor.autolink:autolink:0.11.0")
     implementation("org.locationtech.jts:jts-core:1.19.0")
     implementation("dev.chrisbanes.haze:haze:0.7.2")
+    implementation("dev.hydraulic.conveyor:conveyor-control:1.1")
 
     // OpenAL Audio
     implementation("org.jogamp.joal:joal-main:2.5.0")
@@ -148,7 +149,8 @@ tasks.withType<KotlinCompile>().configureEach {
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
-        vendor = JvmVendorSpec.ORACLE
+        vendor = JvmVendorSpec.JETBRAINS
+        implementation = JvmImplementation.VENDOR_SPECIFIC
     }
 }
 

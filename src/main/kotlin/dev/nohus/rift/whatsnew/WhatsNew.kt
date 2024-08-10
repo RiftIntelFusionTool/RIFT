@@ -136,6 +136,13 @@ object WhatsNew {
                 -! Jove Observatories
                 - You can now enable map indicators for Jove Observatories, to see systems where Unidentified Wormholes can spawn
             """.trimIndent(),
+            "2.17.0" description """
+                - When an update is available, it can now be installed directly from the About window
+                - Updated combat finished alerts to be per-character, for a better experience when multiboxing
+                - Pings are now remembered for 48 hours and won't disappear when restarting
+                - Added the EVE-KILL.com killmail stream to populate kills on the map along with the existing zKillboard integration
+                - The Debug window now shows zKillboard, EVE-KILL, and Jabber connection status
+            """.trimIndent(),
         ).reversed()
     }
 }

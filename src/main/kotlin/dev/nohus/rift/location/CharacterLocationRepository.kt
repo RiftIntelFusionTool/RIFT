@@ -118,7 +118,7 @@ class CharacterLocationRepository(
                         structure = structure,
                         timestamp = Instant.now(),
                     )
-                logger.info { "Location updated from ESI for character $characterId" }
+                logger.debug { "Location updated from ESI for character $characterId" }
             }
             is Failure -> {
                 logger.error { "Failed getting location for character $characterId" }

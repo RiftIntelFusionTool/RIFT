@@ -66,6 +66,7 @@ class ShipTypesRepository(
             "sythe" to "Scythe",
             "trasher" to "Thrasher",
             "auguror" to "Augoror",
+            "porp" to "Porpoise",
         )
         navyVariants = mapOf(
             "Slicer" to "Imperial Navy Slicer",

@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import org.koin.core.annotation.Factory
+import java.nio.file.FileSystemException
 import java.nio.file.Path
 import java.nio.file.StandardWatchEventKinds.ENTRY_CREATE
 import java.nio.file.StandardWatchEventKinds.ENTRY_DELETE
@@ -53,8 +54,15 @@ class DirectoryObserver(
     suspend fun observe(directory: Path, onUpdate: suspend (DirectoryObserverEvent) -> Unit) = coroutineScope {
         stop()
 
-        val watchService = directory.fileSystem.newWatchService()
-        directory.register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE, OVERFLOW)
+        val watchService = try {
+            directory.fileSystem.newWatchService().also {
+                directory.register(it, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE, OVERFLOW)
+            }
+        } catch (e: FileSystemException) {
+            logger.error { "Cannot register directory observer: $e" }
+            stop()
+            return@coroutineScope
+        }
         logger.debug { "Observing directory: $directory" }
 
         watchJob = launch {

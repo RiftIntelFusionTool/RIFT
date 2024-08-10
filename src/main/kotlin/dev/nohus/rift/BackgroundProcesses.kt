@@ -14,7 +14,7 @@ import dev.nohus.rift.jabber.client.StartJabberUseCase
 import dev.nohus.rift.location.CharacterLocationRepository
 import dev.nohus.rift.logging.analytics.Analytics
 import dev.nohus.rift.map.MapJumpRangeController
-import dev.nohus.rift.network.zkillboard.KillboardObserver
+import dev.nohus.rift.network.killboard.KillboardObserver
 import dev.nohus.rift.pings.PingsRepository
 import dev.nohus.rift.repositories.MapStatusRepository
 import dev.nohus.rift.settings.persistence.Settings

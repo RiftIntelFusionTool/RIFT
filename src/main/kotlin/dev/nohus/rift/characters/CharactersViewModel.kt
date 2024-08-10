@@ -44,6 +44,7 @@ class CharactersViewModel(
         val onlineCharacters: List<Int> = emptyList(),
         val locations: Map<Int, Location> = emptyMap(),
         val copying: CopyingState = CopyingState.NotCopying,
+        val isChoosingDisabledCharacters: Boolean = false,
         val dialogMessage: DialogMessage? = null,
         val isSsoDialogOpen: Boolean = false,
     )
@@ -110,7 +111,12 @@ class CharactersViewModel(
     }
 
     fun onCopySettingsClick() {
-        _state.update { it.copy(copying = CopyingState.SelectingSource) }
+        _state.update {
+            it.copy(
+                copying = CopyingState.SelectingSource,
+                isChoosingDisabledCharacters = false,
+            )
+        }
     }
 
     fun onCopyCancel() {
@@ -124,8 +130,10 @@ class CharactersViewModel(
     fun onCopyDestinationClick(characterId: Int) {
         val state = _state.value.copying
         if (state is CopyingState.SelectingDestination) {
-            val sourceName = _state.value.characters.firstOrNull { it.characterId == state.sourceId }?.info?.success?.name ?: return
-            val destinationName = _state.value.characters.firstOrNull { it.characterId == characterId }?.info?.success?.name ?: return
+            val sourceName =
+                _state.value.characters.firstOrNull { it.characterId == state.sourceId }?.info?.success?.name ?: return
+            val destinationName =
+                _state.value.characters.firstOrNull { it.characterId == characterId }?.info?.success?.name ?: return
             _state.update {
                 it.copy(
                     copying = CopyingState.DestinationSelected(
@@ -135,9 +143,17 @@ class CharactersViewModel(
                 )
             }
         } else if (state is CopyingState.DestinationSelected) {
-            val destinationName = _state.value.characters.firstOrNull { it.characterId == characterId }?.info?.success?.name ?: return
+            val destinationName =
+                _state.value.characters.firstOrNull { it.characterId == characterId }?.info?.success?.name ?: return
             val destinations = state.destination + CopyingCharacter(characterId, destinationName)
-            _state.update { it.copy(copying = CopyingState.DestinationSelected(source = state.source, destination = destinations)) }
+            _state.update {
+                it.copy(
+                    copying = CopyingState.DestinationSelected(
+                        source = state.source,
+                        destination = destinations,
+                    ),
+                )
+            }
         }
     }
 
@@ -176,6 +192,15 @@ class CharactersViewModel(
 
     fun onCloseDialogMessage() {
         _state.update { it.copy(dialogMessage = null) }
+    }
+
+    fun onChooseDisabledClick() {
+        _state.update {
+            it.copy(
+                copying = CopyingState.NotCopying,
+                isChoosingDisabledCharacters = !it.isChoosingDisabledCharacters,
+            )
+        }
     }
 
     fun onDisableCharacterClick(characterId: Int) {

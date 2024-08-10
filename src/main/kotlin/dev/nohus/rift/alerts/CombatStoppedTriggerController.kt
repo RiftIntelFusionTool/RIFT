@@ -8,21 +8,25 @@ class CombatStoppedTriggerController(
     private val onTrigger: (alert: Alert, action: GameLogAction, characterId: Int) -> Unit,
 ) {
 
+    data class CharacterAlert(
+        val characterId: Int,
+        val alert: Alert,
+    )
+
     data class TriggerInfo(
         val triggerTimestamp: Instant,
         val target: String,
-        val characterId: Int,
     )
 
-    private val pendingAlerts: MutableMap<Alert, TriggerInfo> = mutableMapOf()
+    private val pendingAlerts: MutableMap<CharacterAlert, TriggerInfo> = mutableMapOf()
 
     fun onCombatAction(alert: Alert, durationSeconds: Int, target: String, characterId: Int) {
+        val characterAlert = CharacterAlert(characterId, alert)
         val triggerInfo = TriggerInfo(
             triggerTimestamp = Instant.now() + Duration.ofSeconds(durationSeconds.toLong()),
             target = target,
-            characterId = characterId,
         )
-        pendingAlerts[alert] = triggerInfo
+        pendingAlerts[characterAlert] = triggerInfo
     }
 
     fun checkPendingAlerts() {
@@ -31,7 +35,7 @@ class CombatStoppedTriggerController(
         val triggeredAlerts = pendingAlerts.filter { it.value.triggerTimestamp.isBefore(Instant.now()) }
         pendingAlerts -= triggeredAlerts.keys
         triggeredAlerts.forEach { (triggeredAlert, triggerInfo) ->
-            onTrigger(triggeredAlert, GameLogAction.CombatStopped(triggerInfo.target), triggerInfo.characterId)
+            onTrigger(triggeredAlert.alert, GameLogAction.CombatStopped(triggerInfo.target), triggeredAlert.characterId)
         }
     }
 }

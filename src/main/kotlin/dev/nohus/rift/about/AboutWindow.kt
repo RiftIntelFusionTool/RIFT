@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -23,6 +24,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.rememberWindowState
 import dev.nohus.rift.about.AboutViewModel.UiState
+import dev.nohus.rift.about.UpdateController.UpdateAvailability.NOT_PACKAGED
+import dev.nohus.rift.about.UpdateController.UpdateAvailability.NO_UPDATE
+import dev.nohus.rift.about.UpdateController.UpdateAvailability.UNKNOWN
+import dev.nohus.rift.about.UpdateController.UpdateAvailability.UPDATE_AUTOMATIC
+import dev.nohus.rift.about.UpdateController.UpdateAvailability.UPDATE_MANUAL
 import dev.nohus.rift.compose.ButtonCornerCut
 import dev.nohus.rift.compose.ButtonType
 import dev.nohus.rift.compose.LinkText
@@ -84,10 +90,27 @@ fun AboutWindow(
                 state = rememberWindowState(width = 400.dp, height = Dp.Unspecified),
                 onCloseClick = viewModel::onDialogDismissed,
             ) {
-                Text(
-                    text = getUpdateDialogText(state.operatingSystem, state.executablePath),
-                    style = RiftTheme.typography.titlePrimary,
-                )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(Spacing.medium),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    if (state.updateAvailability.success == UPDATE_AUTOMATIC) {
+                        Text(
+                            text = "A newer version of RIFT is ready to install.",
+                            style = RiftTheme.typography.titlePrimary,
+                        )
+                        RiftButton(
+                            text = "Update now",
+                            onClick = viewModel::onTriggerUpdateClick,
+                            modifier = Modifier.align(Alignment.End),
+                        )
+                    } else {
+                        Text(
+                            text = getUpdateDialogText(state.operatingSystem, state.executablePath),
+                            style = RiftTheme.typography.titlePrimary,
+                        )
+                    }
+                }
             }
         }
 
@@ -199,7 +222,7 @@ private fun AboutWindowContent(
                             style = RiftTheme.typography.titlePrimary,
                         )
                     }
-                    AnimatedContent(state.isUpdateAvailable) { isUpdateAvailable ->
+                    AnimatedContent(state.updateAvailability) { isUpdateAvailable ->
                         when (isUpdateAvailable) {
                             is AsyncResource.Error -> {
                                 Text(
@@ -217,17 +240,23 @@ private fun AboutWindowContent(
 
                             is AsyncResource.Ready -> {
                                 when (isUpdateAvailable.value) {
-                                    true -> {
-                                        LinkText(
-                                            text = "Update available: ${state.latestVersion}",
-                                            onClick = onUpdateClick,
+                                    NOT_PACKAGED -> {}
+                                    UNKNOWN -> {
+                                        Text(
+                                            text = "Couldn't check for updates",
+                                            style = RiftTheme.typography.bodySecondary,
                                         )
                                     }
-
-                                    false -> {
+                                    NO_UPDATE -> {
                                         Text(
                                             text = "Up to date",
                                             style = RiftTheme.typography.bodySecondary,
+                                        )
+                                    }
+                                    UPDATE_MANUAL, UPDATE_AUTOMATIC -> {
+                                        LinkText(
+                                            text = "Update available",
+                                            onClick = onUpdateClick,
                                         )
                                     }
                                 }
