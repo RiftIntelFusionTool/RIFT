@@ -152,6 +152,21 @@ object WhatsNew {
                 -! Autopilot for all
                 - When setting the autopilot route, you can now set it for all your online characters at once
             """.trimIndent(),
+            "3.0.0" description """
+                -! New feature: Intel Feed
+                - In the new Intel Feed window, you can see all currently known intel
+                - Filter by location type or sync the view with the currently opened map region
+                - Filter by distance to your characters, or within region
+                - Choose the displayed intel types; you can get a killmail feed by picking to only show killmails.
+                - Sort by distance or time to get the freshest intel first
+                - Search through the intel for anything you need
+                - Characters are grouped together by alliance or corporation. Click any row to expand the info and see individual characters.
+                - Compact mode is available for a denser layout
+                
+                - System names now also show the region. Wormhole systems show the wormhole class instead. Abyssal system names (triglavian) are now also supported.
+                - Clicking a system will now navigate to it on the map
+                - Intel in map info boxes will now group characters and switch to a compact mode if there are many items to show
+            """.trimIndent(),
         ).reversed()
     }
 }

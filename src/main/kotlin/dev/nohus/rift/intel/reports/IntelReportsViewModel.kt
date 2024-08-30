@@ -1,8 +1,10 @@
-package dev.nohus.rift.intel
+package dev.nohus.rift.intel.reports
 
 import dev.nohus.rift.ViewModel
 import dev.nohus.rift.characters.repositories.OnlineCharactersRepository
-import dev.nohus.rift.intel.settings.IntelReportsSettings
+import dev.nohus.rift.intel.ChatLogWatcher
+import dev.nohus.rift.intel.ParsedChannelChatMessage
+import dev.nohus.rift.intel.reports.settings.IntelReportsSettings
 import dev.nohus.rift.intel.state.AlertTriggeringMessagesRepository
 import dev.nohus.rift.intel.state.AlertTriggeringMessagesRepository.AlertTriggeringMessage
 import dev.nohus.rift.logs.parse.ChatMessageParser
@@ -16,7 +18,7 @@ import kotlinx.coroutines.launch
 import org.koin.core.annotation.Single
 
 @Single
-class IntelViewModel(
+class IntelReportsViewModel(
     private val logWatcher: ChatLogWatcher,
     private val settings: Settings,
     private val onlineCharactersRepository: OnlineCharactersRepository,
@@ -34,9 +36,7 @@ class IntelViewModel(
     )
 
     private val _state = MutableStateFlow(
-        UiState(
-            settings = getSettings(),
-        ),
+        UiState(settings = getSettings()),
     )
     val state = _state.asStateFlow()
 
@@ -93,7 +93,8 @@ class IntelViewModel(
             isShowingReporter = settings.intelReports.isShowingReporter,
             isShowingChannel = settings.intelReports.isShowingChannel,
             isShowingRegion = settings.intelReports.isShowingRegion,
-            isShowingSystemDistance = settings.intelReports.isShowingSystemDistance,
+            isShowingSystemDistance = settings.isShowingSystemDistance,
+            isUsingJumpBridgesForDistance = settings.isUsingJumpBridgesForDistance,
         )
     }
 

@@ -207,13 +207,16 @@ class SolarSystemsRepository(
         return mapSolarSystems.firstOrNull { it.id == id }?.security
     }
 
-    fun getKnownSpaceRegions(): List<String> {
-        val invalidRegions = """^([A-Z]-R[0-9]{5}|ADR[0-9]{2}|VR-[0-9]{2}|No Name)$""".toRegex()
-        return mapRegions
-            .map { it.name }
-            .filterNot {
-                it.matches(invalidRegions)
-            }
+    fun getKnownSpaceRegions(): List<MapRegion> {
+        return mapRegions.filter { it.id in 10000001..10001000 }
+    }
+
+    fun getWormholeSpaceRegions(): List<MapRegion> {
+        return mapRegions.filter { it.id in 11000001..11000033 }
+    }
+
+    fun getAbyssalSpaceRegions(): List<MapRegion> {
+        return mapRegions.filter { it.id in 12000001..14000005 }
     }
 
     fun getRegionBySystem(systemName: String): String? {
@@ -225,6 +228,10 @@ class SolarSystemsRepository(
     }
 
     fun getSystems() = mapSolarSystems
+
+    fun isKnownSpace(systemId: Int): Boolean {
+        return getSystem(systemId)?.regionId?.let { it < 11000000 } == true
+    }
 
     /**
      * Non-NPC Null-Sec systems

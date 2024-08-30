@@ -89,10 +89,6 @@ class MapSettingsViewModel(
         }
     }
 
-    fun onIntelExpireSecondsChange(seconds: Int) {
-        settings.intelMap = settings.intelMap.copy(intelExpireSeconds = seconds)
-    }
-
     fun onIntelPopupTimeoutSecondsChange(seconds: Int) {
         settings.intelMap = settings.intelMap.copy(intelPopupTimeoutSeconds = seconds)
     }

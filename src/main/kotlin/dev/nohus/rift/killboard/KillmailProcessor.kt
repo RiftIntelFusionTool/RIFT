@@ -1,5 +1,6 @@
-package dev.nohus.rift.network.killboard
+package dev.nohus.rift.killboard
 
+import dev.nohus.rift.configurationpack.ConfigurationPackRepository
 import dev.nohus.rift.intel.state.IntelStateController
 import dev.nohus.rift.intel.state.SystemEntity
 import dev.nohus.rift.repositories.CharacterDetailsRepository
@@ -26,6 +27,7 @@ class KillmailProcessor(
     private val typeRepository: TypesRepository,
     private val shipTypesRepository: ShipTypesRepository,
     private val characterDetailsRepository: CharacterDetailsRepository,
+    private val configurationPackRepository: ConfigurationPackRepository,
 ) {
 
     data class ProcessedKillmail(
@@ -46,13 +48,25 @@ class KillmailProcessor(
             val system = solarSystemsRepository.getSystemName(message.solarSystemId)
                 ?: return@runBlocking // Not in K-space
 
-            val killmail = SystemEntity.Killmail(
-                url = message.url,
-                ship = shipTypesRepository.getShipName(message.victim.shipTypeId),
-                typeName = message.victim.shipTypeId?.let { typeRepository.getTypeName(it) },
-            )
             val deferredVictim = message.victim.characterId
                 ?.let { async { characterDetailsRepository.getCharacterDetails(it) } }
+
+            // Corporation and alliance is only loaded if there is no character, otherwise they are included with the character
+            val deferredVictimCorporation = if (message.victim.characterId == null) {
+                message.victim.corporationId?.let {
+                    async { characterDetailsRepository.getCorporationName(it).success }
+                }
+            } else {
+                null
+            }
+            val deferredVictimAlliance = if (message.victim.characterId == null) {
+                message.victim.allianceId?.let {
+                    async { characterDetailsRepository.getAllianceName(it).success }
+                }
+            } else {
+                null
+            }
+
             val deferredAttackers = message.attackers
                 .mapNotNull { it.characterId }
                 .map { async { characterDetailsRepository.getCharacterDetails(it) } }
@@ -77,6 +91,28 @@ class KillmailProcessor(
                         .map { (name, ships) -> SystemEntity.Ship(name, ships.size, isFriendly = isFriendly) }
                 }
                 .flatMap { it.value }
+
+            val deferredIsVictimFriendly = async {
+                message.victim.allianceId?.let { configurationPackRepository.isFriendlyAlliance(it) }
+            }
+
+            val killmailVictim = SystemEntity.KillmailVictim(
+                characterId = message.victim.characterId,
+                details = victim?.details,
+                corporationId = message.victim.corporationId ?: victim?.details?.corporationId,
+                corporationName = victim?.details?.corporationName ?: deferredVictimCorporation?.await()?.name,
+                corporationTicker = victim?.details?.corporationTicker ?: deferredVictimCorporation?.await()?.ticker,
+                allianceId = message.victim.allianceId ?: victim?.details?.allianceId,
+                allianceName = victim?.details?.allianceName ?: deferredVictimAlliance?.await()?.name,
+                allianceTicker = victim?.details?.allianceTicker ?: deferredVictimAlliance?.await()?.ticker,
+                isFriendly = deferredIsVictimFriendly.await(),
+            )
+            val killmail = SystemEntity.Killmail(
+                url = message.url,
+                ship = shipTypesRepository.getShipName(message.victim.shipTypeId),
+                typeName = message.victim.shipTypeId?.let { typeRepository.getTypeName(it) },
+                victim = killmailVictim,
+            )
 
             val processedKillmail = ProcessedKillmail(
                 system = system,

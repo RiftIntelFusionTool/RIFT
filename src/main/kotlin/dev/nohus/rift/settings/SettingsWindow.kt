@@ -54,6 +54,7 @@ import dev.nohus.rift.generated.resources.Res
 import dev.nohus.rift.generated.resources.deleteicon
 import dev.nohus.rift.generated.resources.window_settings
 import dev.nohus.rift.notifications.NotificationEditWindow
+import dev.nohus.rift.settings.SettingsViewModel.UiState
 import dev.nohus.rift.settings.persistence.ConfigurationPack
 import dev.nohus.rift.settings.persistence.IntelChannel
 import dev.nohus.rift.utils.viewModel
@@ -79,37 +80,8 @@ fun SettingsWindow(
     ) {
         SettingsWindowContent(
             inputModel = inputModel,
-            intelChannels = state.intelChannels,
-            suggestedIntelChannels = state.suggestedIntelChannels,
-            regions = state.regions,
-            logsDirectory = state.logsDirectory,
-            isLogsDirectoryValid = state.isLogsDirectoryValid,
-            settingsDirectory = state.settingsDirectory,
-            isSettingsDirectoryValid = state.isSettingsDirectoryValid,
-            isLoadOldMessagesEnabled = state.isLoadOldMessagesEnabled,
-            isDisplayEveTime = state.isDisplayEveTime,
-            isShowSetupWizardOnNextStartEnabled = state.isShowSetupWizardOnNextStartEnabled,
-            isRememberOpenWindowsEnabled = state.isRememberOpenWindows,
-            isRememberWindowPlacementEnabled = state.isRememberWindowPlacement,
-            isUsingDarkTrayIcon = state.isUsingDarkTrayIcon,
-            soundsVolume = state.soundsVolume,
-            configurationPack = state.configurationPack,
-            onSuggestedIntelChannelsClick = viewModel::onSuggestedIntelChannelsClick,
-            onIntelChannelAdded = viewModel::onIntelChannelAdded,
-            onIntelChannelDelete = viewModel::onIntelChannelDelete,
-            onLogsDirectoryChanged = viewModel::onLogsDirectoryChanged,
-            onDetectLogsDirectoryClick = viewModel::onDetectLogsDirectoryClick,
-            onSettingsDirectoryChanged = viewModel::onSettingsDirectoryChanged,
-            onDetectSettingsDirectoryClick = viewModel::onDetectSettingsDirectoryClick,
-            onLoadOldMessagesChanged = viewModel::onLoadOldMessagedChanged,
-            onShowSetupWizardOnNextStartChanged = viewModel::onShowSetupWizardOnNextStartChanged,
-            onIsDisplayEveTimeChanged = viewModel::onIsDisplayEveTimeChanged,
-            onRememberOpenWindowsChanged = viewModel::onRememberOpenWindowsChanged,
-            onRememberWindowPlacementChanged = viewModel::onRememberWindowPlacementChanged,
-            onEditNotificationClick = viewModel::onEditNotificationClick,
-            onIsUsingDarkTrayIconChanged = viewModel::onIsUsingDarkTrayIconChanged,
-            onSoundsVolumeChange = viewModel::onSoundsVolumeChange,
-            onConfigurationPackChange = viewModel::onConfigurationPackChange,
+            state = state,
+            viewModel = viewModel,
             onDoneClick = onCloseRequest,
         )
 
@@ -133,37 +105,8 @@ fun SettingsWindow(
 @Composable
 private fun SettingsWindowContent(
     inputModel: SettingsInputModel,
-    intelChannels: List<IntelChannel>,
-    suggestedIntelChannels: SuggestedIntelChannels?,
-    regions: List<String>,
-    logsDirectory: String,
-    isLogsDirectoryValid: Boolean,
-    settingsDirectory: String,
-    isSettingsDirectoryValid: Boolean,
-    isLoadOldMessagesEnabled: Boolean,
-    isDisplayEveTime: Boolean,
-    isShowSetupWizardOnNextStartEnabled: Boolean,
-    isRememberOpenWindowsEnabled: Boolean,
-    isRememberWindowPlacementEnabled: Boolean,
-    isUsingDarkTrayIcon: Boolean,
-    onSuggestedIntelChannelsClick: () -> Unit,
-    configurationPack: ConfigurationPack?,
-    onIntelChannelAdded: (name: String, region: String) -> Unit,
-    onIntelChannelDelete: (IntelChannel) -> Unit,
-    onLogsDirectoryChanged: (String) -> Unit,
-    onDetectLogsDirectoryClick: () -> Unit,
-    onSettingsDirectoryChanged: (String) -> Unit,
-    onDetectSettingsDirectoryClick: () -> Unit,
-    onLoadOldMessagesChanged: (Boolean) -> Unit,
-    onShowSetupWizardOnNextStartChanged: (Boolean) -> Unit,
-    onIsDisplayEveTimeChanged: (Boolean) -> Unit,
-    onRememberOpenWindowsChanged: (Boolean) -> Unit,
-    onRememberWindowPlacementChanged: (Boolean) -> Unit,
-    onEditNotificationClick: () -> Unit,
-    onIsUsingDarkTrayIconChanged: (Boolean) -> Unit,
-    soundsVolume: Int,
-    onSoundsVolumeChange: (Int) -> Unit,
-    onConfigurationPackChange: (ConfigurationPack?) -> Unit,
+    state: UiState,
+    viewModel: SettingsViewModel,
     onDoneClick: () -> Unit,
 ) {
     Row(
@@ -176,25 +119,36 @@ private fun SettingsWindowContent(
         ) {
             SectionContainer(inputModel, SettingsInputModel.IntelChannels) {
                 IntelChannelsSection(
-                    intelChannels = intelChannels,
-                    onIntelChannelDelete = onIntelChannelDelete,
-                    regions = regions,
-                    suggestedIntelChannels = suggestedIntelChannels,
-                    onSuggestedIntelChannelsClick = onSuggestedIntelChannelsClick,
-                    onIntelChannelAdded = onIntelChannelAdded,
+                    intelChannels = state.intelChannels,
+                    onIntelChannelDelete = viewModel::onIntelChannelDelete,
+                    regions = state.regions,
+                    suggestedIntelChannels = state.suggestedIntelChannels,
+                    onSuggestedIntelChannelsClick = viewModel::onSuggestedIntelChannelsClick,
+                    onIntelChannelAdded = viewModel::onIntelChannelAdded,
+                )
+            }
+
+            SectionContainer(inputModel) {
+                IntelSection(
+                    isShowingSystemDistance = state.isShowingSystemDistance,
+                    onIsShowingSystemDistanceChange = viewModel::onIsShowingSystemDistanceChange,
+                    isUsingJumpBridgesForDistance = state.isUsingJumpBridgesForDistance,
+                    onIsUsingJumpBridgesForDistance = viewModel::onIsUsingJumpBridgesForDistance,
+                    intelExpireSeconds = state.intelExpireSeconds,
+                    onIntelExpireSecondsChange = viewModel::onIntelExpireSecondsChange,
                 )
             }
 
             SectionContainer(inputModel, SettingsInputModel.EveInstallation) {
                 EveInstallationSection(
-                    isLogsDirectoryValid = isLogsDirectoryValid,
-                    logsDirectory = logsDirectory,
-                    onLogsDirectoryChanged = onLogsDirectoryChanged,
-                    onDetectLogsDirectoryClick = onDetectLogsDirectoryClick,
-                    isSettingsDirectoryValid = isSettingsDirectoryValid,
-                    settingsDirectory = settingsDirectory,
-                    onSettingsDirectoryChanged = onSettingsDirectoryChanged,
-                    onDetectSettingsDirectoryClick = onDetectSettingsDirectoryClick,
+                    isLogsDirectoryValid = state.isLogsDirectoryValid,
+                    logsDirectory = state.logsDirectory,
+                    onLogsDirectoryChanged = viewModel::onLogsDirectoryChanged,
+                    onDetectLogsDirectoryClick = viewModel::onDetectLogsDirectoryClick,
+                    isSettingsDirectoryValid = state.isSettingsDirectoryValid,
+                    settingsDirectory = state.settingsDirectory,
+                    onSettingsDirectoryChanged = viewModel::onSettingsDirectoryChanged,
+                    onDetectSettingsDirectoryClick = viewModel::onDetectSettingsDirectoryClick,
                 )
             }
         }
@@ -204,33 +158,33 @@ private fun SettingsWindowContent(
         ) {
             SectionContainer(inputModel) {
                 UserInterfaceSection(
-                    isRememberOpenWindowsEnabled = isRememberOpenWindowsEnabled,
-                    onRememberOpenWindowsChanged = onRememberOpenWindowsChanged,
-                    isRememberWindowPlacementEnabled = isRememberWindowPlacementEnabled,
-                    onRememberWindowPlacementChanged = onRememberWindowPlacementChanged,
-                    isDisplayEveTime = isDisplayEveTime,
-                    onIsDisplayEveTimeChanged = onIsDisplayEveTimeChanged,
-                    isUsingDarkTrayIcon = isUsingDarkTrayIcon,
-                    onIsUsingDarkTrayIconChanged = onIsUsingDarkTrayIconChanged,
+                    isRememberOpenWindowsEnabled = state.isRememberOpenWindows,
+                    onRememberOpenWindowsChanged = viewModel::onRememberOpenWindowsChanged,
+                    isRememberWindowPlacementEnabled = state.isRememberWindowPlacement,
+                    onRememberWindowPlacementChanged = viewModel::onRememberWindowPlacementChanged,
+                    isDisplayEveTime = state.isDisplayEveTime,
+                    onIsDisplayEveTimeChanged = viewModel::onIsDisplayEveTimeChanged,
+                    isUsingDarkTrayIcon = state.isUsingDarkTrayIcon,
+                    onIsUsingDarkTrayIconChanged = viewModel::onIsUsingDarkTrayIconChanged,
                 )
             }
 
             SectionContainer(inputModel) {
                 AlertsSection(
-                    soundsVolume = soundsVolume,
-                    onSoundsVolumeChange = onSoundsVolumeChange,
-                    onEditNotificationClick = onEditNotificationClick,
+                    soundsVolume = state.soundsVolume,
+                    onSoundsVolumeChange = viewModel::onSoundsVolumeChange,
+                    onEditNotificationClick = viewModel::onEditNotificationClick,
                 )
             }
 
             SectionContainer(inputModel) {
                 OtherSettingsSection(
-                    configurationPack = configurationPack,
-                    onConfigurationPackChange = onConfigurationPackChange,
-                    isLoadOldMessagesEnabled = isLoadOldMessagesEnabled,
-                    onLoadOldMessagesChanged = onLoadOldMessagesChanged,
-                    isShowSetupWizardOnNextStartEnabled = isShowSetupWizardOnNextStartEnabled,
-                    onShowSetupWizardOnNextStartChanged = onShowSetupWizardOnNextStartChanged,
+                    configurationPack = state.configurationPack,
+                    onConfigurationPackChange = viewModel::onConfigurationPackChange,
+                    isLoadOldMessagesEnabled = state.isLoadOldMessagesEnabled,
+                    onLoadOldMessagesChanged = viewModel::onLoadOldMessagedChanged,
+                    isShowSetupWizardOnNextStartEnabled = state.isShowSetupWizardOnNextStartEnabled,
+                    onShowSetupWizardOnNextStartChanged = viewModel::onShowSetupWizardOnNextStartChanged,
                 )
             }
 
@@ -600,4 +554,52 @@ private fun IntelChannelsSection(
             }
         })
     }
+}
+
+@Composable
+private fun IntelSection(
+    isShowingSystemDistance: Boolean,
+    onIsShowingSystemDistanceChange: (Boolean) -> Unit,
+    isUsingJumpBridgesForDistance: Boolean,
+    onIsUsingJumpBridgesForDistance: (Boolean) -> Unit,
+    intelExpireSeconds: Int,
+    onIntelExpireSecondsChange: (Int) -> Unit,
+) {
+    SectionTitle("Intel", Modifier.padding(bottom = Spacing.medium))
+    RiftCheckboxWithLabel(
+        label = "Show distance on systems",
+        tooltip = "Enable to show the number of jumps to\nthe closest character next to system names.\nOnly shows for up to 9 jumps away.",
+        isTooltipBelow = true,
+        isChecked = isShowingSystemDistance,
+        onCheckedChange = onIsShowingSystemDistanceChange,
+        modifier = Modifier.padding(bottom = Spacing.small),
+    )
+    RiftCheckboxWithLabel(
+        label = "Use jump bridges for distance",
+        tooltip = "Enable to include jump bridges in system distances",
+        isTooltipBelow = true,
+        isChecked = isUsingJumpBridgesForDistance,
+        onCheckedChange = onIsUsingJumpBridgesForDistance,
+        modifier = Modifier.padding(bottom = Spacing.small),
+    )
+    val expiryItems = mapOf(
+        "1 minute" to 60,
+        "2 minutes" to 60 * 2,
+        "5 minutes" to 60 * 5,
+        "15 minutes" to 60 * 15,
+        "30 minutes" to 60 * 30,
+        "1 hour" to 60 * 60,
+        "Don't expire" to Int.MAX_VALUE,
+    )
+    RiftDropdownWithLabel(
+        label = "Expire intel after:",
+        items = expiryItems.values.toList(),
+        selectedItem = intelExpireSeconds,
+        onItemSelected = onIntelExpireSecondsChange,
+        getItemName = { item -> expiryItems.entries.firstOrNull { it.value == item }?.key ?: "$item" },
+        tooltip = """
+                    Time after a piece of intel will no longer
+                    be shown on the feed or map.
+        """.trimIndent(),
+    )
 }

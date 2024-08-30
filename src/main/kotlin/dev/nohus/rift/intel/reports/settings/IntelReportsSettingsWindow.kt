@@ -1,4 +1,4 @@
-package dev.nohus.rift.intel.settings
+package dev.nohus.rift.intel.reports.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,11 +17,11 @@ import dev.nohus.rift.utils.viewModel
 import dev.nohus.rift.windowing.WindowManager.RiftWindowState
 
 @Composable
-fun IntelSettingsWindow(
+fun IntelReportsSettingsWindow(
     windowState: RiftWindowState,
     onCloseRequest: () -> Unit,
 ) {
-    val viewModel: IntelSettingsViewModel = viewModel()
+    val viewModel: IntelReportsSettingsViewModel = viewModel()
     val state by viewModel.state.collectAsState()
 
     RiftWindow(
@@ -31,8 +31,8 @@ fun IntelSettingsWindow(
         onCloseClick = onCloseRequest,
         isResizable = false,
     ) {
-        IntelSettingsWindowContent(
-            isUsingCompactMode = state.isUsingCompact,
+        IntelReportsSettingsWindowContent(
+            isUsingCompactMode = state.isUsingCompactMode,
             onIsUsingCompactModeChange = viewModel::onIsUsingCompactModeChange,
             isShowingReporter = state.isShowingReporter,
             onIsShowingReporterChange = viewModel::onIsShowingReporterChange,
@@ -40,14 +40,12 @@ fun IntelSettingsWindow(
             onIsShowingChannelChange = viewModel::onIsShowingChannelChange,
             isShowingRegion = state.isShowingRegion,
             onIsShowingRegionChange = viewModel::onIsShowingRegionChange,
-            isShowingSystemDistance = state.isShowingSystemDistance,
-            onIsShowingSystemDistanceChange = viewModel::onIsShowingSystemDistanceChange,
         )
     }
 }
 
 @Composable
-private fun IntelSettingsWindowContent(
+private fun IntelReportsSettingsWindowContent(
     isUsingCompactMode: Boolean,
     onIsUsingCompactModeChange: (Boolean) -> Unit,
     isShowingReporter: Boolean,
@@ -56,8 +54,6 @@ private fun IntelSettingsWindowContent(
     onIsShowingChannelChange: (Boolean) -> Unit,
     isShowingRegion: Boolean,
     onIsShowingRegionChange: (Boolean) -> Unit,
-    isShowingSystemDistance: Boolean,
-    onIsShowingSystemDistanceChange: (Boolean) -> Unit,
 ) {
     Column {
         SectionTitle("User interface", Modifier.padding(bottom = Spacing.medium))
@@ -84,12 +80,6 @@ private fun IntelSettingsWindowContent(
                 label = "Show channel region",
                 isChecked = isShowingRegion,
                 onCheckedChange = onIsShowingRegionChange,
-            )
-            RiftCheckboxWithLabel(
-                label = "Show distance on systems up to 5 jumps away",
-                tooltip = "Shows number of jumps to the closest character",
-                isChecked = isShowingSystemDistance,
-                onCheckedChange = onIsShowingSystemDistanceChange,
             )
         }
     }

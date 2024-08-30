@@ -1,6 +1,5 @@
 package dev.nohus.rift.repositories
 
-import dev.nohus.rift.characters.repositories.ActiveCharacterRepository
 import dev.nohus.rift.characters.repositories.LocalCharactersRepository
 import dev.nohus.rift.characters.repositories.OnlineCharactersRepository
 import dev.nohus.rift.location.CharacterLocationRepository
@@ -9,7 +8,6 @@ import org.koin.core.annotation.Single
 @Single
 class GetSystemDistanceFromCharacterUseCase(
     private val getSystemDistanceUseCase: GetSystemDistanceUseCase,
-    private val activeCharacterRepository: ActiveCharacterRepository,
     private val onlineCharactersRepository: OnlineCharactersRepository,
     private val localCharactersRepository: LocalCharactersRepository,
     private val characterLocationRepository: CharacterLocationRepository,
@@ -22,11 +20,7 @@ class GetSystemDistanceFromCharacterUseCase(
     ): Int {
         val characterLocations = characterLocationRepository.locations.value
 
-        // Try to get distance to the active character
-        val activeCharacter = activeCharacterRepository.activeCharacter.value
-        getClosestDistance(systemId, listOfNotNull(activeCharacter), characterLocations, maxDistance, withJumpBridges)?.let { return it }
-
-        // No active character or it has no known location, try online characters
+        // Try online characters
         val onlineCharacters = onlineCharactersRepository.onlineCharacters.value
         getClosestDistance(systemId, onlineCharacters, characterLocations, maxDistance, withJumpBridges)?.let { return it }
 
@@ -45,12 +39,17 @@ class GetSystemDistanceFromCharacterUseCase(
         withJumpBridges: Boolean,
     ): Int? {
         if (characterIds.isEmpty()) return null
-        characterIds.mapNotNull { characterId ->
-            val characterSystemId = characterLocations[characterId]?.solarSystemId ?: return@mapNotNull null
-            getSystemDistanceUseCase(characterSystemId, systemId, maxDistance = maxDistance, withJumpBridges = withJumpBridges)
-        }.minOrNull()?.let { distance ->
-            return distance
-        }
+        characterIds
+            .mapNotNull { characterId ->
+                characterLocations[characterId]?.solarSystemId ?: return@mapNotNull null
+            }
+            .distinct()
+            .mapNotNull { characterSystemId ->
+                getSystemDistanceUseCase(characterSystemId, systemId, maxDistance = maxDistance, withJumpBridges = withJumpBridges) ?: return@mapNotNull null
+            }
+            .minOrNull()?.let { distance ->
+                return distance
+            }
         return null
     }
 }

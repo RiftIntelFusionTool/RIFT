@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.Divider
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -118,6 +119,7 @@ fun NotificationWindow(
                 scrollbarModifier = Modifier.padding(vertical = Spacing.small),
                 modifier = Modifier
                     .heightIn(max = 500.dp)
+                    .widthIn(max = 500.dp)
                     .width(IntrinsicSize.Max),
             ) {
                 notifications.reversed().forEachIndexed { index, notification ->
@@ -206,6 +208,7 @@ private fun NotificationContent(
                 modifier = Modifier.padding(horizontal = Spacing.medium),
             ) {
                 Row(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
@@ -231,8 +234,8 @@ private fun NotificationContent(
                         text = buildAnnotatedString {
                             if (notification.senderCharacterId == null) {
                                 append(notification.sender)
+                                append(" > ")
                             }
-                            append(" > ")
                             append(notification.message)
                         },
                         style = RiftTheme.typography.titlePrimary,
@@ -322,6 +325,7 @@ private fun NotificationContent(
                 SystemEntities(
                     entities = notification.systemEntities,
                     system = notification.solarSystem,
+                    rowHeight = 32.dp,
                 )
             }
         }

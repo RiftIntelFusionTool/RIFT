@@ -60,7 +60,6 @@ fun MapSettingsWindow(
     ) {
         MapSettingsWindowContent(
             state = state,
-            onIntelExpireSecondsChange = viewModel::onIntelExpireSecondsChange,
             onIntelPopupTimeoutSecondsChange = viewModel::onIntelPopupTimeoutSecondsChange,
             onIsUsingCompactModeChange = viewModel::onIsUsingCompactModeChange,
             onIsCharacterFollowingChange = viewModel::onIsCharacterFollowingChange,
@@ -122,7 +121,6 @@ fun MapSettingsWindow(
 @Composable
 private fun MapSettingsWindowContent(
     state: UiState,
-    onIntelExpireSecondsChange: (Int) -> Unit,
     onIntelPopupTimeoutSecondsChange: (Int) -> Unit,
     onIsUsingCompactModeChange: (Boolean) -> Unit,
     onIsCharacterFollowingChange: (Boolean) -> Unit,
@@ -364,27 +362,6 @@ private fun MapSettingsWindowContent(
 
         SectionTitle("Intel visibility", Modifier.padding(vertical = Spacing.medium))
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
-            val expiryItems = mapOf(
-                "1 minute" to 60,
-                "2 minutes" to 60 * 2,
-                "5 minutes" to 60 * 5,
-                "15 minutes" to 60 * 15,
-                "30 minutes" to 60 * 30,
-                "1 hour" to 60 * 60,
-                "Don't expire" to Int.MAX_VALUE,
-            )
-            RiftDropdownWithLabel(
-                label = "Expire intel after:",
-                items = expiryItems.values.toList(),
-                selectedItem = intelMap.intelExpireSeconds,
-                onItemSelected = onIntelExpireSecondsChange,
-                getItemName = { item -> expiryItems.entries.firstOrNull { it.value == item }?.key ?: "$item" },
-                tooltip = """
-                    Time after a piece of intel will no longer
-                    be shown on the map.
-                """.trimIndent(),
-            )
-
             val timeoutItems = mapOf(
                 "10 seconds" to 10,
                 "30 seconds" to 30,

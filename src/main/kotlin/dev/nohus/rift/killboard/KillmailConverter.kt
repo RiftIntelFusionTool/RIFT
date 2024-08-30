@@ -1,7 +1,9 @@
-package dev.nohus.rift.network.killboard
+package dev.nohus.rift.killboard
 
-import dev.nohus.rift.network.killboard.Killboard.EveKill
-import dev.nohus.rift.network.killboard.Killboard.Zkillboard
+import dev.nohus.rift.killboard.Killboard.EveKill
+import dev.nohus.rift.killboard.Killboard.Zkillboard
+import dev.nohus.rift.network.killboard.EveKillKillmail
+import dev.nohus.rift.network.killboard.ZkillboardKillmail
 import org.koin.core.annotation.Single
 
 @Single
@@ -16,6 +18,8 @@ class KillmailConverter {
             url = zkb.url,
             victim = Victim(
                 characterId = victim.characterId,
+                corporationId = victim.corporationId,
+                allianceId = victim.allianceId,
                 shipTypeId = victim.shipTypeId,
             ),
             attackers = attackers.map { attacker ->
@@ -36,6 +40,8 @@ class KillmailConverter {
             url = "https://eve-kill.com/kill/$killmailId",
             victim = Victim(
                 characterId = victim?.characterId?.takeIf { it > 0 },
+                corporationId = victim?.corporationId?.takeIf { it > 0 },
+                allianceId = victim?.allianceId?.takeIf { it > 0 },
                 shipTypeId = victim?.shipId?.takeIf { it > 0 },
             ),
             attackers = attackers.map { attacker ->

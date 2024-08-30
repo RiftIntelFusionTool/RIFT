@@ -128,6 +128,10 @@ class Settings(
         get() = model.intelReports
         set(value) = update { copy(intelReports = value) }
 
+    var intelFeed: IntelFeed
+        get() = model.intelFeed
+        set(value) = update { copy(intelFeed = value) }
+
     var soundsVolume: Int
         get() = model.soundsVolume
         set(value) = update { copy(soundsVolume = value) }
@@ -175,4 +179,16 @@ class Settings(
     var installationId: String?
         get() = model.installationId
         set(value) = update { copy(installationId = value) }
+
+    var isShowingSystemDistance: Boolean
+        get() = model.isShowingSystemDistance
+        set(value) = update { copy(isShowingSystemDistance = value) }
+
+    var isUsingJumpBridgesForDistance: Boolean
+        get() = model.isUsingJumpBridgesForDistance
+        set(value) = update { copy(isUsingJumpBridgesForDistance = value) }
+
+    var intelExpireSeconds: Int
+        get() = model.intelExpireSeconds
+        set(value) = update { copy(intelExpireSeconds = value) }
 }

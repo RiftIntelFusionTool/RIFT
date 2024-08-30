@@ -1,9 +1,5 @@
 package dev.nohus.rift.compose
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
-import androidx.compose.runtime.produceState
-import kotlinx.coroutines.delay
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
@@ -11,16 +7,6 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
-
-@Composable
-fun getNowAsState(): State<Instant> {
-    return produceState(Instant.now()) {
-        while (true) {
-            delay(333)
-            value = Instant.now()
-        }
-    }
-}
 
 fun getRelativeTime(timestamp: Instant, displayTimezone: ZoneId): String {
     val duration = Duration.between(timestamp, Instant.now())

@@ -224,7 +224,7 @@ fun RiftOpportunityBox(
                             .fillMaxWidth()
                             .background(Color.White.copy(alpha = 0.05f)),
                     ) {
-                        val now by getNowAsState()
+                        val now = LocalNow.current
                         val age = key(now) { getRelativeTime(timestamp, displayTimezone) }
                         val text = buildAnnotatedString {
                             if (title != null) {

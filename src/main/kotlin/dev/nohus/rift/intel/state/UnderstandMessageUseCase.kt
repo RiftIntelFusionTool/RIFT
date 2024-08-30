@@ -7,6 +7,7 @@ import dev.nohus.rift.intel.state.SystemEntity.Ess
 import dev.nohus.rift.intel.state.SystemEntity.Gate
 import dev.nohus.rift.intel.state.SystemEntity.GateCamp
 import dev.nohus.rift.intel.state.SystemEntity.Ship
+import dev.nohus.rift.intel.state.SystemEntity.Skyhook
 import dev.nohus.rift.intel.state.SystemEntity.Spike
 import dev.nohus.rift.intel.state.SystemEntity.UnspecifiedCharacter
 import dev.nohus.rift.intel.state.SystemEntity.Wormhole
@@ -91,6 +92,7 @@ class UnderstandMessageUseCase(
                             KeywordType.Wormhole -> entities += Wormhole
                             KeywordType.Spike -> entities += Spike
                             KeywordType.Ess -> entities += Ess
+                            KeywordType.Skyhook -> entities += Skyhook
                             KeywordType.GateCamp -> entities += GateCamp
                             KeywordType.CombatProbes -> entities += CombatProbes
                             KeywordType.Bubbles -> entities += Bubbles

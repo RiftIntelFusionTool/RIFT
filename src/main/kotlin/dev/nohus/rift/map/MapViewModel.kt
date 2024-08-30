@@ -203,7 +203,9 @@ class MapViewModel(
                     }
                     is MapExternalControlEvent.ShowSystemOnRegionMap -> {
                         val regionId = solarSystemsRepository.getRegionIdBySystemId(event.solarSystemId) ?: return@collect
-                        openRegionMap(regionId, event.solarSystemId)
+                        if (regionId in solarSystemsRepository.getKnownSpaceRegions().map { it.id }) {
+                            openRegionMap(regionId, event.solarSystemId)
+                        }
                     }
                     null -> {}
                 }
@@ -390,6 +392,7 @@ class MapViewModel(
         val tab = _state.value.tabs.firstOrNull { it.id == id } ?: return
         val mapType = tab.payload as? MapType ?: return
         rememberOpenedRegion(mapType)
+        mapExternalControl.openedRegion.update { (mapType as? RegionMap)?.regionId }
 
         val layout = when (mapType) {
             ClusterSystemsMap -> layoutRepository.getNewEdenLayout()
@@ -551,16 +554,10 @@ class MapViewModel(
             solarSystemsRepository.getSystemId(key)!!
         }
 
-        val now = Instant.now()
-        val expiryMinTimestamp = now - Duration.ofSeconds(settings.intelMap.intelExpireSeconds.toLong())
-        val popupMinTimestamp = now - Duration.ofSeconds(settings.intelMap.intelPopupTimeoutSeconds.toLong())
-        val filtered = intelBySystemId
-            .mapValues { (_, datedEntities) ->
-                datedEntities.filter { it.timestamp >= expiryMinTimestamp } // Filter out expired intel
-            }
-            .filter { (_, datedEntities) ->
-                datedEntities.isNotEmpty() // Remove systems that no longer have any intel to show
-            }
+        val popupMinTimestamp = Instant.now() - Duration.ofSeconds(settings.intelMap.intelPopupTimeoutSeconds.toLong())
+        val filtered = intelBySystemId.filter { (_, datedEntities) ->
+            datedEntities.isNotEmpty() // Remove systems that no longer have any intel to show
+        }
         val popupSystems = filtered.mapNotNull { (systemId, datedEntities) ->
             val showPopup =
                 datedEntities.any { it.timestamp >= popupMinTimestamp } || // Only show system if within popup timeout setting

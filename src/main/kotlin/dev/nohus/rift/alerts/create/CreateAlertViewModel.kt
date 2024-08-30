@@ -163,6 +163,9 @@ class CreateAlertViewModel(
                     }
                 }
             }
+        } else if (answer is MultipleChoiceAnswer) {
+            val isValid = answer.items.isNotEmpty()
+            _state.update { it.copy(isPendingAnswerValid = isValid) }
         }
     }
 

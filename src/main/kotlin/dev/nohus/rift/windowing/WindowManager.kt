@@ -19,8 +19,10 @@ import dev.nohus.rift.characters.CharactersWindow
 import dev.nohus.rift.configurationpack.ConfigurationPackReminderWindow
 import dev.nohus.rift.debug.DebugWindow
 import dev.nohus.rift.gamelogs.NonEnglishEveClientWarningWindow
-import dev.nohus.rift.intel.IntelWindow
-import dev.nohus.rift.intel.settings.IntelSettingsWindow
+import dev.nohus.rift.intel.feed.IntelFeedWindow
+import dev.nohus.rift.intel.feed.settings.IntelFeedSettingsWindow
+import dev.nohus.rift.intel.reports.IntelReportsWindow
+import dev.nohus.rift.intel.reports.settings.IntelReportsSettingsWindow
 import dev.nohus.rift.jabber.JabberInputModel
 import dev.nohus.rift.jabber.JabberWindow
 import dev.nohus.rift.logging.analytics.Analytics
@@ -37,6 +39,7 @@ import dev.nohus.rift.utils.Size
 import dev.nohus.rift.whatsnew.WhatsNewWindow
 import dev.nohus.rift.windowing.WindowManager.RiftWindowState
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.jetbrains.skiko.MainUIDispatcher
 import org.koin.core.annotation.Single
@@ -50,8 +53,59 @@ class WindowManager(
 
     @Serializable
     enum class RiftWindow {
-        Neocom, Intel, IntelSettings, Settings, Map, MapSettings, Characters, Pings, Alerts, About, Jabber,
-        ConfigurationPackReminder, NonEnglishEveClientWarning, Assets, WhatsNew, Debug
+        @SerialName("Neocom")
+        Neocom,
+
+        @SerialName("Intel")
+        IntelReports,
+
+        @SerialName("IntelSettings")
+        IntelReportsSettings,
+
+        @SerialName("IntelFeed")
+        IntelFeed,
+
+        @SerialName("IntelFeedSettings")
+        IntelFeedSettings,
+
+        @SerialName("Settings")
+        Settings,
+
+        @SerialName("Map")
+        Map,
+
+        @SerialName("MapSettings")
+        MapSettings,
+
+        @SerialName("Characters")
+        Characters,
+
+        @SerialName("Pings")
+        Pings,
+
+        @SerialName("Alerts")
+        Alerts,
+
+        @SerialName("About")
+        About,
+
+        @SerialName("Jabber")
+        Jabber,
+
+        @SerialName("ConfigurationPackReminder")
+        ConfigurationPackReminder,
+
+        @SerialName("NonEnglishEveClientWarning")
+        NonEnglishEveClientWarning,
+
+        @SerialName("Assets")
+        Assets,
+
+        @SerialName("WhatsNew")
+        WhatsNew,
+
+        @SerialName("Debug")
+        Debug,
     }
 
     data class RiftWindowState(
@@ -71,7 +125,8 @@ class WindowManager(
 
     private val persistentWindows = listOf(
         RiftWindow.Neocom,
-        RiftWindow.Intel,
+        RiftWindow.IntelReports,
+        RiftWindow.IntelFeed,
         RiftWindow.Map,
         RiftWindow.Characters,
         RiftWindow.Alerts,
@@ -100,8 +155,10 @@ class WindowManager(
             CompositionLocalProvider(LocalRiftWindowState provides state) {
                 when (window) {
                     RiftWindow.Neocom -> NeocomWindow(state, onCloseRequest = { onWindowClose(RiftWindow.Neocom) })
-                    RiftWindow.Intel -> IntelWindow(state, onCloseRequest = { onWindowClose(RiftWindow.Intel) }, onTuneClick = { onWindowOpen(RiftWindow.IntelSettings) })
-                    RiftWindow.IntelSettings -> IntelSettingsWindow(state, onCloseRequest = { onWindowClose(RiftWindow.IntelSettings) })
+                    RiftWindow.IntelReports -> IntelReportsWindow(state, onCloseRequest = { onWindowClose(RiftWindow.IntelReports) }, onTuneClick = { onWindowOpen(RiftWindow.IntelReportsSettings) })
+                    RiftWindow.IntelReportsSettings -> IntelReportsSettingsWindow(state, onCloseRequest = { onWindowClose(RiftWindow.IntelReportsSettings) })
+                    RiftWindow.IntelFeed -> IntelFeedWindow(state, onCloseRequest = { onWindowClose(RiftWindow.IntelFeed) }, onTuneClick = { onWindowOpen(RiftWindow.IntelFeedSettings) })
+                    RiftWindow.IntelFeedSettings -> IntelFeedSettingsWindow(state, onCloseRequest = { onWindowClose(RiftWindow.IntelFeedSettings) })
                     RiftWindow.Settings -> SettingsWindow(state.inputModel as? SettingsInputModel ?: SettingsInputModel.Normal, state, onCloseRequest = { onWindowClose(RiftWindow.Settings) })
                     RiftWindow.Map -> MapWindow(state, onCloseRequest = { onWindowClose(RiftWindow.Map) }, onTuneClick = { onWindowOpen(RiftWindow.MapSettings) })
                     RiftWindow.MapSettings -> MapSettingsWindow(state, onCloseRequest = { onWindowClose(RiftWindow.MapSettings) })
@@ -122,7 +179,6 @@ class WindowManager(
 
     fun onWindowOpen(window: RiftWindow, inputModel: Any? = null, ifClosed: Boolean = false) {
         if (ifClosed && states.value[window]?.isVisible == true) return
-        if (states.value[window]?.isVisible != true) analytics.windowOpened(window.name)
         val state = states.value[window]?.copy(
             inputModel = inputModel,
             isVisible = true,
@@ -148,7 +204,6 @@ class WindowManager(
     }
 
     fun onWindowClose(window: RiftWindow) {
-        analytics.windowClosed(window.name)
         settings.openWindows -= window
         if (window in persistentWindows) {
             states.value[window]?.let {
@@ -167,8 +222,10 @@ class WindowManager(
         }
         return when (window) {
             RiftWindow.Neocom -> WindowSizing(defaultSize = (200 to null), minimumSize = 200 to null)
-            RiftWindow.Intel -> WindowSizing(defaultSize = saved ?: (800 to 500), minimumSize = 400 to 200)
-            RiftWindow.IntelSettings -> WindowSizing(defaultSize = (400 to null), minimumSize = 400 to null)
+            RiftWindow.IntelReports -> WindowSizing(defaultSize = saved ?: (800 to 500), minimumSize = 400 to 200)
+            RiftWindow.IntelReportsSettings -> WindowSizing(defaultSize = (400 to null), minimumSize = 400 to null)
+            RiftWindow.IntelFeed -> WindowSizing(defaultSize = saved ?: (500 to 600), minimumSize = (500 to 250))
+            RiftWindow.IntelFeedSettings -> WindowSizing(defaultSize = (400 to null), minimumSize = 400 to null)
             RiftWindow.Settings -> WindowSizing(defaultSize = (820 to null), minimumSize = 820 to null)
             RiftWindow.Map -> WindowSizing(defaultSize = saved ?: (800 to 800), minimumSize = 350 to 300)
             RiftWindow.MapSettings -> WindowSizing(defaultSize = (400 to 450), minimumSize = 400 to 450)

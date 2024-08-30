@@ -1,4 +1,4 @@
-package dev.nohus.rift.network.killboard
+package dev.nohus.rift.killboard
 
 import java.time.Instant
 
@@ -14,6 +14,8 @@ data class Killmail(
 
 data class Victim(
     val characterId: Int?,
+    val corporationId: Int?,
+    val allianceId: Int?,
     val shipTypeId: Int?,
 )
 

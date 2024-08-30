@@ -221,7 +221,6 @@ private fun AlertsWindowContent(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun LazyItemScope.AlertGroupHeader(
     name: String?,
@@ -239,7 +238,7 @@ private fun LazyItemScope.AlertGroupHeader(
             .background(RiftTheme.colors.backgroundPrimary)
             .padding(horizontal = Spacing.medium, vertical = Spacing.small)
             .fillMaxWidth()
-            .animateItemPlacement()
+            .animateItem()
             .animateContentSize(),
     ) {
         Text(
@@ -289,14 +288,13 @@ private fun LazyItemScope.AlertGroupHeader(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun LazyItemScope.EmptyGroup() {
     Row(
         modifier = Modifier
             .padding(vertical = Spacing.medium)
             .fillMaxWidth()
-            .animateItemPlacement()
+            .animateItem()
             .animateContentSize(),
     ) {
         Text(
@@ -327,7 +325,7 @@ private fun LazyItemScope.AlertItem(
             .pointerHoverIcon(PointerIcon(Cursors.pointerInteractive))
             .padding(vertical = Spacing.medium)
             .fillMaxWidth()
-            .animateItemPlacement()
+            .animateItem()
             .animateContentSize()
             .onClick { onAlertClick(alert.id) },
     ) {

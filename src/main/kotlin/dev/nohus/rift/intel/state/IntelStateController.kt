@@ -3,12 +3,13 @@ package dev.nohus.rift.intel.state
 import dev.nohus.rift.alerts.AlertsTriggerController
 import dev.nohus.rift.intel.ParsedChannelChatMessage
 import dev.nohus.rift.intel.state.SystemEntity.Character
+import dev.nohus.rift.intel.state.SystemEntity.Gate
 import dev.nohus.rift.intel.state.SystemEntity.Killmail
 import dev.nohus.rift.intel.state.SystemEntity.NoVisual
 import dev.nohus.rift.intel.state.SystemEntity.Ship
 import dev.nohus.rift.intel.state.SystemEntity.UnspecifiedCharacter
+import dev.nohus.rift.killboard.KillmailProcessor.ProcessedKillmail
 import dev.nohus.rift.logs.parse.ChatMessageParser
-import dev.nohus.rift.network.killboard.KillmailProcessor.ProcessedKillmail
 import dev.nohus.rift.settings.persistence.Settings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,6 +36,15 @@ class IntelStateController(
     private val _state = MutableStateFlow<Map<String, List<Dated<SystemEntity>>>>(emptyMap())
     val state = _state.asStateFlow()
 
+    private fun updateState() {
+        val expiryMinTimestamp = Instant.now() - Duration.ofSeconds(settings.intelExpireSeconds.toLong())
+        _state.value = systemContents
+            .mapValues { (_, datedEntities) ->
+                datedEntities.filter { it.timestamp >= expiryMinTimestamp } // Filter out expired intel
+            }
+            .filterValues { it.isNotEmpty() }
+            .toMap()
+    }
     suspend fun submitKillmail(
         killmail: ProcessedKillmail,
     ) = mutex.withLock {
@@ -46,7 +56,7 @@ class IntelStateController(
             val entities: List<SystemEntity> = killmail.attackers + killmail.ships + killmail.killmail
             updateSystemEntities(killmail.timestamp, killmail.system, removeExisting = false, entities)
 
-            _state.value = systemContents.toMap()
+            updateState()
         }
     }
 
@@ -77,7 +87,10 @@ class IntelStateController(
         }
         val isSystemExplicit = understanding.systems.isNotEmpty()
 
-        if (system != null) {
+        if (
+            system != null &&
+            understanding.questions.isEmpty() // Don't use information if this is a question
+        ) {
             var entities = understanding.entities
             if (understanding.movement != null) {
                 val moved = entities.filterIsInstance<CharacterBound>()
@@ -106,10 +119,10 @@ class IntelStateController(
         if (understanding.questions.isNotEmpty()) {
             // TODO: Remember questions
         }
-        removeEmptyNoVisual()
+        removeEmptyEntities()
         removeEmptySystems()
 
-        _state.value = systemContents.toMap()
+        updateState()
     }
 
     private fun findMessagesWithCharacterIds(
@@ -222,13 +235,18 @@ class IntelStateController(
 
     /**
      * Remove "no visual" entities from systems where there are no longer any characters
+     * Remove "gate" entities from systems where they are the only entity
      */
-    private fun removeEmptyNoVisual() {
+    private fun removeEmptyEntities() {
         systemContents.keys.forEach { system ->
             val hasNoCharacters = systemContents[system]?.none { it.item is Character || it.item is UnspecifiedCharacter } ?: true
             if (hasNoCharacters) {
                 val filtered = systemContents[system]?.filter { it.item !is NoVisual } ?: emptyList()
                 systemContents[system] = filtered
+            }
+            val hasOnlyGate = systemContents[system]?.all { it.item is Gate } ?: false
+            if (hasOnlyGate) {
+                systemContents[system] = emptyList()
             }
         }
     }

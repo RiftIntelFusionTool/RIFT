@@ -1,13 +1,17 @@
 package dev.nohus.rift.network.killboard
 
+import dev.nohus.rift.killboard.KillmailConverter
+import dev.nohus.rift.killboard.KillmailProcessor
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.WebSocket
 import org.koin.core.annotation.Single
+import kotlin.time.Duration.Companion.seconds
 
 private val logger = KotlinLogging.logger {}
 
@@ -19,36 +23,60 @@ class KillboardObserver(
     private val killmailProcessor: KillmailProcessor,
 ) {
 
-    private var zKillboardSocket: WebSocket? = null
-    private var eveKillSocket: WebSocket? = null
-    var isZkillboardConnected = false
-        private set
-    var isEveKillConnected = false
-        private set
+    data class KillboardState(
+        var socket: WebSocket? = null,
+        var isConnected: Boolean = false,
+        var connectionAttempts: Int = 0,
+    )
+    private val zKillboardState = KillboardState()
+    private val eveKillState = KillboardState()
+    val isZkillboardConnected: Boolean get() = zKillboardState.isConnected
+    val isEveKillConnected: Boolean get() = eveKillState.isConnected
 
     suspend fun start() = coroutineScope {
-        while (true) {
-            if (!isZkillboardConnected || !isEveKillConnected) connect()
-            delay(1_000)
+        launch {
+            maintainConnection(zKillboardState) {
+                connect(
+                    state = zKillboardState,
+                    onMessage = ::onZkillboardMessage,
+                    url = "wss://zkillboard.com/websocket/",
+                    message = """{"action":"sub","channel":"killstream"}""",
+                    name = "zKillboard",
+                )
+            }
         }
     }
 
-    private fun connect() {
-        if (!isZkillboardConnected) {
-            zKillboardSocket?.cancel()
-            val listener = KillboardWebSocketListener(::onZkillboardMessage, ::onZkillboardConnection)
-            val request = Request.Builder().url("wss://zkillboard.com/websocket/").build()
-            zKillboardSocket = okHttpClient.newWebSocket(request, listener).apply {
-                send("""{"action":"sub","channel":"killstream"}""")
+    private suspend fun maintainConnection(state: KillboardState, connect: () -> Unit) {
+        while (true) {
+            if (!state.isConnected) {
+                state.connectionAttempts++
+                connect()
+                delay(state.connectionAttempts.coerceAtMost(30) * 1_000L)
+            } else {
+                state.connectionAttempts = 0
+                delay(5.seconds)
             }
         }
-        if (!isEveKillConnected) {
-            eveKillSocket?.cancel()
-            val listener = KillboardWebSocketListener(::onEveKillMessage, ::onEveKillConnection)
-            val request = Request.Builder().url("wss://ws.eve-kill.com/kills").build()
-            eveKillSocket = okHttpClient.newWebSocket(request, listener).apply {
-                send("""{"type":"subscribe","data":["all"]}""")
+    }
+
+    private fun connect(
+        state: KillboardState,
+        onMessage: (String) -> Unit,
+        url: String,
+        message: String,
+        name: String,
+    ) {
+        state.socket?.cancel()
+        val listener = KillboardWebSocketListener(onMessage, onConnection = { isConnected ->
+            if (state.isConnected != isConnected) {
+                state.isConnected = isConnected
+                if (isConnected) logger.info { "$name connected" } else logger.warn { "$name disconnected" }
             }
+        })
+        val request = Request.Builder().url(url).build()
+        state.socket = okHttpClient.newWebSocket(request, listener).apply {
+            send(message)
         }
     }
 
@@ -59,13 +87,6 @@ class KillboardObserver(
             killmailProcessor.submit(killmail)
         } catch (e: IllegalArgumentException) {
             logger.error { "Invalid zKillboard message: $e" }
-        }
-    }
-
-    private fun onZkillboardConnection(state: Boolean) {
-        if (isZkillboardConnected != state) {
-            isZkillboardConnected = state
-            if (state) logger.info { "zKillboard connected" } else logger.warn { "zKillboard disconnected" }
         }
     }
 
@@ -80,13 +101,6 @@ class KillboardObserver(
             }
         } catch (e: IllegalArgumentException) {
             logger.error { "Invalid EVE-KILL message: $e" }
-        }
-    }
-
-    private fun onEveKillConnection(state: Boolean) {
-        if (isEveKillConnected != state) {
-            isEveKillConnected = state
-            if (state) logger.info { "EVE-KILL connected" } else logger.warn { "EVE-KILL disconnected" }
         }
     }
 }

@@ -1,4 +1,4 @@
-package dev.nohus.rift.intel.settings
+package dev.nohus.rift.intel.reports.settings
 
 import dev.nohus.rift.ViewModel
 import dev.nohus.rift.settings.persistence.Settings
@@ -9,25 +9,23 @@ import kotlinx.coroutines.launch
 import org.koin.core.annotation.Single
 
 @Single
-class IntelSettingsViewModel(
+class IntelReportsSettingsViewModel(
     private val settings: Settings,
 ) : ViewModel() {
 
     data class UiState(
-        val isUsingCompact: Boolean,
+        val isUsingCompactMode: Boolean,
         val isShowingReporter: Boolean,
         val isShowingChannel: Boolean,
         val isShowingRegion: Boolean,
-        val isShowingSystemDistance: Boolean,
     )
 
     private val _state = MutableStateFlow(
         UiState(
-            isUsingCompact = settings.intelReports.isUsingCompactMode,
+            isUsingCompactMode = settings.intelReports.isUsingCompactMode,
             isShowingReporter = settings.intelReports.isShowingReporter,
             isShowingChannel = settings.intelReports.isShowingChannel,
             isShowingRegion = settings.intelReports.isShowingRegion,
-            isShowingSystemDistance = settings.intelReports.isShowingSystemDistance,
         ),
     )
     val state = _state.asStateFlow()
@@ -37,11 +35,10 @@ class IntelSettingsViewModel(
             settings.updateFlow.collect {
                 _state.update {
                     it.copy(
-                        isUsingCompact = settings.intelReports.isUsingCompactMode,
+                        isUsingCompactMode = settings.intelReports.isUsingCompactMode,
                         isShowingReporter = settings.intelReports.isShowingReporter,
                         isShowingChannel = settings.intelReports.isShowingChannel,
                         isShowingRegion = settings.intelReports.isShowingRegion,
-                        isShowingSystemDistance = settings.intelReports.isShowingSystemDistance,
                     )
                 }
             }
@@ -62,9 +59,5 @@ class IntelSettingsViewModel(
 
     fun onIsShowingRegionChange(enabled: Boolean) {
         settings.intelReports = settings.intelReports.copy(isShowingRegion = enabled)
-    }
-
-    fun onIsShowingSystemDistanceChange(enabled: Boolean) {
-        settings.intelReports = settings.intelReports.copy(isShowingSystemDistance = enabled)
     }
 }

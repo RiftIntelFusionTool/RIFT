@@ -63,3 +63,7 @@ fun formatIsk(number: Double): String {
     val formatted = format.format(number)
     return "$formatted ISK"
 }
+
+val Int.plural: String get() {
+    return if (this != 1) "s" else ""
+}

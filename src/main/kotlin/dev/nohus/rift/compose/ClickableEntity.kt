@@ -60,13 +60,16 @@ fun ClickableSystem(
         content()
         return
     }
-    val dotlanUrl = "https://evemaps.dotlan.net/system/$system"
+    val isKnownSpace = repository.isKnownSpace(systemId)
     RiftContextMenuArea(
         items = GetSystemContextMenuItems(systemId),
     ) {
+        val mapExternalControl: MapExternalControl = remember { koin.get() }
         ClickableEntity(
             onClick = {
-                dotlanUrl.toURIOrNull()?.openBrowser()
+                if (isKnownSpace) {
+                    mapExternalControl.showSystemOnRegionMap(systemId, fromMap = false)
+                }
             },
             content = content,
         )
@@ -86,6 +89,7 @@ fun GetSystemContextMenuItems(
     val solarSystemsRepository: SolarSystemsRepository = remember { koin.get() }
     val settings: Settings = remember { koin.get() }
     val system = solarSystemsRepository.getSystemName(systemId) ?: return emptyList()
+    val isKnownSpace = solarSystemsRepository.isKnownSpace(systemId)
     val dotlanUrl = "https://evemaps.dotlan.net/system/$system"
     val zkillboardUrl = "https://zkillboard.com/system/$systemId/"
     var isSettingAutopilotToAll by remember { mutableStateOf(settings.isSettingAutopilotToAll) }
@@ -134,7 +138,7 @@ fun GetSystemContextMenuItems(
                 },
             ),
         )
-        if (mapType !is MapType.ClusterSystemsMap) {
+        if (mapType !is MapType.ClusterSystemsMap && isKnownSpace) {
             add(
                 ContextMenuItem.TextItem(
                     text = if (mapType == null) "Show on Map" else "Show in New Eden",
@@ -144,7 +148,7 @@ fun GetSystemContextMenuItems(
                 ),
             )
         }
-        if (mapType !is MapType.RegionMap) {
+        if (mapType !is MapType.RegionMap && isKnownSpace) {
             add(
                 ContextMenuItem.TextItem(
                     text = if (mapType == null) "Show on Region Map" else "Show in Region",
@@ -200,12 +204,66 @@ fun ClickablePlayer(
 }
 
 @Composable
+fun ClickableCorporation(
+    corporationId: Int?,
+    content: @Composable () -> Unit,
+) {
+    if (corporationId == null) {
+        content()
+        return
+    }
+
+    val evewhoUrl = "https://evewho.com/corporation/$corporationId"
+    val zKillboardUrl = "https://zkillboard.com/corporation/$corporationId/"
+    RiftContextMenuArea(
+        listOf(
+            ContextMenuItem.TextItem("zKillboard", Res.drawable.menu_zkillboard, onClick = { zKillboardUrl.toURIOrNull()?.openBrowser() }),
+            ContextMenuItem.TextItem("EveWho", Res.drawable.menu_evewho, onClick = { evewhoUrl.toURIOrNull()?.openBrowser() }),
+        ),
+    ) {
+        ClickableEntity(
+            onClick = {
+                zKillboardUrl.toURIOrNull()?.openBrowser()
+            },
+            content = content,
+        )
+    }
+}
+
+@Composable
+fun ClickableAlliance(
+    allianceId: Int?,
+    content: @Composable () -> Unit,
+) {
+    if (allianceId == null) {
+        content()
+        return
+    }
+
+    val evewhoUrl = "https://evewho.com/alliance/$allianceId"
+    val zKillboardUrl = "https://zkillboard.com/alliance/$allianceId/"
+    RiftContextMenuArea(
+        listOf(
+            ContextMenuItem.TextItem("zKillboard", Res.drawable.menu_zkillboard, onClick = { zKillboardUrl.toURIOrNull()?.openBrowser() }),
+            ContextMenuItem.TextItem("EveWho", Res.drawable.menu_evewho, onClick = { evewhoUrl.toURIOrNull()?.openBrowser() }),
+        ),
+    ) {
+        ClickableEntity(
+            onClick = {
+                zKillboardUrl.toURIOrNull()?.openBrowser()
+            },
+            content = content,
+        )
+    }
+}
+
+@Composable
 fun ClickableShip(
     name: String,
     typeId: Int,
     content: @Composable () -> Unit,
 ) {
-    val uniWikiUrl = "https://wiki.eveuniversity.org/$name"
+    val uniWikiUrl = "https://wiki.eveuniversity.org/${name.replace(' ', '_')}"
     val eveRefUrl = "https://everef.net/type/$typeId"
     val zKillboard = "https://zkillboard.com/ship/$typeId/"
     RiftContextMenuArea(

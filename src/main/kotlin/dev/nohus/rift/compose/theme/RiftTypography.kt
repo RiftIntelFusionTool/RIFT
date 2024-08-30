@@ -18,6 +18,7 @@ import dev.nohus.rift.generated.resources.evesansneue_bold
 import dev.nohus.rift.generated.resources.evesansneue_bolditalic
 import dev.nohus.rift.generated.resources.evesansneue_italic
 import dev.nohus.rift.generated.resources.evesansneue_regular
+import dev.nohus.rift.generated.resources.triglavian
 import org.jetbrains.compose.resources.Font
 
 @Immutable
@@ -30,6 +31,7 @@ data class RiftTypography(
     val bodyPrimary: TextStyle,
     val bodySecondary: TextStyle,
     val bodyLink: TextStyle,
+    val bodyTriglavian: TextStyle,
     val titleHighlighted: TextStyle,
     val titlePrimary: TextStyle,
     val titleSecondary: TextStyle,
@@ -48,6 +50,7 @@ val LocalRiftTypography = staticCompositionLocalOf {
         bodyPrimary = TextStyle.Default,
         bodySecondary = TextStyle.Default,
         bodyLink = TextStyle.Default,
+        bodyTriglavian = TextStyle.Default,
         titleHighlighted = TextStyle.Default,
         titlePrimary = TextStyle.Default,
         titleSecondary = TextStyle.Default,
@@ -81,6 +84,13 @@ fun getRiftTypography(colors: RiftColors): RiftTypography {
             style = FontStyle.Italic,
         ),
     )
+    val triglavian = FontFamily(
+        Font(
+            resource = Res.font.triglavian,
+            weight = FontWeight.Normal,
+            style = FontStyle.Normal,
+        ),
+    )
 
     val base = TextStyle(
         fontFamily = eveSansNeue,
@@ -108,6 +118,13 @@ fun getRiftTypography(colors: RiftColors): RiftTypography {
         fontSize = 19.sp,
     )
 
+    val baseTriglavian = base.copy(
+        fontFamily = triglavian,
+    )
+    val bodyTriglavian = baseTriglavian.copy(
+        fontSize = 16.sp,
+    )
+
     return RiftTypography(
         captionPrimary = caption.copy(color = colors.textPrimary),
         captionSecondary = caption.copy(color = colors.textSecondary),
@@ -117,6 +134,7 @@ fun getRiftTypography(colors: RiftColors): RiftTypography {
         bodyPrimary = body.copy(color = colors.textPrimary),
         bodySecondary = body.copy(color = colors.textSecondary),
         bodyLink = bodyBold.copy(color = colors.textLink),
+        bodyTriglavian = bodyTriglavian,
         titleHighlighted = title.copy(color = colors.textHighlighted),
         titlePrimary = title.copy(color = colors.textPrimary),
         titleSecondary = title.copy(color = colors.textSecondary),

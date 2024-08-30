@@ -141,14 +141,15 @@ private fun RiftContextMenuPopup(
                     .padding(1.dp)
                     .padding(vertical = 7.dp),
             ) {
-                val hasIconSpace = items.any { it is ContextMenuItem.TextItem && it.iconResource != null || it is ContextMenuItem.CheckboxItem }
+                val hasIconSpace = items.any { it is ContextMenuItem.TextItem && it.iconResource != null || it is ContextMenuItem.CheckboxItem || it is ContextMenuItem.RadioItem }
                 for (item in items) {
                     when (item) {
                         is ContextMenuItem.TextItem -> ContextMenuRow(item.text, item.iconResource, hasIconSpace, null) {
                             onDismissRequest()
                             item.onClick()
                         }
-                        is ContextMenuItem.CheckboxItem -> ContextMenuRow(item.text, null, hasIconSpace, item.isSelected, item.onClick)
+                        is ContextMenuItem.CheckboxItem -> ContextMenuRow(item.text, null, hasIconSpace, item.isSelected, false, item.onClick)
+                        is ContextMenuItem.RadioItem -> ContextMenuRow(item.text, null, hasIconSpace, item.isSelected, true, item.onClick)
                         ContextMenuItem.DividerItem -> ContextMenuDivider()
                     }
                 }
@@ -170,6 +171,12 @@ sealed interface ContextMenuItem {
         val onClick: () -> Unit,
     ) : ContextMenuItem
 
+    data class RadioItem(
+        val text: String,
+        val isSelected: Boolean,
+        val onClick: () -> Unit,
+    ) : ContextMenuItem
+
     data object DividerItem : ContextMenuItem
 }
 
@@ -180,6 +187,7 @@ private fun ContextMenuRow(
     iconResource: DrawableResource?,
     hasIconSpace: Boolean,
     isSelected: Boolean?,
+    isRadio: Boolean = false,
     onClick: () -> Unit,
 ) {
     val pointerState = remember { PointerInteractionStateHolder() }
@@ -227,11 +235,19 @@ private fun ContextMenuRow(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.requiredSize(iconAreaSize),
             ) {
-                RiftCheckbox(
-                    isChecked = isSelected,
-                    onCheckedChange = { onClick() },
-                    pointerInteractionStateHolder = pointerState,
-                )
+                if (isRadio) {
+                    RiftRadioButton(
+                        isChecked = isSelected,
+                        onChecked = { onClick() },
+                        pointerInteractionStateHolder = pointerState,
+                    )
+                } else {
+                    RiftCheckbox(
+                        isChecked = isSelected,
+                        onCheckedChange = { onClick() },
+                        pointerInteractionStateHolder = pointerState,
+                    )
+                }
             }
         }
     }

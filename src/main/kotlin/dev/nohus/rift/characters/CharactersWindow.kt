@@ -161,7 +161,7 @@ private fun CharactersWindowContent(
                 modifier = Modifier.weight(1f),
             ) {
                 items(state.characters.filterNot { it.isHidden }, key = { it.characterId }) { character ->
-                    Box(modifier = Modifier.animateItemPlacement()) {
+                    Box(modifier = Modifier.animateItem()) {
                         CharacterRow(
                             character = character,
                             isOnline = character.characterId in state.onlineCharacters,
@@ -175,7 +175,7 @@ private fun CharactersWindowContent(
                     }
                 }
                 item(key = "disabled characters") {
-                    Box(modifier = Modifier.animateItemPlacement()) {
+                    Box(modifier = Modifier.animateItem()) {
                         RiftTooltipArea(
                             tooltip = "Disabled characters will not be used in RIFT.",
                             anchor = TooltipAnchor.BottomStart,
@@ -205,7 +205,7 @@ private fun CharactersWindowContent(
                     }
                 }
                 items(state.characters.filter { it.isHidden }, key = { it.characterId }) { character ->
-                    Box(modifier = Modifier.animateItemPlacement()) {
+                    Box(modifier = Modifier.animateItem()) {
                         HiddenCharacterRow(
                             character = character,
                             isChoosingDisabledCharacters = state.isChoosingDisabledCharacters,

@@ -31,11 +31,25 @@ sealed interface SystemEntity {
         val url: String,
         val ship: String?,
         val typeName: String?,
+        val victim: KillmailVictim,
     ) : SystemEntity, Clearable
+
+    data class KillmailVictim(
+        val characterId: Int?,
+        val details: CharacterDetails?,
+        val corporationId: Int?,
+        val corporationName: String?,
+        val corporationTicker: String?,
+        val allianceId: Int?,
+        val allianceName: String?,
+        val allianceTicker: String?,
+        val isFriendly: Boolean?,
+    )
 
     data object Wormhole : SystemEntity
     data object Spike : SystemEntity, Clearable
     data object Ess : SystemEntity
+    data object Skyhook : SystemEntity
     data object GateCamp : SystemEntity, Clearable
     data object CombatProbes : SystemEntity
     data object NoVisual : SystemEntity, CharacterBound

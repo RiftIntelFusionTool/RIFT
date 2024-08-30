@@ -76,7 +76,7 @@ class ChatMessageParser(
     }
 
     enum class KeywordType {
-        NoVisual, Clear, Wormhole, Spike, Ess, GateCamp, CombatProbes, Bubbles
+        NoVisual, Clear, Wormhole, Spike, Ess, Skyhook, GateCamp, CombatProbes, Bubbles
     }
 
     enum class QuestionType {
@@ -122,6 +122,10 @@ class ChatMessageParser(
             "ess" to KeywordType.Ess,
             "ess intrusion" to KeywordType.Ess,
             "ess hacking" to KeywordType.Ess,
+            "ess link" to KeywordType.Ess,
+            "skyhook" to KeywordType.Skyhook,
+            "robbing skyhook" to KeywordType.Skyhook,
+            "skyhook theft" to KeywordType.Skyhook,
             "gate camp" to KeywordType.GateCamp,
             "gate camping" to KeywordType.GateCamp,
             "gate camped" to KeywordType.GateCamp,

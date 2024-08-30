@@ -40,6 +40,9 @@ class SettingsViewModel(
         val intelChannels: List<IntelChannel>,
         val suggestedIntelChannels: SuggestedIntelChannels?,
         val regions: List<String>,
+        val isShowingSystemDistance: Boolean,
+        val isUsingJumpBridgesForDistance: Boolean,
+        val intelExpireSeconds: Int,
         val logsDirectory: String,
         val isLogsDirectoryValid: Boolean,
         val settingsDirectory: String,
@@ -61,7 +64,10 @@ class SettingsViewModel(
         UiState(
             intelChannels = settings.intelChannels,
             suggestedIntelChannels = configurationPackRepository.getSuggestedIntelChannels(),
-            regions = solarSystemsRepository.getKnownSpaceRegions().sorted(),
+            regions = solarSystemsRepository.getKnownSpaceRegions().map { it.name }.sorted(),
+            isShowingSystemDistance = settings.isShowingSystemDistance,
+            isUsingJumpBridgesForDistance = settings.isUsingJumpBridgesForDistance,
+            intelExpireSeconds = settings.intelExpireSeconds,
             logsDirectory = settings.eveLogsDirectory?.pathString ?: "",
             isLogsDirectoryValid = getChatLogsDirectoryUseCase(settings.eveLogsDirectory) != null,
             settingsDirectory = settings.eveSettingsDirectory?.pathString ?: "",
@@ -86,6 +92,9 @@ class SettingsViewModel(
                     it.copy(
                         intelChannels = settings.intelChannels,
                         suggestedIntelChannels = configurationPackRepository.getSuggestedIntelChannels(),
+                        isShowingSystemDistance = settings.isShowingSystemDistance,
+                        isUsingJumpBridgesForDistance = settings.isUsingJumpBridgesForDistance,
+                        intelExpireSeconds = settings.intelExpireSeconds,
                         isLoadOldMessagesEnabled = settings.isLoadOldMessagesEnabled,
                         isDisplayEveTime = settings.isDisplayEveTime,
                         isShowSetupWizardOnNextStartEnabled = settings.isShowSetupWizardOnNextStart,
@@ -132,6 +141,18 @@ class SettingsViewModel(
 
     fun onIntelChannelDelete(channel: IntelChannel) {
         settings.intelChannels -= channel
+    }
+
+    fun onIsShowingSystemDistanceChange(enabled: Boolean) {
+        settings.isShowingSystemDistance = enabled
+    }
+
+    fun onIsUsingJumpBridgesForDistance(enabled: Boolean) {
+        settings.isUsingJumpBridgesForDistance = enabled
+    }
+
+    fun onIntelExpireSecondsChange(seconds: Int) {
+        settings.intelExpireSeconds = seconds
     }
 
     fun onLogsDirectoryChanged(text: String) {

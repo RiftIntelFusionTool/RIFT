@@ -1,6 +1,9 @@
 package dev.nohus.rift.repositories
 
 import dev.nohus.rift.configurationpack.ConfigurationPackRepository
+import dev.nohus.rift.network.Result
+import dev.nohus.rift.network.esi.AlliancesIdAlliance
+import dev.nohus.rift.network.esi.CorporationsIdCorporation
 import dev.nohus.rift.network.esi.EsiApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -43,5 +46,13 @@ class CharacterDetailsRepository(
             isFriendly = character.allianceId?.let { configurationPackRepository.isFriendlyAlliance(it) } == true,
             title = character.title,
         )
+    }
+
+    suspend fun getCorporationName(corporationId: Int): Result<CorporationsIdCorporation> {
+        return esiApi.getCorporationsId(corporationId)
+    }
+
+    suspend fun getAllianceName(allianceId: Int): Result<AlliancesIdAlliance> {
+        return esiApi.getAlliancesId(allianceId)
     }
 }

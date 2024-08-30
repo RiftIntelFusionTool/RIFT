@@ -10,19 +10,21 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.onClick
+import androidx.compose.material.Divider
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.SpanStyle
@@ -35,6 +37,7 @@ import dev.nohus.rift.compose.AsyncAllianceLogo
 import dev.nohus.rift.compose.AsyncCorporationLogo
 import dev.nohus.rift.compose.AsyncPlayerPortrait
 import dev.nohus.rift.compose.ClickablePlayer
+import dev.nohus.rift.compose.IntelTimer
 import dev.nohus.rift.compose.RiftTooltipArea
 import dev.nohus.rift.compose.ScrollbarColumn
 import dev.nohus.rift.compose.SystemEntities
@@ -63,8 +66,8 @@ import dev.nohus.rift.repositories.MapStatusRepository.SolarSystemStatus
 import dev.nohus.rift.repositories.NamesRepository
 import dev.nohus.rift.repositories.SolarSystemsRepository.MapSolarSystem
 import dev.nohus.rift.settings.persistence.MapSystemInfoType
+import dev.nohus.rift.utils.plural
 import dev.nohus.rift.utils.roundSecurity
-import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import java.time.Duration
@@ -97,11 +100,12 @@ fun SystemInfoBox(
                 .border(1.dp, borderColor)
                 .padding(horizontal = 2.dp, vertical = 1.dp),
         ) {
-            Column {
+            Column(
+                modifier = Modifier.width(IntrinsicSize.Max),
+            ) {
                 val intelGroups = if (intelInPopup != null) groupIntelByTime(intelInPopup) else null
                 Row {
                     val isShowingSecurity = (isExpanded && MapSystemInfoType.Security in infoTypes) || MapSystemInfoType.Security in indicatorsInfoTypes
-                    val isShowingIntelTimer = intelGroups?.size == 1
                     val securityColor = SecurityColors[system.security]
                     val systemNameText = buildAnnotatedString {
                         append(system.name)
@@ -111,7 +115,6 @@ fun SystemInfoBox(
                                 append(system.security.roundSecurity().toString())
                             }
                         }
-                        if (isShowingIntelTimer) append(" ")
                     }
                     val systemNameStyle = RiftTheme.typography.captionBoldPrimary
                     val highlightedSystemNameStyle =
@@ -121,9 +124,6 @@ fun SystemInfoBox(
                         text = systemNameText,
                         style = style,
                     )
-                    if (isShowingIntelTimer) {
-                        Timer(intelGroups!!.keys.first())
-                    }
                 }
 
                 if (regionName != null) {
@@ -143,7 +143,7 @@ fun SystemInfoBox(
                     ) {
                         onlineCharacters.forEach { onlineCharacterLocation ->
                             ClickablePlayer(onlineCharacterLocation.id) {
-                                SystemEntityInfoRow {
+                                SystemEntityInfoRow(32.dp, hasBorder = false) {
                                     AsyncPlayerPortrait(
                                         characterId = onlineCharacterLocation.id,
                                         size = 32,
@@ -336,10 +336,6 @@ private fun ColumnScope.SystemInfoTypes(
         }
 }
 
-private val Int.plural: String get() {
-    return if (this != 1) "s" else ""
-}
-
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SystemInfoTypesIndicators(
@@ -479,21 +475,43 @@ private fun Intel(
         isFillWidth = false,
         modifier = Modifier.heightIn(max = 300.dp),
     ) {
+        val isCompact = groups.hasAtLeast(8)
         for (group in groups.entries.sortedByDescending { it.key }) {
-            val entities = group.value
+            Divider(
+                color = RiftTheme.colors.divider,
+                modifier = Modifier.fillMaxWidth(),
+            )
             Column(
                 verticalArrangement = Arrangement.spacedBy(1.dp),
+                modifier = Modifier.fillMaxWidth(),
             ) {
-                if (groups.size > 1) {
-                    Timer(group.key)
-                }
-                SystemEntities(entities, system.name)
+                val entities = group.value
+                IntelTimer(
+                    timestamp = group.key,
+                    style = RiftTheme.typography.captionBoldPrimary,
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                )
+                SystemEntities(
+                    entities = entities,
+                    system = system.name,
+                    rowHeight = if (isCompact) 24.dp else 32.dp,
+                    isGroupingCharacters = isCompact,
+                )
             }
         }
     }
 }
 
-private fun groupIntelByTime(intel: List<Dated<SystemEntity>>): Map<Instant, List<SystemEntity>> {
+private fun <T1, T2> Map<T1, List<T2>>.hasAtLeast(count: Int): Boolean {
+    var sum = 0
+    for (entry in entries) {
+        sum += entry.value.size
+        if (sum >= count) return true
+    }
+    return false
+}
+
+fun groupIntelByTime(intel: List<Dated<SystemEntity>>): Map<Instant, List<SystemEntity>> {
     // Group entities by when they were reported, so they can be displayed with a single timer by group
     val groups = mutableMapOf<Instant, List<SystemEntity>>()
     intel.forEach { item ->
@@ -505,38 +523,4 @@ private fun groupIntelByTime(intel: List<Dated<SystemEntity>>): Map<Instant, Lis
         }
     }
     return groups
-}
-
-@Composable
-private fun Timer(
-    timestamp: Instant,
-    modifier: Modifier = Modifier,
-) {
-    val now by produceState(initialValue = Instant.now()) {
-        while (true) {
-            delay(300)
-            value = Instant.now()
-        }
-    }
-    val duration = Duration.between(timestamp, now)
-    val colorFadePercentage = (duration.toSeconds() / 120f).coerceIn(0f, 1f)
-    val color = lerp(RiftTheme.colors.textSpecialHighlighted, RiftTheme.colors.textSecondary, colorFadePercentage)
-    Text(
-        text = formatDuration(duration),
-        style = RiftTheme.typography.captionBoldPrimary.copy(color = color),
-        modifier = modifier,
-    )
-}
-
-private fun formatDuration(duration: Duration): String {
-    val minutes = duration.toMinutes()
-    return if (minutes < 10) {
-        val seconds = duration.toSecondsPart()
-        String.format("%d:%02d", minutes, seconds)
-    } else if (minutes < 60) {
-        "${minutes}m"
-    } else {
-        val hours = duration.toHours()
-        "${hours}h"
-    }
 }

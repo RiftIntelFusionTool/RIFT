@@ -174,7 +174,7 @@ class AlertsTriggerController(
                     val isSenderMatching = triggerSender == null && !isEveSystem || channelChatMessage.chatMessage.author == triggerSender
                     if (isSenderMatching) {
                         val containing = alert.trigger.messageContaining
-                        val isMessageMatching = channelChatMessage.chatMessage.message.containsNonNull(containing)
+                        val isMessageMatching = channelChatMessage.chatMessage.message.lowercase().containsNonNull(containing?.lowercase())
                         if (isMessageMatching) {
                             withCooldown(alert) {
                                 alertsActionController.triggerChatMessageAlert(alert, channelChatMessage)

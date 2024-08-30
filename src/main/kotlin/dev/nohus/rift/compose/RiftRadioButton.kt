@@ -36,11 +36,11 @@ import org.jetbrains.compose.resources.painterResource
 fun RiftRadioButton(
     isChecked: Boolean,
     onChecked: () -> Unit,
+    pointerInteractionStateHolder: PointerInteractionStateHolder = remember { PointerInteractionStateHolder() },
 ) {
     val radioButtonColor = RiftTheme.colors.primary
     val shape = CircleShape
 
-    val pointerInteractionStateHolder = remember { PointerInteractionStateHolder() }
     val transition = updateTransition(pointerInteractionStateHolder.current)
     val shadowColor by transition.animateColor(getTransitionSpec()) {
         if (it == PointerInteractionState.Normal) Color.Transparent else radioButtonColor

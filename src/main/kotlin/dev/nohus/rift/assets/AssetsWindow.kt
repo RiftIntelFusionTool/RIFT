@@ -198,14 +198,14 @@ private fun AssetsWindowContent(
                             if (itemId in expandedItems) expandedItems -= itemId else expandedItems += itemId
                         },
                         onFitAction = onFitAction,
-                        modifier = Modifier.animateItemPlacement(),
+                        modifier = Modifier.animateItem(),
                     )
                 }
             }
             item(key = { "footer" }) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(Spacing.small),
-                    modifier = Modifier.animateItemPlacement(),
+                    modifier = Modifier.animateItem(),
                 ) {
                     if (state.assets.isEmpty()) {
                         Row(

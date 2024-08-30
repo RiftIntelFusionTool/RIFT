@@ -57,7 +57,7 @@ class JumpBridgesRepository(
         data object Error : SearchState
     }
 
-    suspend fun search(): Flow<SearchState> = channelFlow {
+    fun search(): Flow<SearchState> = channelFlow {
         coroutineScope {
             val characterId = localCharactersRepository.characters.value
                 .firstOrNull { it.isAuthenticated }

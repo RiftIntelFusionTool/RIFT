@@ -31,12 +31,16 @@ class NeocomViewModel(
         windowManager.onWindowOpen(RiftWindow.Alerts)
     }
 
-    fun onIntelClick() {
-        windowManager.onWindowOpen(RiftWindow.Intel)
-    }
-
     fun onMapClick() {
         windowManager.onWindowOpen(RiftWindow.Map)
+    }
+
+    fun onIntelFeedClick() {
+        windowManager.onWindowOpen(RiftWindow.IntelFeed)
+    }
+
+    fun onIntelReportsClick() {
+        windowManager.onWindowOpen(RiftWindow.IntelReports)
     }
 
     fun onCharactersClick() {

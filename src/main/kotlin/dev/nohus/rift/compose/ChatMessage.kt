@@ -14,14 +14,12 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.onClick
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -38,7 +36,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -53,18 +50,18 @@ import dev.nohus.rift.generated.resources.keywords_gatecamp
 import dev.nohus.rift.generated.resources.keywords_interdiction_probe
 import dev.nohus.rift.generated.resources.keywords_killreport
 import dev.nohus.rift.generated.resources.keywords_no_visual
+import dev.nohus.rift.generated.resources.keywords_skyhook
 import dev.nohus.rift.generated.resources.keywords_spike
 import dev.nohus.rift.generated.resources.keywords_systems
 import dev.nohus.rift.generated.resources.keywords_wormhole
 import dev.nohus.rift.intel.ParsedChannelChatMessage
-import dev.nohus.rift.intel.settings.IntelReportsSettings
+import dev.nohus.rift.intel.reports.settings.IntelReportsSettings
 import dev.nohus.rift.logs.parse.ChatLogFileMetadata
 import dev.nohus.rift.logs.parse.ChatMessage
 import dev.nohus.rift.logs.parse.ChatMessageParser.KeywordType
 import dev.nohus.rift.logs.parse.ChatMessageParser.Token
 import dev.nohus.rift.logs.parse.ChatMessageParser.TokenType
 import dev.nohus.rift.logs.parse.ChatMessageParser.TokenType.Link
-import dev.nohus.rift.repositories.GetSystemDistanceFromCharacterUseCase
 import dev.nohus.rift.repositories.ShipTypesRepository
 import dev.nohus.rift.repositories.SolarSystemsRepository
 import dev.nohus.rift.repositories.TypesRepository
@@ -202,46 +199,33 @@ private fun Message(
             val text = token.words.joinToString(" ")
             if (types.size == 1) {
                 when (val type = types.single()) {
-                    is TokenType.Count -> TokenWithCount(settings, text)
-                    is TokenType.Keyword -> TokenWithKeyword(settings, type.type)
-                    is TokenType.Kill -> TokenWithKill(settings, type)
-                    Link -> TokenWithText(settings, text, "Link")
-                    is TokenType.Player -> TokenWithPlayer(settings, text, type.characterId)
-                    is TokenType.Question -> TokenWithText(settings, text, "Question")
-                    is TokenType.Ship -> TokenWithShip(settings, type)
-                    is TokenType.System -> TokenWithSystem(settings, type.name)
-                    TokenType.Url -> TokenWithUrl(settings, text)
+                    is TokenType.Count -> TokenWithCount(settings.rowHeight, text)
+                    is TokenType.Keyword -> TokenWithKeyword(settings.rowHeight, type.type)
+                    is TokenType.Kill -> TokenWithKill(settings.rowHeight, type)
+                    Link -> TokenWithText(settings.rowHeight, text, "Link")
+                    is TokenType.Player -> TokenWithPlayer(settings.rowHeight, text, type.characterId)
+                    is TokenType.Question -> TokenWithText(settings.rowHeight, text, "Question")
+                    is TokenType.Ship -> TokenWithShip(settings.rowHeight, type)
+                    is TokenType.System -> TokenWithSystem(settings.rowHeight, settings.isShowingSystemDistance, settings.isUsingJumpBridgesForDistance, type.name)
+                    TokenType.Url -> TokenWithUrl(settings.rowHeight, text)
                     is TokenType.Gate -> {
                         val fromSystem = tokens.mapNotNull { it.types.filterIsInstance<TokenType.System>().firstOrNull() }.singleOrNull()?.name
-                        TokenWithGate(settings, fromSystem, type.system, type.isAnsiblex)
+                        TokenWithGate(settings.rowHeight, fromSystem, type.system, type.isAnsiblex)
                     }
-                    is TokenType.Movement -> TokenWithMovement(settings, tokens, type)
+                    is TokenType.Movement -> TokenWithMovement(settings.rowHeight, tokens, type)
                 }
             } else if (types.size > 1) {
-                TokenWithText(settings, text, "Multi")
+                TokenWithText(settings.rowHeight, text, "Multi")
             } else {
-                TokenWithPlainText(settings, text)
+                TokenWithPlainText(settings.rowHeight, text)
             }
         }
     }
 }
 
 @Composable
-private fun BorderedToken(
-    settings: IntelReportsSettings,
-    content: @Composable RowScope.() -> Unit,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.height(IntrinsicSize.Max).heightIn(min = settings.rowHeight).border(1.dp, RiftTheme.colors.borderGreyLight),
-    ) {
-        content()
-    }
-}
-
-@Composable
-private fun TokenWithText(settings: IntelReportsSettings, text: String, type: String) {
-    BorderedToken(settings) {
+private fun TokenWithText(rowHeight: Dp, text: String, type: String) {
+    BorderedToken(rowHeight) {
         Text(
             text = type,
             modifier = Modifier.padding(4.dp),
@@ -255,8 +239,8 @@ private fun TokenWithText(settings: IntelReportsSettings, text: String, type: St
 }
 
 @Composable
-private fun TokenWithCount(settings: IntelReportsSettings, text: String) {
-    BorderedToken(settings) {
+private fun TokenWithCount(rowHeight: Dp, text: String) {
+    BorderedToken(rowHeight) {
         Text(
             text = text,
             modifier = Modifier.padding(4.dp),
@@ -265,10 +249,10 @@ private fun TokenWithCount(settings: IntelReportsSettings, text: String) {
 }
 
 @Composable
-private fun TokenWithPlainText(settings: IntelReportsSettings, text: String) {
+private fun TokenWithPlainText(rowHeight: Dp, text: String) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.height(IntrinsicSize.Max).heightIn(min = settings.rowHeight),
+        modifier = Modifier.height(IntrinsicSize.Max).heightIn(min = rowHeight),
     ) {
         Text(
             text = text,
@@ -279,11 +263,11 @@ private fun TokenWithPlainText(settings: IntelReportsSettings, text: String) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun TokenWithUrl(settings: IntelReportsSettings, text: String) {
+private fun TokenWithUrl(rowHeight: Dp, text: String) {
     val pointerInteractionStateHolder = remember { PointerInteractionStateHolder() }
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.height(IntrinsicSize.Max).heightIn(min = settings.rowHeight)
+        modifier = Modifier.height(IntrinsicSize.Max).heightIn(min = rowHeight)
             .pointerHoverIcon(PointerIcon(Cursors.hand))
             .pointerInteraction(pointerInteractionStateHolder)
             .onClick { text.toURIOrNull()?.openBrowser() },
@@ -299,16 +283,16 @@ private fun TokenWithUrl(settings: IntelReportsSettings, text: String) {
 }
 
 @Composable
-private fun TokenWithShip(settings: IntelReportsSettings, ship: TokenType.Ship) {
+private fun TokenWithShip(rowHeight: Dp, ship: TokenType.Ship) {
     val repository: ShipTypesRepository by koin.inject()
     val shipTypeId = repository.getShipTypeId(ship.name)
     ClickableShip(ship.name, shipTypeId) {
-        BorderedToken(settings) {
+        BorderedToken(rowHeight) {
             AsyncTypeIcon(
                 typeId = shipTypeId,
-                modifier = Modifier.size(settings.rowHeight),
+                modifier = Modifier.size(rowHeight),
             )
-            VerticalDivider(color = RiftTheme.colors.borderGreyLight, modifier = Modifier.height(settings.rowHeight))
+            VerticalDivider(color = RiftTheme.colors.borderGreyLight, modifier = Modifier.height(rowHeight))
             val text = if (ship.count > 1) {
                 "${ship.count}x ${ship.name}"
             } else if (ship.isPlural) {
@@ -326,83 +310,38 @@ private fun TokenWithShip(settings: IntelReportsSettings, ship: TokenType.Ship) 
 }
 
 @Composable
-private fun TokenWithSystem(settings: IntelReportsSettings, system: String) {
-    val repository: SolarSystemsRepository by koin.inject()
-    ClickableSystem(system) {
-        BorderedToken(settings) {
-            val sunTypeId = repository.getSystemSunTypeId(system)
-            AsyncTypeIcon(
-                typeId = sunTypeId,
-                modifier = Modifier.size(settings.rowHeight),
-            )
-            VerticalDivider(color = RiftTheme.colors.borderGreyLight, modifier = Modifier.height(settings.rowHeight))
-            Text(
-                text = system,
-                style = RiftTheme.typography.bodyLink,
-                modifier = Modifier.padding(4.dp),
-            )
-            if (settings.isShowingSystemDistance) {
-                val systemId = repository.getSystemId(system) ?: return@BorderedToken
-                SystemDistanceIndicator(systemId, settings.rowHeight)
-            }
-        }
-    }
-}
-
-@Composable
-private fun SystemDistanceIndicator(
-    systemId: Int,
-    height: Dp,
+private fun TokenWithSystem(
+    rowHeight: Dp,
+    isShowingSystemDistance: Boolean,
+    isUsingJumpBridges: Boolean,
+    system: String,
 ) {
-    val getDistance: GetSystemDistanceFromCharacterUseCase by koin.inject()
-    val distance = getDistance(systemId, maxDistance = 5, withJumpBridges = false)
-    if (distance > 5) return
-    val distanceColor = getDistanceColor(distance)
-    Column(
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier
-            .height(height)
-            .padding(top = 1.dp, bottom = 1.dp, end = 1.dp)
-            .border(2.dp, distanceColor, RoundedCornerShape(100))
-            .padding(horizontal = 4.dp),
-    ) {
-        Text(
-            text = "$distance",
-            style = RiftTheme.typography.bodyPrimary.copy(fontWeight = FontWeight.Bold),
-            modifier = Modifier,
-        )
-    }
-}
-
-private fun getDistanceColor(distance: Int): Color {
-    return when {
-        distance >= 5 -> Color(0xFF2E74DF)
-        distance >= 4 -> Color(0xFF4ACFF3)
-        distance >= 3 -> Color(0xFF5CDCA6)
-        distance >= 2 -> Color(0xFF70E552)
-        distance >= 1 -> Color(0xFFDC6C08)
-        else -> Color(0xFFBC1113)
-    }
+    IntelSystem(
+        system = system,
+        rowHeight = rowHeight,
+        isShowingSystemDistance = isShowingSystemDistance,
+        isUsingJumpBridges = isUsingJumpBridges,
+    )
 }
 
 @Composable
-private fun TokenWithGate(settings: IntelReportsSettings, fromSystem: String?, toSystem: String, isAnsiblex: Boolean) {
+private fun TokenWithGate(rowHeight: Dp, fromSystem: String?, toSystem: String, isAnsiblex: Boolean) {
     val systemsRepository: SolarSystemsRepository by koin.inject()
 
-    BorderedToken(settings) {
+    BorderedToken(rowHeight) {
         GateIcon(
             isAnsiblex = isAnsiblex,
             fromSystem = fromSystem,
             toSystem = toSystem,
-            size = settings.rowHeight,
+            size = rowHeight,
         )
-        VerticalDivider(color = RiftTheme.colors.borderGreyLight, modifier = Modifier.height(settings.rowHeight))
+        VerticalDivider(color = RiftTheme.colors.borderGreyLight, modifier = Modifier.height(rowHeight))
         val sunTypeId = systemsRepository.getSystemSunTypeId(toSystem)
         AsyncTypeIcon(
             typeId = sunTypeId,
-            modifier = Modifier.size(settings.rowHeight),
+            modifier = Modifier.size(rowHeight),
         )
-        VerticalDivider(color = RiftTheme.colors.borderGreyLight, modifier = Modifier.height(settings.rowHeight))
+        VerticalDivider(color = RiftTheme.colors.borderGreyLight, modifier = Modifier.height(rowHeight))
         val gateText = if (isAnsiblex) "Ansiblex" else "Gate"
         Text(
             text = "$toSystem $gateText",
@@ -413,31 +352,31 @@ private fun TokenWithGate(settings: IntelReportsSettings, fromSystem: String?, t
 }
 
 @Composable
-private fun TokenWithMovement(settings: IntelReportsSettings, previousTokens: List<Token>, movement: TokenType.Movement) {
+private fun TokenWithMovement(rowHeight: Dp, previousTokens: List<Token>, movement: TokenType.Movement) {
     val systemsRepository: SolarSystemsRepository by koin.inject()
-    BorderedToken(settings) {
+    BorderedToken(rowHeight) {
         Image(
             painter = painterResource(Res.drawable.keywords_systems),
             contentDescription = null,
-            modifier = Modifier.size(settings.rowHeight),
+            modifier = Modifier.size(rowHeight),
         )
         if (movement.isGate) {
-            VerticalDivider(color = RiftTheme.colors.borderGreyLight, modifier = Modifier.height(settings.rowHeight))
+            VerticalDivider(color = RiftTheme.colors.borderGreyLight, modifier = Modifier.height(rowHeight))
             val systemFrom = previousTokens.mapNotNull { it.types.filterIsInstance<TokenType.System>().firstOrNull() }.lastOrNull()?.name
             GateIcon(
                 isAnsiblex = false,
                 fromSystem = systemFrom,
                 toSystem = movement.toSystem,
-                size = settings.rowHeight,
+                size = rowHeight,
             )
         }
-        VerticalDivider(color = RiftTheme.colors.borderGreyLight, modifier = Modifier.height(settings.rowHeight))
+        VerticalDivider(color = RiftTheme.colors.borderGreyLight, modifier = Modifier.height(rowHeight))
         val sunTypeId = systemsRepository.getSystemSunTypeId(movement.toSystem)
         AsyncTypeIcon(
             typeId = sunTypeId,
-            modifier = Modifier.size(settings.rowHeight),
+            modifier = Modifier.size(rowHeight),
         )
-        VerticalDivider(color = RiftTheme.colors.borderGreyLight, modifier = Modifier.height(settings.rowHeight))
+        VerticalDivider(color = RiftTheme.colors.borderGreyLight, modifier = Modifier.height(rowHeight))
         Text(
             text = movement.verb,
             modifier = Modifier.padding(vertical = 4.dp).padding(start = 4.dp),
@@ -457,14 +396,14 @@ private fun TokenWithMovement(settings: IntelReportsSettings, previousTokens: Li
 }
 
 @Composable
-private fun TokenWithKeyword(settings: IntelReportsSettings, type: KeywordType) {
-    BorderedToken(settings) {
+private fun TokenWithKeyword(rowHeight: Dp, type: KeywordType) {
+    BorderedToken(rowHeight) {
         when (type) {
             KeywordType.NoVisual -> {
                 Image(
                     painter = painterResource(Res.drawable.keywords_no_visual),
                     contentDescription = null,
-                    modifier = Modifier.size(settings.rowHeight),
+                    modifier = Modifier.size(rowHeight),
                 )
                 Text(
                     text = "No visual",
@@ -475,7 +414,7 @@ private fun TokenWithKeyword(settings: IntelReportsSettings, type: KeywordType) 
                 Image(
                     painter = painterResource(Res.drawable.keywords_clear),
                     contentDescription = null,
-                    modifier = Modifier.size(settings.rowHeight),
+                    modifier = Modifier.size(rowHeight),
                 )
                 Text(
                     text = "Clear",
@@ -486,7 +425,7 @@ private fun TokenWithKeyword(settings: IntelReportsSettings, type: KeywordType) 
                 Image(
                     painter = painterResource(Res.drawable.keywords_wormhole),
                     contentDescription = null,
-                    modifier = Modifier.size(settings.rowHeight),
+                    modifier = Modifier.size(rowHeight),
                 )
                 Text(
                     text = "Wormhole",
@@ -497,7 +436,7 @@ private fun TokenWithKeyword(settings: IntelReportsSettings, type: KeywordType) 
                 Image(
                     painter = painterResource(Res.drawable.keywords_spike),
                     contentDescription = null,
-                    modifier = Modifier.size(settings.rowHeight),
+                    modifier = Modifier.size(rowHeight),
                 )
                 Text(
                     text = "Spike",
@@ -508,10 +447,21 @@ private fun TokenWithKeyword(settings: IntelReportsSettings, type: KeywordType) 
                 Image(
                     painter = painterResource(Res.drawable.keywords_ess),
                     contentDescription = null,
-                    modifier = Modifier.size(settings.rowHeight),
+                    modifier = Modifier.size(rowHeight),
                 )
                 Text(
                     text = "ESS",
+                    modifier = Modifier.padding(4.dp),
+                )
+            }
+            KeywordType.Skyhook -> {
+                Image(
+                    painter = painterResource(Res.drawable.keywords_skyhook),
+                    contentDescription = null,
+                    modifier = Modifier.size(rowHeight),
+                )
+                Text(
+                    text = "Skyhook",
                     modifier = Modifier.padding(4.dp),
                 )
             }
@@ -519,7 +469,7 @@ private fun TokenWithKeyword(settings: IntelReportsSettings, type: KeywordType) 
                 Image(
                     painter = painterResource(Res.drawable.keywords_gatecamp),
                     contentDescription = null,
-                    modifier = Modifier.size(settings.rowHeight),
+                    modifier = Modifier.size(rowHeight),
                 )
                 Text(
                     text = "Gate Camp",
@@ -530,7 +480,7 @@ private fun TokenWithKeyword(settings: IntelReportsSettings, type: KeywordType) 
                 Image(
                     painter = painterResource(Res.drawable.keywords_combat_probe),
                     contentDescription = null,
-                    modifier = Modifier.size(settings.rowHeight),
+                    modifier = Modifier.size(rowHeight),
                 )
                 Text(
                     text = "Combat Probes",
@@ -541,7 +491,7 @@ private fun TokenWithKeyword(settings: IntelReportsSettings, type: KeywordType) 
                 Image(
                     painter = painterResource(Res.drawable.keywords_interdiction_probe),
                     contentDescription = null,
-                    modifier = Modifier.size(settings.rowHeight),
+                    modifier = Modifier.size(rowHeight),
                 )
                 Text(
                     text = "Bubbles",
@@ -553,15 +503,15 @@ private fun TokenWithKeyword(settings: IntelReportsSettings, type: KeywordType) 
 }
 
 @Composable
-private fun TokenWithPlayer(settings: IntelReportsSettings, name: String, characterId: Int) {
+private fun TokenWithPlayer(rowHeight: Dp, name: String, characterId: Int) {
     ClickablePlayer(characterId) {
-        BorderedToken(settings) {
+        BorderedToken(rowHeight) {
             AsyncPlayerPortrait(
                 characterId = characterId,
                 size = 32,
-                modifier = Modifier.size(settings.rowHeight),
+                modifier = Modifier.size(rowHeight),
             )
-            VerticalDivider(color = RiftTheme.colors.borderGreyLight, modifier = Modifier.height(settings.rowHeight))
+            VerticalDivider(color = RiftTheme.colors.borderGreyLight, modifier = Modifier.height(rowHeight))
             Text(
                 text = name,
                 style = RiftTheme.typography.bodyHighlighted,
@@ -572,32 +522,32 @@ private fun TokenWithPlayer(settings: IntelReportsSettings, name: String, charac
 }
 
 @Composable
-private fun TokenWithKill(settings: IntelReportsSettings, token: TokenType.Kill) {
+private fun TokenWithKill(rowHeight: Dp, token: TokenType.Kill) {
     val repository: TypesRepository by koin.inject()
     RiftTooltipArea(
         tooltip = "${token.name}\n${token.target}",
         anchor = TooltipAnchor.BottomCenter,
     ) {
         ClickablePlayer(token.characterId) {
-            BorderedToken(settings) {
+            BorderedToken(rowHeight) {
                 Image(
                     painter = painterResource(Res.drawable.keywords_killreport),
                     contentDescription = null,
-                    modifier = Modifier.size(settings.rowHeight),
+                    modifier = Modifier.size(rowHeight),
                 )
-                VerticalDivider(color = RiftTheme.colors.borderGreyLight, modifier = Modifier.height(settings.rowHeight))
+                VerticalDivider(color = RiftTheme.colors.borderGreyLight, modifier = Modifier.height(rowHeight))
                 AsyncPlayerPortrait(
                     characterId = token.characterId,
                     size = 32,
-                    modifier = Modifier.size(settings.rowHeight),
+                    modifier = Modifier.size(rowHeight),
                 )
-                VerticalDivider(color = RiftTheme.colors.borderGreyLight, modifier = Modifier.height(settings.rowHeight))
+                VerticalDivider(color = RiftTheme.colors.borderGreyLight, modifier = Modifier.height(rowHeight))
                 val typeId = repository.getTypeId(token.target)
                 AsyncTypeIcon(
                     typeId = typeId,
-                    modifier = Modifier.size(settings.rowHeight),
+                    modifier = Modifier.size(rowHeight),
                 )
-                VerticalDivider(color = RiftTheme.colors.borderGreyLight, modifier = Modifier.height(settings.rowHeight))
+                VerticalDivider(color = RiftTheme.colors.borderGreyLight, modifier = Modifier.height(rowHeight))
                 Text(
                     text = token.name,
                     style = RiftTheme.typography.bodyHighlighted,
@@ -621,6 +571,7 @@ private fun ParsedMessagePreview() {
         isShowingChannel = true,
         isShowingRegion = true,
         isShowingSystemDistance = true,
+        isUsingJumpBridgesForDistance = true,
     )
 
     MaterialTheme {

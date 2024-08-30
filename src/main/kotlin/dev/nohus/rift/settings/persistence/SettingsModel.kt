@@ -8,6 +8,7 @@ import dev.nohus.rift.settings.persistence.MapSystemInfoType.Security
 import dev.nohus.rift.utils.Pos
 import dev.nohus.rift.utils.Size
 import dev.nohus.rift.windowing.WindowManager.RiftWindow
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -37,6 +38,7 @@ data class SettingsModel(
     val isSettingsReadFailure: Boolean = false,
     val isUsingDarkTrayIcon: Boolean = false,
     val intelReports: IntelReports = IntelReports(),
+    val intelFeed: IntelFeed = IntelFeed(),
     val soundsVolume: Int = 100,
     val alertGroups: Set<String> = emptySet(),
     val configurationPack: ConfigurationPack? = null,
@@ -49,6 +51,9 @@ data class SettingsModel(
     val jumpRange: JumpRange? = null,
     val selectedPlanetTypes: List<Int> = emptyList(),
     val installationId: String? = null,
+    val isShowingSystemDistance: Boolean = true,
+    val isUsingJumpBridgesForDistance: Boolean = false,
+    val intelExpireSeconds: Int = 300,
 )
 
 @Serializable
@@ -75,7 +80,6 @@ data class IntelMap(
         MapType.NewEden to listOf(Security, Assets, Incursions, MetaliminalStorms),
         MapType.Region to listOf(Security, Assets, Incursions, MetaliminalStorms),
     ),
-    val intelExpireSeconds: Int = 5 * 60,
     val intelPopupTimeoutSeconds: Int = 60,
     val isCharacterFollowing: Boolean = true,
     val isInvertZoom: Boolean = false,
@@ -109,8 +113,84 @@ data class IntelReports(
     val isShowingReporter: Boolean = true,
     val isShowingChannel: Boolean = true,
     val isShowingRegion: Boolean = false,
-    val isShowingSystemDistance: Boolean = true,
 )
+
+@Serializable
+data class IntelFeed(
+    val isUsingCompactMode: Boolean = false,
+    val locationFilters: List<LocationFilter> = listOf(
+        LocationFilter.KnownSpace,
+        LocationFilter.WormholeSpace,
+        LocationFilter.AbyssalSpace,
+    ),
+    val distanceFilter: DistanceFilter = DistanceFilter.All,
+    val entityFilters: List<EntityFilter> = listOf(
+        EntityFilter.Killmails,
+        EntityFilter.Characters,
+        EntityFilter.Other,
+    ),
+    val sortingFilter: SortingFilter = SortingFilter.Time,
+)
+
+@Serializable
+sealed interface LocationFilter {
+    @Serializable
+    @SerialName("KnownSpace")
+    data object KnownSpace : LocationFilter
+
+    @Serializable
+    @SerialName("WormholeSpace")
+    data object WormholeSpace : LocationFilter
+
+    @Serializable
+    @SerialName("AbyssalSpace")
+    data object AbyssalSpace : LocationFilter
+
+    @Serializable
+    @SerialName("CurrentMapRegion")
+    data object CurrentMapRegion : LocationFilter
+}
+
+@Serializable
+sealed interface DistanceFilter {
+    @Serializable
+    @SerialName("All")
+    data object All : DistanceFilter
+
+    @Serializable
+    @SerialName("CharacterLocationRegions")
+    data object CharacterLocationRegions : DistanceFilter
+
+    @Serializable
+    @SerialName("WithinDistance")
+    data class WithinDistance(val jumps: Int) : DistanceFilter
+}
+
+@Serializable
+sealed interface EntityFilter {
+    @Serializable
+    @SerialName("Killmails")
+    data object Killmails : EntityFilter
+
+    @Serializable
+    @SerialName("Characters")
+    data object Characters : EntityFilter
+
+    @Serializable
+    @SerialName("Other")
+    data object Other : EntityFilter
+}
+
+@Serializable
+sealed interface SortingFilter {
+    @Serializable
+    @SerialName("Time")
+    data object Time : SortingFilter
+
+    @Serializable
+    @SerialName("Distance")
+    data object Distance : SortingFilter
+}
 
 @Serializable
 enum class ConfigurationPack {

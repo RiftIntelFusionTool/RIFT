@@ -23,6 +23,8 @@ import java.nio.file.WatchKey
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.TimeUnit
+import kotlin.io.path.getLastModifiedTime
+import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
 
 private val logger = KotlinLogging.logger {}
@@ -67,8 +69,12 @@ class DirectoryObserver(
 
         watchJob = launch {
             if (operatingSystem == OperatingSystem.Windows) {
-                launch {
+                launch(Dispatchers.IO) {
                     pokeFiles(directory)
+                }
+            } else if (operatingSystem == OperatingSystem.MacOs) {
+                launch(Dispatchers.IO) {
+                    watchFileModification(directory, onUpdate)
                 }
             }
             launch {
@@ -99,9 +105,32 @@ class DirectoryObserver(
                     Duration.between(Instant.ofEpochMilli(it.lastModified()), Instant.now()) < Duration.ofHours(2)
                 }
                 ?: emptyList()
-            logger.debug { "Poking files: ${recentFiles.size}" }
             repeat(100) { // 100 * 200 == 20 seconds
                 recentFiles.forEach { it.length() }
+                delay(200)
+            }
+        }
+    }
+
+    /**
+     * On macOS the file modification events are not consistently delivered.
+     * Checking the last modified timestamp to learn of modifications.
+     */
+    private suspend fun watchFileModification(path: Path, onUpdate: suspend (DirectoryObserverEvent) -> Unit) {
+        val lastModifiedMap = mutableMapOf<Path, Long>()
+        while (true) {
+            val recentFiles = path.listDirectoryEntries().filter {
+                Duration.between(it.getLastModifiedTime().toInstant(), Instant.now()) < Duration.ofHours(24)
+            }
+            repeat(100) { // 100 * 200 == 20 seconds
+                recentFiles.forEach { file ->
+                    val oldLastModified = lastModifiedMap[file] ?: 0L
+                    val newLastModified = file.getLastModifiedTime().toMillis()
+                    if (oldLastModified != newLastModified) {
+                        lastModifiedMap[file] = newLastModified
+                        onUpdate(FileEvent(file, FileEventType.Modified))
+                    }
+                }
                 delay(200)
             }
         }

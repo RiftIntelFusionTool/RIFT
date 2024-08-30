@@ -25,7 +25,7 @@ fun <T> RiftDropdownWithLabel(
     tooltip: String? = null,
     height: Dp = 32.dp,
 ) {
-    val row = remember(label, items, selectedItem, onItemSelected, height) {
+    val row = remember(label, items, selectedItem, height) {
         movableContentOf {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
