@@ -28,8 +28,10 @@ import dev.nohus.rift.generated.resources.window_chatchannels
 import dev.nohus.rift.generated.resources.window_evemailtag
 import dev.nohus.rift.generated.resources.window_loudspeaker_icon
 import dev.nohus.rift.generated.resources.window_map
+import dev.nohus.rift.generated.resources.window_planets
 import dev.nohus.rift.generated.resources.window_quitgame
 import dev.nohus.rift.generated.resources.window_rift_64
+import dev.nohus.rift.generated.resources.window_satellite
 import dev.nohus.rift.generated.resources.window_settings
 import dev.nohus.rift.generated.resources.window_sovereignty
 import dev.nohus.rift.settings.persistence.Settings
@@ -110,10 +112,11 @@ private fun getTrayMenuItems(
         add(Separator)
         add(TrayMenuTextItem("Alerts", Res.drawable.window_loudspeaker_icon) { windowManager.onWindowOpen(WindowManager.RiftWindow.Alerts) })
         add(TrayMenuTextItem("Map", Res.drawable.window_map) { windowManager.onWindowOpen(WindowManager.RiftWindow.Map) })
-        add(TrayMenuTextItem("Intel Feed", Res.drawable.window_map) { windowManager.onWindowOpen(WindowManager.RiftWindow.IntelFeed) })
+        add(TrayMenuTextItem("Intel Feed", Res.drawable.window_satellite) { windowManager.onWindowOpen(WindowManager.RiftWindow.IntelFeed) })
         add(TrayMenuTextItem("Intel Reports", Res.drawable.window_bleedchannel) { windowManager.onWindowOpen(WindowManager.RiftWindow.IntelReports) })
         add(TrayMenuTextItem("Characters", Res.drawable.window_characters) { windowManager.onWindowOpen(WindowManager.RiftWindow.Characters) })
         add(TrayMenuTextItem("Assets", Res.drawable.window_assets) { windowManager.onWindowOpen(WindowManager.RiftWindow.Assets) })
+        add(TrayMenuTextItem("Planetary Industry", Res.drawable.window_planets) { windowManager.onWindowOpen(WindowManager.RiftWindow.PlanetaryIndustry) })
         if (isJabberEnabled) {
             add(TrayMenuTextItem("Pings", Res.drawable.window_sovereignty) { windowManager.onWindowOpen(WindowManager.RiftWindow.Pings) })
             add(TrayMenuTextItem("Jabber", Res.drawable.window_chatchannels) { windowManager.onWindowOpen(WindowManager.RiftWindow.Jabber) })

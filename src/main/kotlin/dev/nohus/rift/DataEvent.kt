@@ -1,5 +1,7 @@
 package dev.nohus.rift
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import java.util.UUID
 
 data class DataEvent<T>(
@@ -30,5 +32,14 @@ fun Event?.get(): Boolean {
         return true
     } else {
         false
+    }
+}
+
+@Composable
+fun EventEffect(event: Event?, block: () -> Unit) {
+    LaunchedEffect(event) {
+        if (event.get()) {
+            block()
+        }
     }
 }

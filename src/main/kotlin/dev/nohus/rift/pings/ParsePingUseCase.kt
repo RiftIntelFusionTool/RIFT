@@ -1,9 +1,9 @@
 package dev.nohus.rift.pings
 
-import dev.nohus.rift.configurationpack.ConfigurationPackRepository
 import dev.nohus.rift.repositories.CharactersRepository
 import dev.nohus.rift.repositories.MapStatusRepository
 import dev.nohus.rift.repositories.SolarSystemsRepository
+import dev.nohus.rift.standings.StandingsRepository
 import org.koin.core.annotation.Single
 import java.time.Instant
 
@@ -11,8 +11,8 @@ import java.time.Instant
 class ParsePingUseCase(
     private val charactersRepository: CharactersRepository,
     private val solarSystemsRepository: SolarSystemsRepository,
-    private val configurationPackRepository: ConfigurationPackRepository,
     private val mapStatusRepository: MapStatusRepository,
+    private val standingsRepository: StandingsRepository,
 ) {
     suspend operator fun invoke(
         timestamp: Instant,
@@ -103,9 +103,20 @@ class ParsePingUseCase(
     private fun parseFormupLocations(text: String): List<FormupLocation> {
         val splitRegex = """[\s/]""".toRegex()
         return if (splitRegex in text) { // Multiple systems
-            text.split(splitRegex).filterNot {
+            val locations = text.split(splitRegex).filterNot {
                 it.lowercase() in listOf("and", "or", "-")
             }.map(::parseFormupLocation)
+            // Merge consecutive text formup locations
+            return mutableListOf<FormupLocation>().apply {
+                for (location in locations) {
+                    val previous = lastOrNull()
+                    if (previous != null && previous is FormupLocation.Text && location is FormupLocation.Text) {
+                        this[lastIndex] = FormupLocation.Text("${previous.text} ${location.text}")
+                    } else {
+                        this += location
+                    }
+                }
+            }
         } else {
             listOf(parseFormupLocation(text))
         }
@@ -114,7 +125,7 @@ class ParsePingUseCase(
     private fun parseFormupLocation(text: String): FormupLocation {
         var system = solarSystemsRepository.getSystemName(text, regionHint = null) // Fast path
         if (system == null) { // System not found, try with system hints
-            val friendlyAllianceIds = configurationPackRepository.getFriendlyAllianceIds()
+            val friendlyAllianceIds = standingsRepository.getFriendlyAllianceIds()
             val friendlySystems = mapStatusRepository.status.value.mapNotNull {
                 if (it.value.sovereignty?.allianceId in friendlyAllianceIds) it.key else null
             }

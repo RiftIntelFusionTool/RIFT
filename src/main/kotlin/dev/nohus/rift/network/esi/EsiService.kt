@@ -35,6 +35,24 @@ interface EsiService {
         @Path("id") allianceId: Int,
     ): AlliancesIdAlliance
 
+    @GET("/v2/alliances/{id}/contacts/")
+    suspend fun getAlliancesIdContacts(
+        @Path("id") allianceId: Int,
+        @Header("Authorization") authorization: String,
+    ): List<Contact>
+
+    @GET("/v2/corporations/{id}/contacts/")
+    suspend fun getCorporationsIdContacts(
+        @Path("id") corporationId: Int,
+        @Header("Authorization") authorization: String,
+    ): List<Contact>
+
+    @GET("/v2/characters/{id}/contacts/")
+    suspend fun getCharactersIdContacts(
+        @Path("id") characterId: Int,
+        @Header("Authorization") authorization: String,
+    ): List<Contact>
+
     @GET("/v3/characters/{id}/online/")
     suspend fun getCharacterIdOnline(
         @Path("id") characterId: Int,
@@ -61,6 +79,18 @@ interface EsiService {
         @Query("search") search: String,
         @Header("Authorization") authorization: String,
     ): CharactersIdSearch
+
+    @GET("/v4/characters/{id}/clones/")
+    suspend fun getCharactersIdClones(
+        @Path("id") characterId: Int,
+        @Header("Authorization") authorization: String,
+    ): CharactersIdClones
+
+    @GET("/v2/characters/{id}/implants/")
+    suspend fun getCharactersIdImplants(
+        @Path("id") characterId: Int,
+        @Header("Authorization") authorization: String,
+    ): List<Int>
 
     @GET("/v2/universe/stations/{id}/")
     suspend fun getUniverseStationsId(
@@ -112,4 +142,35 @@ interface EsiService {
 
     @GET("/v1/markets/prices/")
     suspend fun getMarketsPrices(): List<MarketsPrice>
+
+    @GET("/v2/characters/{id}/fleet/")
+    suspend fun getCharactersIdFleet(
+        @Path("id") characterId: Int,
+        @Header("Authorization") authorization: String,
+    ): CharactersIdFleet
+
+    @GET("/v1/fleets/{id}/")
+    suspend fun getFleetsId(
+        @Path("id") fleetId: Long,
+        @Header("Authorization") authorization: String,
+    ): FleetsId
+
+    @GET("/v1/fleets/{id}/members/")
+    suspend fun getFleetsIdMembers(
+        @Path("id") fleetId: Long,
+        @Header("Authorization") authorization: String,
+    ): List<FleetMember>
+
+    @GET("/v1/characters/{id}/planets/")
+    suspend fun getCharactersIdPlanets(
+        @Path("id") characterId: Int,
+        @Header("Authorization") authorization: String,
+    ): List<CharactersIdPlanet>
+
+    @GET("/v3/characters/{character_id}/planets/{planet_id}/")
+    suspend fun getCharactersIdPlanetsId(
+        @Path("character_id") characterId: Int,
+        @Path("planet_id") planetId: Int,
+        @Header("Authorization") authorization: String,
+    ): CharactersIdPlanetsId
 }

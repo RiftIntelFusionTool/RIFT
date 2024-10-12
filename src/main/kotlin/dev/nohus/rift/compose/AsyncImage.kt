@@ -3,6 +3,7 @@ package dev.nohus.rift.compose
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
@@ -10,6 +11,7 @@ import dev.nohus.rift.generated.resources.Res
 import dev.nohus.rift.generated.resources.missing
 import dev.nohus.rift.generated.resources.missing_blueprint
 import dev.nohus.rift.generated.resources.missing_skin
+import dev.nohus.rift.repositories.TypesRepository.Type
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kamel.core.utils.cacheControl
 import io.kamel.image.KamelImage
@@ -30,6 +32,7 @@ fun AsyncImage(
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Fit,
     fallbackIcon: @Composable () -> Unit = { FallbackIcon() },
+    withAnimatedLoading: Boolean = true,
 ) {
     val painter = asyncPainterResource(url) {
         requestBuilder {
@@ -45,14 +48,32 @@ fun AsyncImage(
             logger.error { "Failed to load AsyncImage: $url" }
             fallbackIcon()
         },
-        animationSpec = tween(),
+        animationSpec = if (withAnimatedLoading) tween() else null,
         modifier = modifier,
     )
 }
 
 /**
- * Shows an icon of an Eve Online type ID
- * nameHint is used to choose the fallback icon
+ * Shows an icon of an EVE Online type ID
+ */
+@Composable
+fun AsyncTypeIcon(
+    type: Type?,
+    modifier: Modifier = Modifier,
+) {
+    key(type) {
+        AsyncTypeIcon(
+            typeId = type?.id,
+            fallbackIconId = type?.iconId,
+            nameHint = type?.name,
+            modifier = modifier,
+        )
+    }
+}
+
+/**
+ * Shows an icon of an EVE Online type ID
+ * nameHint is used to choose a replacement fallback icon
  */
 @Composable
 fun AsyncTypeIcon(
@@ -102,23 +123,25 @@ fun AsyncTypeIcon(
 }
 
 /**
- * Shows a portrait of an Eve Online character
+ * Shows a portrait of an EVE Online character
  */
 @Composable
 fun AsyncPlayerPortrait(
     characterId: Int?,
     size: Int,
     modifier: Modifier = Modifier,
+    withAnimatedLoading: Boolean = true,
 ) {
     val effectiveSize = if (LocalDensity.current.density >= 2) size * 2 else size
     AsyncImage(
         url = "https://images.evetech.net/characters/${characterId ?: 0}/portrait?size=$effectiveSize",
         modifier = modifier,
+        withAnimatedLoading = withAnimatedLoading,
     )
 }
 
 /**
- * Shows a logo of an Eve Online corporation
+ * Shows a logo of an EVE Online corporation
  */
 @Composable
 fun AsyncCorporationLogo(
@@ -134,7 +157,7 @@ fun AsyncCorporationLogo(
 }
 
 /**
- * Shows a logo of an Eve Online alliance
+ * Shows a logo of an EVE Online alliance
  */
 @Composable
 fun AsyncAllianceLogo(

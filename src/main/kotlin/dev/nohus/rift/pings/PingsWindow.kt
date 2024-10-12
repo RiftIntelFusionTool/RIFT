@@ -278,13 +278,7 @@ private fun FleetPing(
 private fun getSolarSystemPillState(location: FormupLocationUiModel): SolarSystemPillState {
     return when (location) {
         is FormupLocationUiModel.System -> {
-            val distance = when (location.distance) {
-                0 -> "Current System"
-                1 -> "1 jump"
-                in 2..9 -> "${location.distance} jumps"
-                else -> "10+ jumps"
-            }
-            SolarSystemPillState(distance = distance, name = location.name, security = location.security)
+            SolarSystemPillState(distance = location.distance, name = location.name, security = location.security)
         }
         is FormupLocationUiModel.Text -> SolarSystemPillState(distance = null, name = location.text, security = null)
     }

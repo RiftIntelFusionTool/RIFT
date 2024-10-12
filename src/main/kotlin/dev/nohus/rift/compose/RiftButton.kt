@@ -7,13 +7,13 @@ import androidx.compose.animation.core.Transition
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.updateTransition
-import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -96,23 +96,42 @@ fun RiftIconButton(
 @Composable
 fun RiftButton(
     text: String,
+    icon: DrawableResource? = null,
     type: ButtonType = ButtonType.Primary,
     cornerCut: ButtonCornerCut = ButtonCornerCut.BottomRight,
+    isCompact: Boolean = false,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
     RiftButton(
         content = { contentColor ->
-            Text(
-                text = text,
-                color = contentColor,
-                style = RiftTheme.typography.bodyPrimary.copy(shadow = Shadow(offset = Offset(0f, 0f), blurRadius = 3f)),
-                maxLines = 1,
-                modifier = Modifier.padding(horizontal = 15.dp),
-            )
+            Row {
+                if (icon != null) {
+                    val painter = painterResource(icon)
+                    Image(
+                        painter = painter,
+                        contentDescription = null,
+                        colorFilter = ColorFilter.tint(contentColor),
+                        contentScale = ContentScale.FillHeight,
+                        modifier = Modifier
+                            .padding(horizontal = 8.dp)
+                            .size(16.dp),
+                    )
+                }
+                Text(
+                    text = text,
+                    color = contentColor,
+                    style = RiftTheme.typography.bodyPrimary.copy(shadow = Shadow(offset = Offset(0f, 0f), blurRadius = 3f)),
+                    maxLines = 1,
+                    modifier = Modifier
+                        .padding(end = 15.dp)
+                        .modifyIf(icon == null) { padding(start = 15.dp) },
+                )
+            }
         },
         type = type,
         cornerCut = cornerCut,
+        isCompact = isCompact,
         modifier = modifier,
         onClick = onClick,
     )
@@ -124,6 +143,7 @@ private fun RiftButton(
     content: @Composable (contentColor: Color) -> Unit,
     type: ButtonType = ButtonType.Primary,
     cornerCut: ButtonCornerCut = ButtonCornerCut.BottomRight,
+    isCompact: Boolean = false,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
@@ -218,7 +238,7 @@ private fun RiftButton(
         ) {
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = Modifier.height(32.dp),
+                modifier = Modifier.height(if (isCompact) 24.dp else 32.dp),
             ) {
                 content(contentColor)
             }
@@ -248,14 +268,4 @@ private fun ButtonShadow(
             .graphicsLayer(renderEffect = BlurEffect(6f, 6f, edgeTreatment = TileMode.Decal))
             .border(2.dp * shadowStrength, shadowColor, shape),
     )
-}
-
-@Preview
-@Composable
-private fun RiftButtonPreview() {
-    PreviewContainer {
-        RiftButton("Jump", ButtonType.Primary, ButtonCornerCut.BottomLeft, Modifier.width(100.dp)) {}
-        RiftButton("Rename", ButtonType.Secondary, ButtonCornerCut.None, Modifier.width(100.dp)) {}
-        RiftButton("Destroy", ButtonType.Negative, ButtonCornerCut.BottomRight, Modifier.width(100.dp)) {}
-    }
 }

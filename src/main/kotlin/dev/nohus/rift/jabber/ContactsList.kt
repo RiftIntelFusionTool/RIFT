@@ -28,7 +28,6 @@ import dev.nohus.rift.compose.ContextMenuItem
 import dev.nohus.rift.compose.RiftContextMenuArea
 import dev.nohus.rift.compose.RiftTooltipArea
 import dev.nohus.rift.compose.ScrollbarColumn
-import dev.nohus.rift.compose.TooltipAnchor
 import dev.nohus.rift.compose.hoverBackground
 import dev.nohus.rift.compose.theme.Cursors
 import dev.nohus.rift.compose.theme.RiftTheme
@@ -242,9 +241,7 @@ private fun Contact(
                 }
             }.trim()
             RiftTooltipArea(
-                tooltip = tooltip,
-                anchor = TooltipAnchor.TopStart,
-                contentAnchor = Alignment.BottomCenter,
+                text = tooltip,
             ) {
                 PresenceIndicatorDot(
                     presence = user.presences.last(),

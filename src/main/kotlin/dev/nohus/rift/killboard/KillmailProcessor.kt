@@ -1,12 +1,13 @@
 package dev.nohus.rift.killboard
 
-import dev.nohus.rift.configurationpack.ConfigurationPackRepository
 import dev.nohus.rift.intel.state.IntelStateController
 import dev.nohus.rift.intel.state.SystemEntity
 import dev.nohus.rift.repositories.CharacterDetailsRepository
 import dev.nohus.rift.repositories.ShipTypesRepository
 import dev.nohus.rift.repositories.SolarSystemsRepository
 import dev.nohus.rift.repositories.TypesRepository
+import dev.nohus.rift.standings.Standing
+import dev.nohus.rift.standings.StandingsRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -27,7 +28,7 @@ class KillmailProcessor(
     private val typeRepository: TypesRepository,
     private val shipTypesRepository: ShipTypesRepository,
     private val characterDetailsRepository: CharacterDetailsRepository,
-    private val configurationPackRepository: ConfigurationPackRepository,
+    private val standingsRepository: StandingsRepository,
 ) {
 
     data class ProcessedKillmail(
@@ -80,21 +81,18 @@ class KillmailProcessor(
             val ships = message.attackers
                 .mapNotNull { attacker ->
                     val shipName = shipTypesRepository.getShipName(attacker.shipTypeId) ?: return@mapNotNull null
-                    val isFriendly = attackers.firstOrNull { it.characterId == attacker.characterId }?.details?.isFriendly ?: false
-                    isFriendly to shipName
+                    val standing = attackers.firstOrNull { it.characterId == attacker.characterId }?.details?.standing ?: Standing.Neutral
+                    standing to shipName
                 }
                 .groupBy { it.first }
-                .mapValues { (isFriendly, ships) ->
+                .mapValues { (standing, ships) ->
                     ships
                         .map { it.second }
                         .groupBy { it }
-                        .map { (name, ships) -> SystemEntity.Ship(name, ships.size, isFriendly = isFriendly) }
+                        .map { (name, ships) -> SystemEntity.Ship(name, ships.size, standing = standing) }
                 }
                 .flatMap { it.value }
-
-            val deferredIsVictimFriendly = async {
-                message.victim.allianceId?.let { configurationPackRepository.isFriendlyAlliance(it) }
-            }
+            val standing = standingsRepository.getStanding(message.victim.allianceId, message.victim.corporationId, message.victim.characterId)
 
             val killmailVictim = SystemEntity.KillmailVictim(
                 characterId = message.victim.characterId,
@@ -105,7 +103,7 @@ class KillmailProcessor(
                 allianceId = message.victim.allianceId ?: victim?.details?.allianceId,
                 allianceName = victim?.details?.allianceName ?: deferredVictimAlliance?.await()?.name,
                 allianceTicker = victim?.details?.allianceTicker ?: deferredVictimAlliance?.await()?.ticker,
-                isFriendly = deferredIsVictimFriendly.await(),
+                standing = standing,
             )
             val killmail = SystemEntity.Killmail(
                 url = message.url,

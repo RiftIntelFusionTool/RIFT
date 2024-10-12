@@ -12,9 +12,13 @@ import dev.nohus.rift.logs.parse.ChannelChatMessage
 import dev.nohus.rift.notifications.NotificationsController
 import dev.nohus.rift.notifications.NotificationsController.Notification
 import dev.nohus.rift.notifications.system.SendNotificationUseCase
+import dev.nohus.rift.planetaryindustry.PlanetaryIndustryRepository.ColonyItem
+import dev.nohus.rift.pushover.SendPushNotificationUseCase
 import dev.nohus.rift.repositories.CharactersRepository
 import dev.nohus.rift.repositories.SolarSystemsRepository
 import dev.nohus.rift.repositories.TypesRepository
+import dev.nohus.rift.repositories.TypesRepository.Type
+import dev.nohus.rift.utils.formatDurationLong
 import dev.nohus.rift.utils.sound.SoundPlayer
 import dev.nohus.rift.utils.sound.SoundsRepository
 import dev.nohus.rift.windowing.WindowManager
@@ -30,6 +34,7 @@ import kotlin.io.path.absolutePathString
 @Single
 class AlertsActionController(
     private val sendNotificationUseCase: SendNotificationUseCase,
+    private val sendPushNotificationUseCase: SendPushNotificationUseCase,
     private val soundPlayer: SoundPlayer,
     private val soundsRepository: SoundsRepository,
     private val notificationsController: NotificationsController,
@@ -59,8 +64,8 @@ class AlertsActionController(
     fun triggerGameActionAlert(alert: Alert, action: GameLogAction, characterId: Int) {
         val title = getNotificationTitle(action)
         val message = getNotificationMessage(action)
-        val typeId = getNotificationTypeId(action)
-        val notification = Notification.TextNotification(title, message, characterId, typeId)
+        val type = getNotificationItemType(action)
+        val notification = Notification.TextNotification(title, message, characterId, type)
         triggerAlert(alert, notification, title, message.toString())
     }
 
@@ -71,9 +76,13 @@ class AlertsActionController(
             val message = "${chatMessage.chatMessage.author}: ${chatMessage.chatMessage.message}"
             val notification = Notification.ChatMessageNotification(
                 channel = chatMessage.metadata.channelName,
-                message = chatMessage.chatMessage.message,
-                sender = chatMessage.chatMessage.author,
-                senderCharacterId = characterId,
+                messages = listOf(
+                    Notification.ChatMessage(
+                        message = chatMessage.chatMessage.message,
+                        sender = chatMessage.chatMessage.author,
+                        senderCharacterId = characterId,
+                    ),
+                ),
             )
             triggerAlert(alert, notification, title, message)
         }
@@ -92,9 +101,7 @@ class AlertsActionController(
     }
 
     fun triggerJabberPingAlert(alert: Alert) {
-        // Ping alerts cannot generate notifications
-        val notification = Notification.TextNotification("", AnnotatedString(""), null, null)
-        triggerAlert(alert, notification, "", "")
+        triggerAlert(alert, null, "", "")
     }
 
     @OptIn(ExperimentalTextApi::class)
@@ -123,12 +130,52 @@ class AlertsActionController(
         triggerAlert(alert, notification, title, message.toString())
     }
 
-    private fun triggerAlert(alert: Alert, notification: Notification, title: String, message: String) {
+    @OptIn(ExperimentalTextApi::class)
+    fun triggerPlanetaryIndustryAlert(alert: Alert, colonyItem: ColonyItem) {
+        val duration = Duration.between(Instant.now(), colonyItem.ffwdColony.currentSimTime)
+        val isInFuture = duration >= Duration.ofMinutes(5)
+        val title = if (isInFuture) {
+            "Your colony will need attention"
+        } else {
+            "Your colony needs attention"
+        }
+        val styleTag = Notification.TextNotification.styleTag
+        val styleValue = Notification.TextNotification.styleValue
+        val riftMessage = buildAnnotatedString {
+            append("Planet ")
+            withAnnotation(styleTag, styleValue) {
+                append(colonyItem.colony.planet.name)
+            }
+            if (isInFuture) {
+                append(" will need attention in ")
+                withAnnotation(styleTag, styleValue) {
+                    append(formatDurationLong(duration))
+                }
+            }
+        }
+        val systemMessage = buildString {
+            if (colonyItem.characterName != null) {
+                append(colonyItem.characterName)
+                append(": ")
+            }
+            append("Planet ")
+            append(colonyItem.colony.planet.name)
+            if (isInFuture) {
+                append(" will need attention in ${formatDurationLong(duration)}")
+            }
+        }
+        val planetType = typesRepository.getType(colonyItem.colony.planet.type.typeId)
+        val notification = Notification.TextNotification(title, riftMessage, colonyItem.colony.characterId, planetType)
+        triggerAlert(alert, notification, title, systemMessage)
+    }
+
+    private fun triggerAlert(alert: Alert, notification: Notification?, title: String, message: String) {
         analytics.alertTriggered()
         alert.actions.forEach { action ->
             when (action) {
-                AlertAction.RiftNotification -> sendRiftNotification(notification)
+                AlertAction.RiftNotification -> if (notification != null) sendRiftNotification(notification)
                 AlertAction.SystemNotification -> sendSystemNotification(title, message)
+                AlertAction.PushNotification -> sendPushNotification(title, message)
                 is AlertAction.Sound -> {
                     withSoundCooldown {
                         val sound = soundsRepository.getSounds().firstOrNull { it.id == action.id } ?: return@withSoundCooldown
@@ -141,6 +188,7 @@ class AlertsActionController(
                     }
                 }
                 AlertAction.ShowPing -> windowManager.onWindowOpen(WindowManager.RiftWindow.Pings)
+                AlertAction.ShowColonies -> windowManager.onWindowOpen(WindowManager.RiftWindow.PlanetaryIndustry)
             }
         }
     }
@@ -204,6 +252,7 @@ class AlertsActionController(
             is GameLogAction.BeingWarpScrambled -> "Warp scrambled"
             is GameLogAction.Decloaked -> "Decloaked"
             is GameLogAction.CombatStopped -> "Combat stopped"
+            GameLogAction.CloneJumping -> throw IllegalStateException("Not used")
         }
     }
 
@@ -242,16 +291,18 @@ class AlertsActionController(
                     append(action.target)
                 }
             }
+            GameLogAction.CloneJumping -> throw IllegalStateException("Not used")
         }
     }
 
-    private fun getNotificationTypeId(action: GameLogAction): Int? {
+    private fun getNotificationItemType(action: GameLogAction): Type? {
         return when (action) {
-            is GameLogAction.UnderAttack -> typesRepository.getTypeId(action.target)
-            is GameLogAction.Attacking -> typesRepository.getTypeId(action.target)
-            is GameLogAction.BeingWarpScrambled -> typesRepository.getTypeId(action.target)
-            is GameLogAction.Decloaked -> typesRepository.getTypeId(action.by)
-            is GameLogAction.CombatStopped -> typesRepository.getTypeId(action.target)
+            is GameLogAction.UnderAttack -> typesRepository.getType(action.target)
+            is GameLogAction.Attacking -> typesRepository.getType(action.target)
+            is GameLogAction.BeingWarpScrambled -> typesRepository.getType(action.target)
+            is GameLogAction.Decloaked -> typesRepository.getType(action.by)
+            is GameLogAction.CombatStopped -> typesRepository.getType(action.target)
+            GameLogAction.CloneJumping -> throw IllegalStateException("Not used")
         }
     }
 
@@ -267,5 +318,11 @@ class AlertsActionController(
             body = message,
             timeout = 8,
         )
+    }
+
+    private fun sendPushNotification(title: String, message: String) {
+        scope.launch {
+            sendPushNotificationUseCase(title, message)
+        }
     }
 }

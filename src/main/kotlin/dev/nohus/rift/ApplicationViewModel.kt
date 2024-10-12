@@ -1,9 +1,11 @@
 package dev.nohus.rift
 
 import dev.nohus.rift.configurationpack.ShouldShowConfigurationPackReminderUseCase
-import dev.nohus.rift.gamelogs.ShouldShowNonEnglishEveClientWarningUseCase
 import dev.nohus.rift.settings.persistence.Settings
 import dev.nohus.rift.singleinstance.SingleInstanceController
+import dev.nohus.rift.startupwarning.GetStartupWarningsUseCase
+import dev.nohus.rift.startupwarning.StartupWarningInputModel
+import dev.nohus.rift.utils.CleanupTempFilesUseCase
 import dev.nohus.rift.utils.OperatingSystem
 import dev.nohus.rift.utils.directories.DetectDirectoriesUseCase
 import dev.nohus.rift.whatsnew.WhatsNewController
@@ -29,7 +31,8 @@ class ApplicationViewModel(
     private val windowManager: WindowManager,
     private val singleInstanceController: SingleInstanceController,
     private val shouldShowConfigurationPackReminderUseCase: ShouldShowConfigurationPackReminderUseCase,
-    private val shouldShowNonEnglishEveClientWarningUseCase: ShouldShowNonEnglishEveClientWarningUseCase,
+    private val getStartupWarnings: GetStartupWarningsUseCase,
+    private val cleanupTempFilesUseCase: CleanupTempFilesUseCase,
     private val whatsNewController: WhatsNewController,
     private val operatingSystem: OperatingSystem,
     private val settings: Settings,
@@ -40,14 +43,16 @@ class ApplicationViewModel(
         val isApplicationRunning: Boolean,
         val isTrayIconShown: Boolean,
         val isSetupWizardShown: Boolean,
+        val isSplashScreenShown: Boolean,
     )
 
     private val _state = MutableStateFlow(
         UiState(
             isAnotherInstanceDialogShown = false,
             isApplicationRunning = true,
-            isTrayIconShown = settings.isSetupWizardFinished,
-            isSetupWizardShown = !settings.isSetupWizardFinished || settings.isShowSetupWizardOnNextStart,
+            isTrayIconShown = false,
+            isSetupWizardShown = false,
+            isSplashScreenShown = isSplashScreenEnabled(),
         ),
     )
     val state = _state.asStateFlow()
@@ -68,6 +73,9 @@ class ApplicationViewModel(
 
     private fun initializeApplication() {
         logger.info { "Initializing RIFT ${BuildConfig.version} on $operatingSystem" }
+        viewModelScope.launch {
+            cleanupTempFilesUseCase()
+        }
         detectDirectoriesUseCase()
         viewModelScope.launch {
             backgroundProcesses.start()
@@ -79,22 +87,35 @@ class ApplicationViewModel(
             }
         }
         viewModelScope.launch {
-            settings.updateFlow.map { it.isSetupWizardFinished }.collect { finished ->
-                _state.update { it.copy(isTrayIconShown = finished) }
+            if (isSplashScreenEnabled()) delay(3_500)
+            windowManager.openInitialWindows()
+            _state.update {
+                it.copy(
+                    isSplashScreenShown = false,
+                    isTrayIconShown = settings.isSetupWizardFinished,
+                    isSetupWizardShown = !settings.isSetupWizardFinished || settings.isShowSetupWizardOnNextStart,
+                )
             }
-        }
-        viewModelScope.launch(MainUIDispatcher) {
-            val showReminder = shouldShowConfigurationPackReminderUseCase()
-            if (showReminder) windowManager.onWindowOpen(RiftWindow.ConfigurationPackReminder)
-        }
-        viewModelScope.launch(MainUIDispatcher) {
-            val showWarning = shouldShowNonEnglishEveClientWarningUseCase()
-            if (showWarning) windowManager.onWindowOpen(RiftWindow.NonEnglishEveClientWarning)
-        }
-        if (settings.isSetupWizardFinished) {
-            whatsNewController.showIfRequired()
-        } else {
-            whatsNewController.resetWhatsNewVersion()
+            launch {
+                settings.updateFlow.map { it.isSetupWizardFinished }.collect { finished ->
+                    _state.update { it.copy(isTrayIconShown = finished) }
+                }
+            }
+            launch(MainUIDispatcher) {
+                val showReminder = shouldShowConfigurationPackReminderUseCase()
+                if (showReminder) windowManager.onWindowOpen(RiftWindow.ConfigurationPackReminder)
+            }
+            launch(MainUIDispatcher) {
+                val startupWarnings = getStartupWarnings()
+                if (startupWarnings.isNotEmpty()) {
+                    windowManager.onWindowOpen(RiftWindow.StartupWarning, inputModel = StartupWarningInputModel(startupWarnings))
+                }
+            }
+            if (settings.isSetupWizardFinished) {
+                whatsNewController.showIfRequired()
+            } else {
+                whatsNewController.resetWhatsNewVersion()
+            }
         }
     }
 
@@ -116,5 +137,9 @@ class ApplicationViewModel(
             windowManager.saveWindowPlacements()
             _state.update { it.copy(isApplicationRunning = false) }
         }
+    }
+
+    private fun isSplashScreenEnabled(): Boolean {
+        return !settings.skipSplashScreen
     }
 }

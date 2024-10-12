@@ -32,9 +32,9 @@ object WormholeRegionClasses {
         "E-R00028" to "Class 5",
         "E-R00029" to "Class 5",
         "F-R00030" to "Class 6",
-        "G-R00031" to "Shattered", // Thera
-        "H-R00032" to "Shattered",
-        "K-R00033" to "Unknown",
+        "G-R00031" to "Class 12", // Thera
+        "H-R00032" to "Class 13",
+        "K-R00033" to "Drifter",
     )
 
     operator fun get(regionName: String) = classes[regionName]

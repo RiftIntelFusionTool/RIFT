@@ -11,10 +11,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.AnnotatedString
 import dev.nohus.rift.alerts.AlertsTriggerController.AlertLocationMatch
 import dev.nohus.rift.intel.state.SystemEntity
+import dev.nohus.rift.notifications.NotificationsController.Notification.ChatMessageNotification
+import dev.nohus.rift.repositories.TypesRepository.Type
 import dev.nohus.rift.settings.persistence.Settings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import org.jetbrains.exposed.sql.not
 import org.koin.core.annotation.Single
 
 @Single
@@ -27,7 +30,7 @@ class NotificationsController(
             val title: String,
             val message: AnnotatedString,
             val characterId: Int?, // Associated character
-            val typeId: Int?, // Associated type ID
+            val type: Type?, // Associated type ID
         ) : Notification {
             companion object {
                 const val styleTag = "Style"
@@ -37,10 +40,14 @@ class NotificationsController(
 
         data class ChatMessageNotification(
             val channel: String,
+            val messages: List<ChatMessage>,
+        ) : Notification
+
+        data class ChatMessage(
             val message: String,
             val sender: String,
             val senderCharacterId: Int?,
-        ) : Notification
+        )
 
         data class JabberMessageNotification(
             val chat: String,
@@ -61,7 +68,27 @@ class NotificationsController(
     private val notificationsStateFlow = MutableStateFlow<List<Notification>>(emptyList())
 
     fun show(notification: Notification) {
-        notificationsStateFlow.update { it.takeLast(maxShownNotifications - 1) + notification }
+        notificationsStateFlow.update {
+            collapseChatNotifications(it + notification).takeLast(maxShownNotifications)
+        }
+    }
+
+    private fun collapseChatNotifications(notifications: List<Notification>): List<Notification> {
+        return mutableListOf<Notification>().apply {
+            for (notification in notifications) {
+                val previous = lastOrNull()
+                if (previous is ChatMessageNotification && notification is ChatMessageNotification &&
+                    previous.channel == notification.channel
+                ) {
+                    this[lastIndex] = ChatMessageNotification(
+                        channel = notification.channel,
+                        messages = previous.messages + notification.messages,
+                    )
+                } else {
+                    this += notification
+                }
+            }
+        }
     }
 
     private fun hide(notification: Notification) {

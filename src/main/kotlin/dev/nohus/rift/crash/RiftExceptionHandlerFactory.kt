@@ -15,6 +15,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.awt.Window
 import java.awt.event.WindowEvent
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.SwingUtilities
 import kotlin.system.exitProcess
 
@@ -25,7 +26,9 @@ object RiftExceptionHandlerFactory : WindowExceptionHandlerFactory {
     }
 }
 
+var isCrashed = AtomicBoolean(false)
 fun handleFatalException(throwable: Throwable, window: Window? = null) {
+    if (isCrashed.getAndSet(true)) return
     val sentryId = Sentry.captureException(throwable)
     println("RIFT has encountered a fatal issue: $sentryId")
     SwingUtilities.invokeLater {

@@ -40,7 +40,6 @@ import dev.nohus.rift.compose.RiftPill
 import dev.nohus.rift.compose.RiftTextField
 import dev.nohus.rift.compose.RiftTooltipArea
 import dev.nohus.rift.compose.ScrollbarColumn
-import dev.nohus.rift.compose.TooltipAnchor
 import dev.nohus.rift.compose.theme.RiftTheme
 import dev.nohus.rift.compose.theme.Spacing
 import dev.nohus.rift.generated.resources.Res
@@ -288,7 +287,12 @@ fun MapSettingsPanel(
                                 onBack = { panelState = Expanded },
                             )
                             SystemIndicatorsPills(
-                                hidden = setOf(MapSystemInfoType.StarColor, MapSystemInfoType.IntelHostiles, MapSystemInfoType.FactionWarfare),
+                                hidden = setOf(
+                                    MapSystemInfoType.StarColor,
+                                    MapSystemInfoType.NullSecurity,
+                                    MapSystemInfoType.IntelHostiles,
+                                    MapSystemInfoType.FactionWarfare,
+                                ),
                                 getInfoTypeNames = ::getMapStarInfoTypeIndicatorName,
                                 selected = systemInfoTypes.indicators[settingsMapType].orEmpty(),
                                 onPillClick = { onIndicatorChange(settingsMapType, it) },
@@ -309,7 +313,11 @@ fun MapSettingsPanel(
                                 onBack = { panelState = Expanded },
                             )
                             SystemIndicatorsPills(
-                                hidden = setOf(MapSystemInfoType.StarColor, MapSystemInfoType.IntelHostiles),
+                                hidden = setOf(
+                                    MapSystemInfoType.StarColor,
+                                    MapSystemInfoType.NullSecurity,
+                                    MapSystemInfoType.IntelHostiles,
+                                ),
                                 getInfoTypeNames = ::getMapStarInfoTypeInfoBoxName,
                                 selected = systemInfoTypes.infoBox[settingsMapType].orEmpty(),
                                 onPillClick = { onInfoBoxChange(settingsMapType, it) },
@@ -395,7 +403,6 @@ private fun JumpRangePanel(
                         null -> ""
                     },
                     notFulfilledTooltip = "No such system or character",
-                    tooltipAnchor = TooltipAnchor.BottomEnd,
                 )
             }
         }
@@ -497,9 +504,7 @@ private fun SystemColorPills(
             .forEach { type ->
                 val (text, tooltip) = getMapStarInfoTypeColorName(type)
                 RiftTooltipArea(
-                    tooltip = tooltip,
-                    anchor = TooltipAnchor.TopCenter,
-                    contentAnchor = Alignment.BottomCenter,
+                    text = tooltip,
                 ) {
                     RiftPill(
                         text = text,
@@ -535,9 +540,7 @@ private fun SystemIndicatorsPills(
         pills.forEach { type ->
             val (text, tooltip) = getInfoTypeNames(type)
             RiftTooltipArea(
-                tooltip = tooltip,
-                anchor = TooltipAnchor.TopCenter,
-                contentAnchor = Alignment.BottomCenter,
+                text = tooltip,
             ) {
                 RiftPill(
                     text = text,
@@ -552,10 +555,14 @@ private fun SystemIndicatorsPills(
     }
 }
 
+/**
+ * System coloring
+ */
 private fun getMapStarInfoTypeColorName(color: MapSystemInfoType?): Pair<String, String> {
     return when (color) {
         MapSystemInfoType.StarColor -> "Actual color" to "Colored with the\nactual color of the star"
-        MapSystemInfoType.Security -> "Security status" to "Colored according to the\nsecurity status"
+        MapSystemInfoType.Security -> "Security Status" to "Colored according to the\nsecurity status"
+        MapSystemInfoType.NullSecurity -> "Null-Sec Status" to "Colored according to the\nnegative security status"
         MapSystemInfoType.IntelHostiles -> "Hostiles count" to "Colored according to the\nnumber of reported hostiles"
         MapSystemInfoType.Jumps -> "Jumps" to "Colored according to the\nnumber of jumps in the last hour"
         MapSystemInfoType.Kills -> "Kills" to "Colored according to the\nnumber of ship and pod kills in the last hour"
@@ -569,14 +576,20 @@ private fun getMapStarInfoTypeColorName(color: MapSystemInfoType?): Pair<String,
         MapSystemInfoType.JumpRange -> "Jump Range" to "Colored according to\njump range"
         MapSystemInfoType.Planets -> throw IllegalArgumentException("Not used for colors")
         MapSystemInfoType.JoveObservatories -> "Jove Observatories" to "Colored when a\nJove Observatory is present"
+        MapSystemInfoType.Colonies -> "PI Colonies" to "Colored when you have a\nPI colony present"
+        MapSystemInfoType.Clones -> "Clones" to "Colored when you have\njump clones present"
         null -> "None" to "No background color"
     }
 }
 
+/**
+ * System indicators
+ */
 private fun getMapStarInfoTypeIndicatorName(color: MapSystemInfoType?): Pair<String, String> {
     return when (color) {
         MapSystemInfoType.StarColor -> "" to ""
         MapSystemInfoType.Security -> "Security status" to "Security status of the system"
+        MapSystemInfoType.NullSecurity -> "" to ""
         MapSystemInfoType.IntelHostiles -> "" to ""
         MapSystemInfoType.Jumps -> "Jumps" to "Number of jumps in the last hour"
         MapSystemInfoType.Kills -> "Kills" to "Number of ship and pod kills in the last hour"
@@ -590,14 +603,20 @@ private fun getMapStarInfoTypeIndicatorName(color: MapSystemInfoType?): Pair<Str
         MapSystemInfoType.JumpRange -> "Jump Range" to "Indicator for systems in jump range"
         MapSystemInfoType.Planets -> "Planets" to "Indicators for planets"
         MapSystemInfoType.JoveObservatories -> "Jove Observatories" to "Indicators for Jove Observatories"
+        MapSystemInfoType.Colonies -> "PI Colonies" to "Indicators for PI colonies"
+        MapSystemInfoType.Clones -> "Clones" to "Indicators for jump clones"
         null -> "None" to "No background color"
     }
 }
 
+/**
+ * System info box indicators
+ */
 private fun getMapStarInfoTypeInfoBoxName(color: MapSystemInfoType?): Pair<String, String> {
     return when (color) {
         MapSystemInfoType.StarColor -> "" to ""
         MapSystemInfoType.Security -> "Security status" to "Security status of the system"
+        MapSystemInfoType.NullSecurity -> "" to ""
         MapSystemInfoType.IntelHostiles -> "" to ""
         MapSystemInfoType.Jumps -> "Jumps" to "Number of jumps in the last hour"
         MapSystemInfoType.Kills -> "Kills" to "Number of ship and pod kills in the last hour"
@@ -611,6 +630,8 @@ private fun getMapStarInfoTypeInfoBoxName(color: MapSystemInfoType?): Pair<Strin
         MapSystemInfoType.JumpRange -> "Jump Range" to "Jump distance to system"
         MapSystemInfoType.Planets -> "Planets" to "Planets information"
         MapSystemInfoType.JoveObservatories -> "Jove Observatories" to "Jove Observatory presence information"
+        MapSystemInfoType.Colonies -> "PI Colonies" to "PI colonies information"
+        MapSystemInfoType.Clones -> "Clones" to "Jump clones information"
         null -> "None" to "No background color"
     }
 }

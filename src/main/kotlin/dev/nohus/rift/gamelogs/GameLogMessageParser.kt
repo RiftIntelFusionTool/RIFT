@@ -1,21 +1,22 @@
 package dev.nohus.rift.gamelogs
 
 import dev.nohus.rift.alerts.AlertsTriggerController
+import dev.nohus.rift.clones.ClonesRepository
 import dev.nohus.rift.gamelogs.GameLogAction.Attacking
 import dev.nohus.rift.gamelogs.GameLogAction.BeingWarpScrambled
+import dev.nohus.rift.gamelogs.GameLogAction.CloneJumping
 import dev.nohus.rift.gamelogs.GameLogAction.Decloaked
 import dev.nohus.rift.gamelogs.GameLogAction.UnderAttack
 import dev.nohus.rift.logs.parse.GameLogMessageWithMetadata
-import io.github.oshai.kotlinlogging.KotlinLogging
 import org.koin.core.annotation.Single
 import java.time.Duration
 import java.time.Instant
 
-private val logger = KotlinLogging.logger {}
-
 @Single
 class GameLogMessageParser(
     private val alertsTriggerController: AlertsTriggerController,
+    private val recentTargetsRepository: RecentTargetsRepository,
+    private val clonesRepository: ClonesRepository,
 ) {
 
     fun onMessage(messageWithMetadata: GameLogMessageWithMetadata) {
@@ -33,8 +34,12 @@ class GameLogMessageParser(
             "mining" -> checkMiningMessage(message)
             else -> null
         }
-        if (action != null && Duration.between(messageWithMetadata.message.timestamp, Instant.now()) < Duration.ofSeconds(5)) {
-            alertsTriggerController.onNewGameLogAction(action, messageWithMetadata.metadata.characterId)
+        if (action != null) {
+            if (Duration.between(messageWithMetadata.message.timestamp, Instant.now()) < Duration.ofSeconds(5)) {
+                alertsTriggerController.onNewGameLogAction(action, messageWithMetadata.metadata.characterId)
+                if (action is CloneJumping) clonesRepository.onCloneJump()
+            }
+            recentTargetsRepository.onNewGameLogAction(action)
         }
     }
 
@@ -59,7 +64,7 @@ class GameLogMessageParser(
     private fun checkNotifyMessage(message: String): GameLogAction? {
         NOTIFY_WEAPON_RAN_OUT_OF_CHARGES.onMatch(message) { (weapon) -> return null }
         NOTIFY_WEAPON_DEACTIVATES_TARGET_EXPLODED.onMatch(message) { (weapon, target) -> return null }
-        NOTIFY_CLONE_JUMPING.onMatch(message) { return null }
+        NOTIFY_CLONE_JUMPING.onMatch(message) { return CloneJumping }
         NOTIFY_DISEMBARKING_FROM_SHIP.onMatch(message) { return null }
         NOTIFY_SESSION_CHANGE_ALREADY_IN_PROGRESS.onMatch(message) { return null }
         NOTIFY_DRONES_ENGAGING.onMatch(message) { (target) -> return null }

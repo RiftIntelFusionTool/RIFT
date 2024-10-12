@@ -46,9 +46,27 @@ class EsiApi(
         return execute { service.getAlliancesId(allianceId) }
     }
 
+    suspend fun getAlliancesIdContacts(characterId: Int, allianceId: Int): Result<List<Contact>> {
+        return executeEveAuthorized(characterId) { authorization ->
+            service.getAlliancesIdContacts(allianceId, authorization)
+        }
+    }
+
+    suspend fun getCorporationsIdContacts(characterId: Int, corporationId: Int): Result<List<Contact>> {
+        return executeEveAuthorized(characterId) { authorization ->
+            service.getCorporationsIdContacts(corporationId, authorization)
+        }
+    }
+
+    suspend fun getCharactersIdContacts(characterId: Int): Result<List<Contact>> {
+        return executeEveAuthorized(characterId) { authorization ->
+            service.getCharactersIdContacts(characterId, authorization)
+        }
+    }
+
     suspend fun getCharacterIdOnline(characterId: Int): Result<CharacterIdOnline> {
-        return executeEveAuthorized(characterId) { authentication ->
-            service.getCharacterIdOnline(characterId, authentication)
+        return executeEveAuthorized(characterId) { authorization ->
+            service.getCharacterIdOnline(characterId, authorization)
         }
     }
 
@@ -65,8 +83,20 @@ class EsiApi(
     }
 
     suspend fun getCharactersIdSearch(characterId: Int, categories: String, strict: Boolean, search: String): Result<CharactersIdSearch> {
-        return executeEveAuthorized(characterId) { authentication ->
-            service.getCharactersIdSearch(characterId, categories, strict, search, authentication)
+        return executeEveAuthorized(characterId) { authorization ->
+            service.getCharactersIdSearch(characterId, categories, strict, search, authorization)
+        }
+    }
+
+    suspend fun getCharactersIdClones(characterId: Int): Result<CharactersIdClones> {
+        return executeEveAuthorized(characterId) { authorization ->
+            service.getCharactersIdClones(characterId, authorization)
+        }
+    }
+
+    suspend fun getCharactersIdImplants(characterId: Int): Result<List<Int>> {
+        return executeEveAuthorized(characterId) { authorization ->
+            service.getCharactersIdImplants(characterId, authorization)
         }
     }
 
@@ -116,18 +146,48 @@ class EsiApi(
     }
 
     suspend fun getCharactersIdAssets(page: Int, characterId: Int): Result<Response<List<CharactersIdAsset>>> {
-        return executeEveAuthorized(characterId) { authentication ->
-            service.getCharactersIdAssets(characterId, page, authentication)
+        return executeEveAuthorized(characterId) { authorization ->
+            service.getCharactersIdAssets(characterId, page, authorization)
         }
     }
 
     suspend fun getCharactersIdAssetsNames(characterId: Int, assets: List<Long>): Result<List<CharactersIdAssetsName>> {
-        return executeEveAuthorized(characterId) { authentication ->
-            service.getCharactersIdAssetsNames(characterId, assets, authentication)
+        return executeEveAuthorized(characterId) { authorization ->
+            service.getCharactersIdAssetsNames(characterId, assets, authorization)
         }
     }
 
     suspend fun getMarketsPrices(): Result<List<MarketsPrice>> {
         return execute { service.getMarketsPrices() }
+    }
+
+    suspend fun getCharactersIdFleet(characterId: Int): Result<CharactersIdFleet> {
+        return executeEveAuthorized(characterId) { authorization ->
+            service.getCharactersIdFleet(characterId, authorization)
+        }
+    }
+
+    suspend fun getFleetsId(characterId: Int, fleetId: Long): Result<FleetsId> {
+        return executeEveAuthorized(characterId) { authorization ->
+            service.getFleetsId(fleetId, authorization)
+        }
+    }
+
+    suspend fun getFleetsIdMembers(characterId: Int, fleetId: Long): Result<List<FleetMember>> {
+        return executeEveAuthorized(characterId) { authorization ->
+            service.getFleetsIdMembers(fleetId, authorization)
+        }
+    }
+
+    suspend fun getCharactersIdPlanets(characterId: Int): Result<List<CharactersIdPlanet>> {
+        return executeEveAuthorized(characterId) { authorization ->
+            service.getCharactersIdPlanets(characterId, authorization)
+        }
+    }
+
+    suspend fun getCharactersIdPlanetsId(characterId: Int, planetId: Int): Result<CharactersIdPlanetsId> {
+        return executeEveAuthorized(characterId) { authorization ->
+            service.getCharactersIdPlanetsId(characterId, planetId, authorization)
+        }
     }
 }

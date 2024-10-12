@@ -31,11 +31,11 @@ class ConfigurationPackRepository(
             .mapNotNull { it.info.success?.allianceId }
             .toSet()
         return ConfigurationPack.entries.firstOrNull { pack ->
-            getFriendlyAllianceIds(pack).any { it in characterAlliances }
+            getPackMemberAllianceIds(pack).any { it in characterAlliances }
         }
     }
 
-    private fun getFriendlyAllianceIds(pack: ConfigurationPack?): List<Int> {
+    private fun getPackMemberAllianceIds(pack: ConfigurationPack?): List<Int> {
         return when (pack) {
             Imperium -> listOf(
                 99003214, // Brave Collective
@@ -99,14 +99,6 @@ class ConfigurationPackRepository(
             TheInitiative -> false
             null -> false
         }
-    }
-
-    fun isFriendlyAlliance(allianceId: Int): Boolean {
-        return allianceId in getFriendlyAllianceIds(settings.configurationPack)
-    }
-
-    fun getFriendlyAllianceIds(): List<Int> {
-        return getFriendlyAllianceIds(settings.configurationPack)
     }
 
     fun getJumpBridgeNetworkUrl(): String? {

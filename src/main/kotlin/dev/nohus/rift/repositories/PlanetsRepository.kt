@@ -22,28 +22,39 @@ class PlanetsRepository(
 ) {
 
     data class Planet(
+        val id: Int,
         val systemId: Int,
         val type: PlanetType,
-        val name: String?,
+        val name: String,
+        val radius: Float,
     )
 
     private val planetsBySystemId: Map<Int, List<Planet>>
+    private val planetsById: Map<Int, Planet>
 
     init {
         val typesById = PlanetTypes.types.associateBy { it.typeId }
-        planetsBySystemId = staticDatabase.transaction {
+        val planets = staticDatabase.transaction {
             Planets.selectAll().toList()
         }.map {
             Planet(
+                id = it[Planets.id],
                 systemId = it[Planets.systemId],
                 type = typesById[it[Planets.typeId]]!!,
                 name = it[Planets.name],
+                radius = it[Planets.radius],
             )
-        }.groupBy { it.systemId }
+        }
+        planetsBySystemId = planets.groupBy { it.systemId }
+        planetsById = planets.associateBy { it.id }
     }
 
     fun getPlanets(): Map<Int, List<Planet>> {
         return planetsBySystemId
+    }
+
+    fun getPlanetById(id: Int): Planet? {
+        return planetsById[id]
     }
 }
 

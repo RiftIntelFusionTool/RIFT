@@ -18,7 +18,7 @@ class CharacterNameValidator {
             !PLAYER_NAME_REGEX2.matches(name) ->
                 "EVE character names cannot start or end with a \"'\" or \"-\""
             !PLAYER_NAME_REGEX3.matches(name) ->
-                "EVE character names can have a first name of up 25 characters, middle name up to 35 characters, and last name up to 12 characters"
+                "EVE character names can have a first name of up to 25 characters, middle name up to 35 characters, and last name up to 12 characters"
             else -> "Invalid character name"
         }
     }

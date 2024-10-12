@@ -29,6 +29,14 @@ sealed interface AlertTrigger {
     ) : AlertTrigger
 
     @Serializable
+    @SerialName("PlanetaryIndustry")
+    data class PlanetaryIndustry(
+        val eventTypes: List<PiEventType>,
+        val coloniesFilter: List<String>?,
+        val alertBeforeSeconds: Int,
+    ) : AlertTrigger
+
+    @Serializable
     @SerialName("ChatMessage")
     data class ChatMessage(
         val channel: ChatMessageChannel,
@@ -161,6 +169,25 @@ sealed interface GameActionType {
 }
 
 @Serializable
+sealed interface PiEventType {
+    @Serializable
+    @SerialName("NotSetup")
+    data object NotSetup : PiEventType
+
+    @Serializable
+    @SerialName("ExtractorInactive")
+    data object ExtractorInactive : PiEventType
+
+    @Serializable
+    @SerialName("StorageFull")
+    data object StorageFull : PiEventType
+
+    @Serializable
+    @SerialName("Idle")
+    data object Idle : PiEventType
+}
+
+@Serializable
 sealed interface IntelChannel {
     @Serializable
     @SerialName("All")
@@ -251,6 +278,10 @@ sealed interface AlertAction {
     data object SystemNotification : AlertAction
 
     @Serializable
+    @SerialName("PushNotification")
+    data object PushNotification : AlertAction
+
+    @Serializable
     @SerialName("Sound")
     data class Sound(
         val id: Int,
@@ -265,4 +296,8 @@ sealed interface AlertAction {
     @Serializable
     @SerialName("ShowPing")
     data object ShowPing : AlertAction
+
+    @Serializable
+    @SerialName("ShowColonies")
+    data object ShowColonies : AlertAction
 }

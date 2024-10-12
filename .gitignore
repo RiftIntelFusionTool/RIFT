@@ -48,5 +48,6 @@ Raw Assets/
 scripts/**/Local.kt
 website/download
 website/download.html
+website/patrons.txt
 output
 .kotlin/sessions/

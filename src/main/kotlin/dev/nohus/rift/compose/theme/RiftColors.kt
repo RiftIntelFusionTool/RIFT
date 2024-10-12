@@ -16,6 +16,8 @@ data class RiftColors(
     val textPrimary: Color,
     val textSecondary: Color,
     val textLink: Color,
+    val textGreen: Color,
+    val textRed: Color,
 
     val inactiveGray: Color,
     val primary: Color,
@@ -52,9 +54,15 @@ data class RiftColors(
     val extendedAwayOrange: Color,
     val offlineRed: Color,
 
-    val standingBlue: Color,
+    val standingTerrible: Color,
+    val standingBad: Color,
+    val standingGood: Color,
+    val standingExcellent: Color,
 
     val mapBackground: Color,
+
+    val progressBarBackground: Color,
+    val progressBarProgress: Color,
 )
 
 val LocalRiftColors = staticCompositionLocalOf {
@@ -69,6 +77,8 @@ val LocalRiftColors = staticCompositionLocalOf {
         textPrimary = Color.Unspecified,
         textSecondary = Color.Unspecified,
         textLink = Color.Unspecified,
+        textGreen = Color.Unspecified,
+        textRed = Color.Unspecified,
 
         inactiveGray = Color.Unspecified,
         primary = Color.Unspecified,
@@ -105,9 +115,15 @@ val LocalRiftColors = staticCompositionLocalOf {
         extendedAwayOrange = Color.Unspecified,
         offlineRed = Color.Unspecified,
 
-        standingBlue = Color.Unspecified,
+        standingTerrible = Color.Unspecified,
+        standingBad = Color.Unspecified,
+        standingGood = Color.Unspecified,
+        standingExcellent = Color.Unspecified,
 
         mapBackground = Color.Unspecified,
+
+        progressBarBackground = Color.Unspecified,
+        progressBarProgress = Color.Unspecified,
     )
 }
 
@@ -122,6 +138,8 @@ fun getRiftColors() = RiftColors(
     textPrimary = Color(0xFFC3C5C6),
     textSecondary = Color(0xFF7E8081),
     textLink = Color(0xFFD98D00),
+    textGreen = Color(0xFF029C02),
+    textRed = Color(0xFFFB0101),
 
     inactiveGray = Color(0xFF595555),
     primary = Color(0xFF58A7BF),
@@ -158,7 +176,13 @@ fun getRiftColors() = RiftColors(
     extendedAwayOrange = Color(0xFFFF945A),
     offlineRed = Color(0xFFFF494F),
 
-    standingBlue = Color(0xFF2E6AC9),
+    standingTerrible = Color(0xFFFF494F),
+    standingBad = Color(0xFFFF945A),
+    standingGood = Color(0xFF316BCA),
+    standingExcellent = Color(0xFF0062FF),
 
     mapBackground = Color(0xFF0A0E15),
+
+    progressBarBackground = Color(0xFF1A1E1F),
+    progressBarProgress = Color(0xFF0D557E),
 )

@@ -167,6 +167,67 @@ object WhatsNew {
                 - Clicking a system will now navigate to it on the map
                 - Intel in map info boxes will now group characters and switch to a compact mode if there are many items to show
             """.trimIndent(),
+            "3.1.0" description """
+                - Many performance optimizations
+                - Improved layout of chat message notifications
+                - Added animations in the Intel Feed window
+                - Updated setting autopilot destination to only affect online characters
+                - Updated system info boxes on the map to dynamically adjust to the window size
+                - Added icons and updated the layout of information in the map system info boxes
+                - Updated alerts with distance ranges to use jump bridge distances if enabled in settings
+                - Added option to open wormhole systems on anoik.is in their context menu 
+            """.trimIndent(),
+            "4.0.0" description """
+                -! New feature: Planetary Industry
+                - You can now view all your PI colonies in one place
+                - Each colony shows all the current details in real time
+                - See colonies and their status in a list view, or a simplified grid overview
+                - Check and sort by expiry time, including for production planets or storages getting full
+                - Fast-forward to the future and see how you colony will look when it stops working
+                - Colony location can now be selected to show on the map
+
+                -! New feature: Jump clones
+                - Characters window now shows your jump clones and implants, including in your active clone
+                - Jump clone locations can be selected to show on the map
+
+                -! Intel updates
+                - Standings are now automatically updated from ESI, and characters in intel displays now show in red, orange, blue, and dark blue depending on standings
+                - Intel Feed now groups characters in NPC corps together in one group
+                - Improved parsing of intel messages
+
+                - When creating an alert for a combat event, your recent combat targets will now be suggested for filtering
+                - Updated logs directory detection to handle Windows installations with non-standard Documents directory location
+                - Updated Dotlan icon in solar system context menu
+                - Some of the new feature require new ESI scopes, so you will need to reauthenticate your characters
+            """.trimIndent(),
+            "4.1.0" description """
+                - New view in Planetary Industry to show planets grouped into rows by character
+                - Active clones with no implants are no longer shown in the Characters window
+                - Jump clones display in the Characters window can now be toggled on and off
+            """.trimIndent(),
+            "4.2.0" description """
+                -! Planetary Industry alerts
+                - Create alerts for expired extractors, storages getting full, etc.
+                - Choose how long in advance to receive them
+                
+                -! New feature: Mobile push notifications
+                - Receive RIFT alerts on your phone
+                - After initial setup in RIFT settings, they can be enabled for any alert
+                
+                - The New Eden map view now shows system backgrounds at lesser zoom, allowing for a better overview
+                - Updated About window with Creator Code and Patreon info
+            """.trimIndent(),
+            "4.3.0" description """
+                - Region maps can now be zoomed out much further, which will also scale the systems down. This makes them usable with very small map window sizes.
+                - You can now press Space to automatically resize the map view to fit the window size
+                - Startup warnings now have a "don't show again" checkbox.
+                - Improved PI alerts to show how much time is left to the triggering event
+            """.trimIndent(),
+            "4.4.0" description """
+                - New Null-Sec system coloring mode on the map. Unlike the normal security status colors that show all of Null-Sec in a single color, this one uses a color scale to show different levels of negative security status.
+                - Crash window will now tell you if you are not running the latest version of RIFT, in case the problem is already fixed
+                - Updated editing alert actions to allow choosing special actions like showing the PI window for PI alerts
+            """.trimIndent(),
         ).reversed()
     }
 }

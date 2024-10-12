@@ -49,9 +49,7 @@ fun <T> RiftDropdownWithLabel(
     }
     if (tooltip != null) {
         RiftTooltipArea(
-            tooltip = tooltip,
-            anchor = TooltipAnchor.BottomCenter,
-            contentAnchor = Alignment.TopCenter,
+            text = tooltip,
         ) {
             row()
         }

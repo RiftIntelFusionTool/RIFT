@@ -75,13 +75,14 @@ class SystemsMapPainter(
         JumpBridgeConnectionLine(from, to, isBidirectional)
     }.distinct()
     private val drawCache = DrawCache()
+    private val offsetComparator = compareBy<Offset>({ it.x }, { it.y })
 
     @Composable
     override fun initializeComposed() {
         textMeasurer = rememberTextMeasurer()
         regionNameStyle = RiftTheme.typography.captionPrimary.copy(letterSpacing = 3.sp)
         mapBackground = RiftTheme.colors.mapBackground
-        maxCellScale = 3f / LocalDensity.current.density
+        maxCellScale = 6f / LocalDensity.current.density
         density = LocalDensity.current.density
         val nodeSafeZoneRadius = if (mapType is RegionMap) {
             LocalDensity.current.run { 20.dp.toPx() }
@@ -130,8 +131,10 @@ class SystemsMapPainter(
                 drawJumpBridgeConnection(connection, mapType, center, scale, zoom, animationPercentage, systemColorStrategy)
             }
         }
-        cluster.regions.forEach { region ->
-            drawRegion(region, center, scale)
+        if (mapType is MapType.ClusterSystemsMap) {
+            cluster.regions.forEach { region ->
+                drawRegion(region, center, scale)
+            }
         }
     }
 
@@ -159,7 +162,6 @@ class SystemsMapPainter(
                 cellGradientRadius,
                 alphaModifier,
                 scale,
-                density,
             )
 
             translate(offset.x, offset.y) {
@@ -220,7 +222,7 @@ class SystemsMapPainter(
         val deltaOffset = to - from
 
         val autopilotPathEffect = getAutopilotPathEffect(connection.from.id, connection.to.id, animation, zoom)
-        if (connection.type == MapGateConnectionsRepository.ConnectionType.Region || scale < 4) {
+        if (connection.type == MapGateConnectionsRepository.ConnectionType.Region || scale < 4 || mapType is RegionMap) {
             translate(from.x, from.y) {
                 val width = (1f / scale).coerceAtMost(2f) * density
                 if (autopilotPathEffect != null) {
@@ -281,29 +283,36 @@ class SystemsMapPainter(
         val from = getCanvasCoordinates(fromLayoutPosition.x, fromLayoutPosition.y, center, scale)
         val to = getCanvasCoordinates(toLayoutPosition.x, toLayoutPosition.y, center, scale)
         val distance = sqrt((from.x - to.x).toDouble().pow(2.0) + (from.y - to.y).toDouble().pow(2.0)).toFloat()
-        val (p1, p2) = listOf(from, to).sortedWith(compareBy({ it.x }, { it.y }))
-        val isReversed = from == p2
+
+        val isReversed = offsetComparator.compare(from, to) > 0
+        val p1 = if (isReversed) to else from
+        val p2 = if (isReversed) from else to
+        val autopilotFrom = if (isReversed) connection.to.id else connection.from.id
+        val autopilotTo = if (isReversed) connection.from.id else connection.to.id
 
         val width = (1f / scale).coerceAtMost(2f) * density
-        val (autopilotFrom, autopilotTo) = listOf(connection.from.id, connection.to.id).let { if (isReversed) it.reversed() else it }
         val autopilotPathEffect = getAutopilotPathEffect(autopilotFrom, autopilotTo, animation, zoom)
+        val vector = p2 - p1
         if (autopilotPathEffect != null) {
             val fromColor = systemColorStrategy.getActiveColor(connection.from.id)
             val toColor = systemColorStrategy.getActiveColor(connection.to.id)
             val bridgeColor = Color(0xFF75D25A)
             val colors = listOf(fromColor, bridgeColor, toColor)
-            val brush1 = Brush.linearGradient(
+            val brush1 = drawCache.getJumpBridgeBrush(
                 colors = colors.map { it.copy(alpha = 0.25f) },
-                start = if (isReversed) p2 else p1,
-                end = if (isReversed) p1 else p2,
+                start = if (isReversed) vector else Offset.Zero,
+                end = if (isReversed) Offset.Zero else vector,
             )
-            val brush2 = Brush.linearGradient(
+            val brush2 = drawCache.getJumpBridgeBrush(
                 colors = colors,
-                start = if (isReversed) p2 else p1,
-                end = if (isReversed) p1 else p2,
+                start = if (isReversed) vector else Offset.Zero,
+                end = if (isReversed) Offset.Zero else vector,
             )
-            drawArcBetweenTwoPoints(p1, p2, distance * 0.75f, brush1, Stroke(width * 2 * density))
-            drawArcBetweenTwoPoints(p1, p2, distance * 0.75f, brush2, Stroke(width * 2 * density, pathEffect = autopilotPathEffect))
+            translate(p1.x, p1.y) {
+                val (stroke1, stroke2) = drawCache.getJumpBridgeAutopilotStrokes(width, density, autopilotPathEffect)
+                drawArcBetweenTwoPoints(Offset.Zero, vector, distance * 0.75f, brush1, stroke1)
+                drawArcBetweenTwoPoints(Offset.Zero, vector, distance * 0.75f, brush2, stroke2)
+            }
         } else {
             val alphaModifier = jumpBridgeNetworkOpacity / 100f
             val toColorFilter: Color.(isBidirectional: Boolean) -> Color = { if (it) this else this.copy(alpha = 0.1f) }
@@ -311,20 +320,22 @@ class SystemsMapPainter(
                 val fromColor = systemColorStrategy.getActiveColor(connection.from.id)
                 val toColor = systemColorStrategy.getActiveColor(connection.to.id)
                 val bridgeColor = Color(0xFF75D25A)
-                listOf(fromColor, bridgeColor, bridgeColor.toColorFilter(connection.bidirectional), toColor.toColorFilter(connection.bidirectional))
+                drawCache.getColorList(fromColor, bridgeColor, bridgeColor.toColorFilter(connection.bidirectional), toColor.toColorFilter(connection.bidirectional))
             } else {
                 val fromColor = systemColorStrategy.getInactiveColor(connection.from.id)
                 val toColor = systemColorStrategy.getInactiveColor(connection.to.id)
                 val bridgeColor = Color(0xFF75D25A).copy(alpha = 0.1f)
-                listOf(fromColor, bridgeColor, bridgeColor.toColorFilter(connection.bidirectional), toColor.toColorFilter(connection.bidirectional))
+                drawCache.getColorList(fromColor, bridgeColor, bridgeColor.toColorFilter(connection.bidirectional), toColor.toColorFilter(connection.bidirectional))
             }.map { it.copy(alpha = it.alpha * alphaModifier) }
-            val brush = Brush.linearGradient(
+            val brush = drawCache.getJumpBridgeBrush(
                 colors = colors,
-                start = if (isReversed) p2 else p1,
-                end = if (isReversed) p1 else p2,
+                start = if (isReversed) vector else Offset.Zero,
+                end = if (isReversed) Offset.Zero else vector,
             )
-            val style = Stroke(width, pathEffect = PathEffect.dashPathEffect(floatArrayOf(40f * zoom * density, 5f * zoom * density)))
-            drawArcBetweenTwoPoints(p1, p2, distance * 0.75f, brush, style)
+            val stroke = drawCache.getJumpBridgeStroke(width, zoom, density)
+            translate(p1.x, p1.y) {
+                drawArcBetweenTwoPoints(Offset.Zero, vector, distance * 0.75f, brush, stroke)
+            }
         }
     }
 
@@ -335,7 +346,7 @@ class SystemsMapPainter(
             autopilotConnections.any { it.first == to && it.second == from } -> factor * zoom
             else -> return null
         }
-        return PathEffect.dashPathEffect(floatArrayOf(16f * zoom * density, 8f * zoom * density), phase * density)
+        return drawCache.getAutopilotPathEffect(zoom, density, phase)
     }
 
     private fun DrawScope.drawArcBetweenTwoPoints(

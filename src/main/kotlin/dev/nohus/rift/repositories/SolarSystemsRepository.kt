@@ -230,7 +230,11 @@ class SolarSystemsRepository(
     fun getSystems() = mapSolarSystems
 
     fun isKnownSpace(systemId: Int): Boolean {
-        return getSystem(systemId)?.regionId?.let { it < 11000000 } == true
+        return getSystem(systemId)?.regionId?.let { it in 10000001..10001000 } == true
+    }
+
+    fun isWormholeSpace(systemId: Int): Boolean {
+        return getSystem(systemId)?.regionId?.let { it in 11000001..11000033 } == true
     }
 
     /**

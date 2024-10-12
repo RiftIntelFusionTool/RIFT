@@ -2,10 +2,12 @@ package dev.nohus.rift.about
 
 import dev.nohus.rift.BuildConfig
 import dev.nohus.rift.ViewModel
+import dev.nohus.rift.about.GetPatronsUseCase.Patron
 import dev.nohus.rift.about.UpdateController.UpdateAvailability
 import dev.nohus.rift.network.AsyncResource
 import dev.nohus.rift.network.AsyncResource.Loading
 import dev.nohus.rift.network.AsyncResource.Ready
+import dev.nohus.rift.network.HttpGetUseCase.CacheBehavior
 import dev.nohus.rift.utils.OperatingSystem
 import dev.nohus.rift.utils.directories.AppDirectories
 import dev.nohus.rift.utils.openFileManager
@@ -30,6 +32,7 @@ class AboutViewModel(
     private val windowManager: WindowManager,
     getVersionUseCase: GetVersionUseCase,
     private val updateController: UpdateController,
+    private val getPatrons: GetPatronsUseCase,
 ) : ViewModel() {
 
     data class UiState(
@@ -41,6 +44,7 @@ class AboutViewModel(
         val isCreditsDialogShown: Boolean,
         val operatingSystem: OperatingSystem,
         val executablePath: String,
+        val patrons: List<Patron>,
     )
 
     private val _state = MutableStateFlow(
@@ -53,12 +57,24 @@ class AboutViewModel(
             isCreditsDialogShown = false,
             operatingSystem = operatingSystem,
             executablePath = getExecutable(),
+            patrons = emptyList(),
         ),
     )
     val state = _state.asStateFlow()
 
     init {
         checkForUpdate()
+        checkPatrons()
+    }
+
+    private fun checkPatrons() {
+        viewModelScope.launch {
+            listOf(CacheBehavior.CacheOnly, CacheBehavior.NetworkOnly).forEach { cachedOnly ->
+                getPatrons(cachedOnly).success?.let { patrons ->
+                    _state.update { it.copy(patrons = patrons) }
+                }
+            }
+        }
     }
 
     fun onUpdateClick() {

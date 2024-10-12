@@ -65,7 +65,6 @@ import dev.nohus.rift.compose.RiftTextField
 import dev.nohus.rift.compose.RiftTooltipArea
 import dev.nohus.rift.compose.RiftWindow
 import dev.nohus.rift.compose.ScrollbarLazyColumn
-import dev.nohus.rift.compose.TooltipAnchor
 import dev.nohus.rift.compose.hoverBackground
 import dev.nohus.rift.compose.theme.Cursors
 import dev.nohus.rift.compose.theme.RiftTheme
@@ -105,7 +104,6 @@ fun AssetsWindow(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun AssetsWindowContent(
     state: UiState,
@@ -364,9 +362,7 @@ private fun AssetRow(
                     ExpandChevron(isExpanded = isExpanded)
                 }
                 AsyncTypeIcon(
-                    typeId = asset.asset.typeId,
-                    fallbackIconId = asset.type?.iconId,
-                    nameHint = asset.typeName,
+                    type = asset.type,
                     modifier = Modifier.size(32.dp),
                 )
                 Column(
@@ -394,9 +390,7 @@ private fun AssetRow(
                     ) {
                         if (depth == 1 && characterNames != null) {
                             RiftTooltipArea(
-                                tooltip = "${characterNames[asset.characterId] ?: asset.characterId}",
-                                anchor = TooltipAnchor.TopStart,
-                                contentAnchor = Alignment.BottomCenter,
+                                text = "${characterNames[asset.characterId] ?: asset.characterId}",
                                 modifier = Modifier.padding(end = Spacing.small),
                             ) {
                                 AsyncPlayerPortrait(

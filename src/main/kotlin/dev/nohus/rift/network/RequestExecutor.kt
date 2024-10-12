@@ -73,6 +73,8 @@ class RequestExecutorImpl(
                         }
                     } else if ("Forbidden" == errorResponse.error) {
                         logger.debug { "Forbidden API response" }
+                    } else if (e.code() == 404) {
+                        // Valid response
                     } else {
                         logger.error { "Unknown API error response: $errorResponse" }
                     }

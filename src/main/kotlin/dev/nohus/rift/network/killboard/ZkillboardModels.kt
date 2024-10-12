@@ -107,7 +107,7 @@ data class Zkb(
     @SerialName("hash")
     val hash: String,
     @SerialName("locationID")
-    val locationID: Int,
+    val locationID: Int? = null,
     @SerialName("npc")
     val npc: Boolean,
     @SerialName("points")

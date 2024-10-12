@@ -18,22 +18,25 @@ import dev.nohus.rift.assets.AssetsWindow
 import dev.nohus.rift.characters.CharactersWindow
 import dev.nohus.rift.configurationpack.ConfigurationPackReminderWindow
 import dev.nohus.rift.debug.DebugWindow
-import dev.nohus.rift.gamelogs.NonEnglishEveClientWarningWindow
+import dev.nohus.rift.fleet.FleetsWindow
 import dev.nohus.rift.intel.feed.IntelFeedWindow
 import dev.nohus.rift.intel.feed.settings.IntelFeedSettingsWindow
 import dev.nohus.rift.intel.reports.IntelReportsWindow
 import dev.nohus.rift.intel.reports.settings.IntelReportsSettingsWindow
 import dev.nohus.rift.jabber.JabberInputModel
 import dev.nohus.rift.jabber.JabberWindow
-import dev.nohus.rift.logging.analytics.Analytics
 import dev.nohus.rift.map.MapWindow
 import dev.nohus.rift.map.settings.MapSettingsWindow
 import dev.nohus.rift.neocom.NeocomWindow
 import dev.nohus.rift.pings.PingsWindow
+import dev.nohus.rift.planetaryindustry.PlanetaryIndustryWindow
+import dev.nohus.rift.pushover.PushoverWindow
 import dev.nohus.rift.settings.SettingsInputModel
 import dev.nohus.rift.settings.SettingsWindow
 import dev.nohus.rift.settings.persistence.Settings
 import dev.nohus.rift.settings.persistence.WindowPlacement
+import dev.nohus.rift.startupwarning.StartupWarningInputModel
+import dev.nohus.rift.startupwarning.StartupWarningWindow
 import dev.nohus.rift.utils.Pos
 import dev.nohus.rift.utils.Size
 import dev.nohus.rift.whatsnew.WhatsNewWindow
@@ -48,7 +51,6 @@ import java.time.Instant
 @Single
 class WindowManager(
     private val settings: Settings,
-    private val analytics: Analytics,
 ) {
 
     @Serializable
@@ -95,9 +97,6 @@ class WindowManager(
         @SerialName("ConfigurationPackReminder")
         ConfigurationPackReminder,
 
-        @SerialName("NonEnglishEveClientWarning")
-        NonEnglishEveClientWarning,
-
         @SerialName("Assets")
         Assets,
 
@@ -106,6 +105,22 @@ class WindowManager(
 
         @SerialName("Debug")
         Debug,
+
+        @SerialName("Fleets")
+        Fleets,
+
+        @SerialName("PlanetaryIndustry")
+        PlanetaryIndustry,
+
+        @SerialName("StartupWarning")
+        StartupWarning,
+
+        @SerialName("Pushover")
+        Pushover,
+
+        @Deprecated("Removed")
+        @SerialName("NonEnglishEveClientWarning")
+        NonEnglishEveClientWarning,
     }
 
     data class RiftWindowState(
@@ -123,6 +138,9 @@ class WindowManager(
         val minimumSize: Pair<Int?, Int?>,
     )
 
+    private val nonSavedWindows = listOf(
+        RiftWindow.StartupWarning,
+    )
     private val persistentWindows = listOf(
         RiftWindow.Neocom,
         RiftWindow.IntelReports,
@@ -135,10 +153,10 @@ class WindowManager(
     )
     private var states: MutableState<Map<RiftWindow, RiftWindowState>> = mutableStateOf(emptyMap())
 
-    init {
+    fun openInitialWindows() {
         if (settings.isSetupWizardFinished) {
             if (settings.isRememberOpenWindows) {
-                settings.openWindows.forEach { onWindowOpen(it) }
+                settings.openWindows.filter { it !in nonSavedWindows }.forEach { onWindowOpen(it) }
             } else {
                 onWindowOpen(RiftWindow.Neocom)
             }
@@ -168,10 +186,14 @@ class WindowManager(
                     RiftWindow.Jabber -> JabberWindow(state.inputModel as? JabberInputModel ?: JabberInputModel.None, state, onCloseRequest = { onWindowClose(RiftWindow.Jabber) })
                     RiftWindow.Pings -> PingsWindow(state, onCloseRequest = { onWindowClose(RiftWindow.Pings) })
                     RiftWindow.ConfigurationPackReminder -> ConfigurationPackReminderWindow(state, onCloseRequest = { onWindowClose(RiftWindow.ConfigurationPackReminder) })
-                    RiftWindow.NonEnglishEveClientWarning -> NonEnglishEveClientWarningWindow(state, onCloseRequest = { onWindowClose(RiftWindow.NonEnglishEveClientWarning) })
                     RiftWindow.Assets -> AssetsWindow(state, onCloseRequest = { onWindowClose(RiftWindow.Assets) })
                     RiftWindow.WhatsNew -> WhatsNewWindow(state, onCloseRequest = { onWindowClose(RiftWindow.WhatsNew) })
                     RiftWindow.Debug -> DebugWindow(state, onCloseRequest = { onWindowClose(RiftWindow.Debug) })
+                    RiftWindow.Fleets -> FleetsWindow(state, onCloseRequest = { onWindowClose(RiftWindow.Fleets) })
+                    RiftWindow.PlanetaryIndustry -> PlanetaryIndustryWindow(state, onCloseRequest = { onWindowClose(RiftWindow.PlanetaryIndustry) })
+                    RiftWindow.StartupWarning -> StartupWarningWindow(state.inputModel as? StartupWarningInputModel, state, onCloseRequest = { onWindowClose(RiftWindow.StartupWarning) })
+                    RiftWindow.Pushover -> PushoverWindow(state, onCloseRequest = { onWindowClose(RiftWindow.Pushover) })
+                    RiftWindow.NonEnglishEveClientWarning -> {}
                 }
             }
         }
@@ -229,16 +251,20 @@ class WindowManager(
             RiftWindow.Settings -> WindowSizing(defaultSize = (820 to null), minimumSize = 820 to null)
             RiftWindow.Map -> WindowSizing(defaultSize = saved ?: (800 to 800), minimumSize = 350 to 300)
             RiftWindow.MapSettings -> WindowSizing(defaultSize = (400 to 450), minimumSize = 400 to 450)
-            RiftWindow.Characters -> WindowSizing(defaultSize = saved ?: (420 to 400), minimumSize = 350 to 300)
+            RiftWindow.Characters -> WindowSizing(defaultSize = saved ?: (420 to 400), minimumSize = 400 to 300)
             RiftWindow.Alerts -> WindowSizing(defaultSize = saved ?: (500 to 500), minimumSize = 500 to 500)
             RiftWindow.About -> WindowSizing(defaultSize = (500 to null), minimumSize = (500 to null))
             RiftWindow.Jabber -> WindowSizing(defaultSize = saved ?: (400 to 500), minimumSize = (200 to 200))
             RiftWindow.Pings -> WindowSizing(defaultSize = saved ?: (440 to 500), minimumSize = (440 to 300))
             RiftWindow.ConfigurationPackReminder -> WindowSizing(defaultSize = (450 to null), minimumSize = (450 to null))
-            RiftWindow.NonEnglishEveClientWarning -> WindowSizing(defaultSize = (450 to null), minimumSize = (450 to null))
             RiftWindow.Assets -> WindowSizing(defaultSize = saved ?: (500 to 500), minimumSize = (500 to 300))
-            RiftWindow.WhatsNew -> WindowSizing(defaultSize = saved ?: (450 to 500), minimumSize = (450 to 500))
+            RiftWindow.WhatsNew -> WindowSizing(defaultSize = saved ?: (450 to 600), minimumSize = (450 to 600))
             RiftWindow.Debug -> WindowSizing(defaultSize = saved ?: (450 to 500), minimumSize = (450 to 500))
+            RiftWindow.Fleets -> WindowSizing(defaultSize = saved ?: (300 to 300), minimumSize = 300 to 300)
+            RiftWindow.PlanetaryIndustry -> WindowSizing(defaultSize = saved ?: (540 to 800), minimumSize = 540 to 360)
+            RiftWindow.StartupWarning -> WindowSizing(defaultSize = (450 to null), minimumSize = (450 to null))
+            RiftWindow.Pushover -> WindowSizing(defaultSize = (350 to null), minimumSize = 350 to null)
+            RiftWindow.NonEnglishEveClientWarning -> WindowSizing(defaultSize = (450 to null), minimumSize = (450 to null))
         }
     }
 
@@ -249,12 +275,14 @@ class WindowManager(
     }
 
     private fun rememberWindowPlacements() {
-        states.value.forEach { (window, state) ->
-            settings.windowPlacements += window to WindowPlacement(
-                position = state.windowState.position.let { Pos(it.x.value.toInt(), it.y.value.toInt()) },
-                size = state.windowState.size.let { Size(it.width.value.toInt(), it.height.value.toInt()) },
-            )
-        }
+        states.value
+            .filter { (_, state) -> state.window !in nonSavedWindows }
+            .forEach { (window, state) ->
+                settings.windowPlacements += window to WindowPlacement(
+                    position = state.windowState.position.let { Pos(it.x.value.toInt(), it.y.value.toInt()) },
+                    size = state.windowState.size.let { Size(it.width.value.toInt(), it.height.value.toInt()) },
+                )
+            }
     }
 }
 

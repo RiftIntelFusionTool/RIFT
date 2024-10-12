@@ -39,6 +39,9 @@ class PointerInteractionStateHolder {
         }
 }
 
+@Composable
+fun rememberPointerInteractionStateHolder() = remember { PointerInteractionStateHolder() }
+
 enum class PointerInteractionState {
     Normal, Hover, Press
 }

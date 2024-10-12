@@ -139,8 +139,7 @@ private fun MessageMetadata(
     pointerState: PointerInteractionStateHolder,
 ) {
     RiftTooltipArea(
-        tooltip = "Original message:\n${message.chatMessage.message}",
-        anchor = TooltipAnchor.BottomStart,
+        text = "Original message:\n${message.chatMessage.message}",
     ) {
         val background by pointerState.animateWindowBackgroundSecondaryHover()
         Row(
@@ -525,8 +524,7 @@ private fun TokenWithPlayer(rowHeight: Dp, name: String, characterId: Int) {
 private fun TokenWithKill(rowHeight: Dp, token: TokenType.Kill) {
     val repository: TypesRepository by koin.inject()
     RiftTooltipArea(
-        tooltip = "${token.name}\n${token.target}",
-        anchor = TooltipAnchor.BottomCenter,
+        text = "${token.name}\n${token.target}",
     ) {
         ClickablePlayer(token.characterId) {
             BorderedToken(rowHeight) {
@@ -542,9 +540,9 @@ private fun TokenWithKill(rowHeight: Dp, token: TokenType.Kill) {
                     modifier = Modifier.size(rowHeight),
                 )
                 VerticalDivider(color = RiftTheme.colors.borderGreyLight, modifier = Modifier.height(rowHeight))
-                val typeId = repository.getTypeId(token.target)
+                val type = repository.getType(token.target)
                 AsyncTypeIcon(
-                    typeId = typeId,
+                    type = type,
                     modifier = Modifier.size(rowHeight),
                 )
                 VerticalDivider(color = RiftTheme.colors.borderGreyLight, modifier = Modifier.height(rowHeight))

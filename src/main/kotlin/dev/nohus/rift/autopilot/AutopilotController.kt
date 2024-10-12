@@ -2,6 +2,7 @@ package dev.nohus.rift.autopilot
 
 import dev.nohus.rift.characters.repositories.ActiveCharacterRepository
 import dev.nohus.rift.characters.repositories.LocalCharactersRepository
+import dev.nohus.rift.characters.repositories.OnlineCharactersRepository
 import dev.nohus.rift.location.CharacterLocationRepository
 import dev.nohus.rift.network.esi.EsiApi
 import dev.nohus.rift.repositories.GetRouteUseCase
@@ -23,6 +24,7 @@ class AutopilotController(
     private val activeCharacterRepository: ActiveCharacterRepository,
     private val characterLocationRepository: CharacterLocationRepository,
     private val localCharactersRepository: LocalCharactersRepository,
+    private val onlineCharactersRepository: OnlineCharactersRepository,
     private val getRouteUseCase: GetRouteUseCase,
     private val esiApi: EsiApi,
     private val settings: Settings,
@@ -175,7 +177,7 @@ class AutopilotController(
 
     private fun getTargetCharacters(): List<Int> {
         return if (settings.isSettingAutopilotToAll) {
-            localCharactersRepository.characters.value.map { it.characterId }
+            onlineCharactersRepository.onlineCharacters.value
         } else {
             activeCharacterRepository.activeCharacter.value?.let { listOf(it) } ?: emptyList()
         }

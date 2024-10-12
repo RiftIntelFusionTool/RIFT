@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -40,6 +40,7 @@ import dev.nohus.rift.map.MapViewModel.MapType.RegionMap
 import dev.nohus.rift.map.systemcolor.SystemColorStrategy
 import dev.nohus.rift.repositories.ShipTypesRepository
 import dev.nohus.rift.repositories.SolarSystemsRepository.MapSolarSystem
+import dev.nohus.rift.standings.isFriendly
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.imageResource
 import kotlin.math.cos
@@ -66,15 +67,16 @@ fun SolarSystemNode(
     intel: List<Dated<SystemEntity>>?,
     onlineCharacters: List<OnlineCharacterLocation>,
     systemColorStrategy: SystemColorStrategy,
-    systemRadialGradients: MutableMap<Color, Brush>,
+    systemRadialGradients: MutableMap<Pair<Color, NodeSizes>, Brush>,
     nodeSizes: NodeSizes,
+    isScaled: Boolean,
     modifier: Modifier,
 ) {
     Box(
         modifier = modifier,
     ) {
         val systemColor = systemColorStrategy.getActiveColor(system.id)
-        val brush = systemRadialGradients.getOrPut(systemColor) {
+        val brush = systemRadialGradients.getOrPut(systemColor to nodeSizes) {
             Brush.radialGradient(
                 0.0f to systemColor.copy(alpha = 1.0f),
                 0.5f to systemColor.copy(alpha = 0.9f),
@@ -91,7 +93,7 @@ fun SolarSystemNode(
         hostileOrbitPainter.updateComposition()
         val hasOnlineCharacter = onlineCharacters.any { it.location.solarSystemId == system.id }
 
-        val hostileCount = hostileOrbitPainter.getHostileCount(intel)
+        val hostileCount = hostileOrbitPainter.getTotalCount(intel)
         val entityIcons = hostileOrbitPainter.getEntityIcons(intel)
         val nodeBackgroundCircleMaxScale = SOLAR_SYSTEM_NODE_BACKGROUND_CIRCLE_MAX_SCALE / LocalDensity.current.density
 
@@ -102,7 +104,7 @@ fun SolarSystemNode(
                 drawCircle(mapBackground, radius = nodeSizes.radiusWithMarginPx, center = Offset.Zero)
             }
             drawCircle(brush, radius = nodeSizes.radiusPx, center = Offset.Zero)
-            hostileOrbitPainter.draw(this, nodeSizes, hostileCount, entityIcons)
+            hostileOrbitPainter.draw(this, nodeSizes, hostileCount, entityIcons.takeIf { !isScaled } ?: emptyList())
             characterLocationPainter.draw(this, nodeSizes, hasOnlineCharacter)
         }
     }
@@ -138,8 +140,8 @@ class HostileOrbitPainter {
     private val shipTypesRepository: ShipTypesRepository by koin.inject()
     private val bitmapsCache = mutableMapOf<DrawableResource, ImageBitmap>()
     private val bitmapOffset = Offset(8f, 8f)
-    private var animationRotation by mutableStateOf(0f)
-    private val orbitBrushForColor = mutableMapOf<Color, Brush>()
+    private var animationRotation by mutableFloatStateOf(0f)
+    private val orbitBrushForColorNodeSizes = mutableMapOf<Pair<Color, NodeSizes>, Brush>()
     private val friendlyEntityRadius = 10f
     private lateinit var friendlyEntityBrush: Brush
 
@@ -157,12 +159,14 @@ class HostileOrbitPainter {
             animationSpec = infiniteRepeatable(tween(5_000, easing = LinearEasing)),
         )
         this.animationRotation = rotation
-        this.friendlyEntityBrush = Brush.radialGradient(
-            0.0f to RiftTheme.colors.standingBlue.copy(alpha = 1.0f),
-            1.0f to RiftTheme.colors.standingBlue.copy(alpha = 0f),
-            radius = friendlyEntityRadius,
-            center = Offset.Zero,
-        )
+        if (!::friendlyEntityBrush.isInitialized) {
+            friendlyEntityBrush = Brush.radialGradient(
+                0.0f to RiftTheme.colors.standingGood.copy(alpha = 1.0f),
+                1.0f to RiftTheme.colors.standingGood.copy(alpha = 0f),
+                radius = friendlyEntityRadius,
+                center = Offset.Zero,
+            )
+        }
     }
 
     fun draw(
@@ -176,7 +180,7 @@ class HostileOrbitPainter {
             val startRadius = nodeSizes.radiusPx
             val centerRadius = (startRadius + endRadius) / 2
             val color = getColor(hostileCount / 5f)
-            val brush = orbitBrushForColor.getOrPut(color) {
+            val brush = orbitBrushForColorNodeSizes.getOrPut(color to nodeSizes) {
                 Brush.radialGradient(
                     0.0f to color.copy(alpha = 0.0f),
                     (startRadius / endRadius) to color.copy(alpha = 0.0f),
@@ -209,7 +213,10 @@ class HostileOrbitPainter {
         }
     }
 
-    fun getHostileCount(intel: List<Dated<SystemEntity>>?): Int {
+    /**
+     * Returns the number of ships or characters, whichever is higher, adding extra for reported gate camps and spikes
+     */
+    fun getTotalCount(intel: List<Dated<SystemEntity>>?): Int {
         if (intel == null) return 0
         val entities = intel.map { it.item }
         val characterCount = entities.filterIsInstance<SystemEntity.Character>().count() + entities.filterIsInstance<SystemEntity.UnspecifiedCharacter>().sumOf { it.count }
@@ -229,9 +236,21 @@ class HostileOrbitPainter {
 
     @Composable
     fun getEntityIcons(intel: List<Dated<SystemEntity>>?): List<EntityIcon> {
-        val hostileCount = getHostileCount(intel)
-        val hostileIcons = getHostileIcons(hostileCount, intel)
-        val friendlyIcons = getFriendlyIcons(intel)
+        if (intel == null) return emptyList()
+        val entities = intel.map { it.item }
+        val totalCount = getTotalCount(intel) // Total count of both friendly and hostile
+        val hostileShipIcons = getIcons(intel.filter { it.item is SystemEntity.Ship && it.item.standing?.isFriendly != true })
+        val friendlyShipIcons = getIcons(intel.filter { it.item is SystemEntity.Ship && it.item.standing?.isFriendly == true })
+        val friendlyCharacters = entities.count { it is SystemEntity.Character && it.details.standing.isFriendly }
+        val friendlyCount = maxOf(friendlyShipIcons.size, friendlyCharacters) // Total count of friendly
+        val hostileCharacters = totalCount - friendlyCount // Total count of hostile
+        val unknownHostileShips = (hostileCharacters - hostileShipIcons.size).coerceAtLeast(0)
+        val unknownFriendlyShips = (friendlyCharacters - friendlyShipIcons.size).coerceAtLeast(0)
+        val unknownHostileShipIcons = List(unknownHostileShips) { Res.drawable.brackets_entity }
+        val unknownFriendlyShipIcons = List(unknownFriendlyShips) { Res.drawable.brackets_entity }
+        val hostileIcons = hostileShipIcons + unknownHostileShipIcons
+        val friendlyIcons = friendlyShipIcons + unknownFriendlyShipIcons
+
         val maxIcons = 10
         val hostileMaxIcons = if (hostileIcons.size >= friendlyIcons.size * 2) {
             (10 - friendlyIcons.size).coerceAtLeast(7)
@@ -243,29 +262,6 @@ class HostileOrbitPainter {
         val friendlyMaxIcons = maxIcons - hostileMaxIcons
         return getGroupedImageBitmaps(hostileIcons, hostileMaxIcons).map { EntityIcon(it, isFriendly = false) } +
             getGroupedImageBitmaps(friendlyIcons, friendlyMaxIcons).map { EntityIcon(it, isFriendly = true) }
-    }
-
-    @Composable
-    private fun getHostileIcons(
-        characterCount: Int,
-        intel: List<Dated<SystemEntity>>?,
-    ): List<DrawableResource> {
-        if (intel == null) return emptyList()
-        val specificIcons = getIcons(intel.filter { it.item is SystemEntity.Ship && it.item.isFriendly != true })
-        val unknownCharactersCount = (characterCount - specificIcons.size).coerceAtLeast(0)
-        val friendlyCharacterCount = intel.count { it.item is SystemEntity.Ship && it.item.isFriendly == true }
-        val hostileCharacterCount = unknownCharactersCount - friendlyCharacterCount
-        val hostileCharactersIcons = List(hostileCharacterCount) { Res.drawable.brackets_entity }
-        return specificIcons + hostileCharactersIcons
-    }
-
-    @Composable
-    private fun getFriendlyIcons(
-        intel: List<Dated<SystemEntity>>?,
-    ): List<DrawableResource> {
-        if (intel == null) return emptyList()
-        val specificIcons = getIcons(intel.filter { it.item is SystemEntity.Ship && it.item.isFriendly == true })
-        return specificIcons
     }
 
     @Composable

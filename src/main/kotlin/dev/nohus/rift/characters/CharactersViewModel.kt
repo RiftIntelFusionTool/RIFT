@@ -5,6 +5,8 @@ import dev.nohus.rift.characters.files.CopyEveCharacterSettingsUseCase
 import dev.nohus.rift.characters.repositories.CharacterWalletRepository
 import dev.nohus.rift.characters.repositories.LocalCharactersRepository
 import dev.nohus.rift.characters.repositories.OnlineCharactersRepository
+import dev.nohus.rift.clones.Clone
+import dev.nohus.rift.clones.ClonesRepository
 import dev.nohus.rift.compose.DialogMessage
 import dev.nohus.rift.compose.MessageDialogType
 import dev.nohus.rift.location.CharacterLocationRepository
@@ -27,6 +29,7 @@ class CharactersViewModel(
     private val localCharactersRepository: LocalCharactersRepository,
     private val characterLocationRepository: CharacterLocationRepository,
     private val characterWalletRepository: CharacterWalletRepository,
+    private val clonesRepository: ClonesRepository,
     private val settings: Settings,
 ) : ViewModel() {
 
@@ -37,6 +40,7 @@ class CharactersViewModel(
         val isHidden: Boolean,
         val info: AsyncResource<LocalCharactersRepository.CharacterInfo>,
         val walletBalance: Double?,
+        val clones: List<Clone>,
     )
 
     data class UiState(
@@ -47,6 +51,7 @@ class CharactersViewModel(
         val isChoosingDisabledCharacters: Boolean = false,
         val dialogMessage: DialogMessage? = null,
         val isSsoDialogOpen: Boolean = false,
+        val isShowingClones: Boolean,
     )
 
     sealed interface CopyingState {
@@ -67,18 +72,25 @@ class CharactersViewModel(
         val name: String,
     )
 
-    private val _state = MutableStateFlow(UiState())
+    private val _state = MutableStateFlow(
+        UiState(
+            isShowingClones = settings.isShowingCharactersClones,
+        ),
+    )
     val state = _state.asStateFlow()
 
     init {
         viewModelScope.launch {
             localCharactersRepository.load()
+        }
+        viewModelScope.launch {
             combine(
                 localCharactersRepository.allCharacters,
                 onlineCharactersRepository.onlineCharacters,
                 characterWalletRepository.balances,
+                clonesRepository.clones,
                 settings.updateFlow,
-            ) { characters, onlineCharacters, balances, _ ->
+            ) { characters, onlineCharacters, balances, clones, _ ->
                 val items = characters
                     .map { localCharacter ->
                         CharacterItem(
@@ -88,6 +100,7 @@ class CharactersViewModel(
                             isHidden = localCharacter.isHidden,
                             info = localCharacter.info,
                             walletBalance = balances[localCharacter.characterId],
+                            clones = clones[localCharacter.characterId] ?: emptyList(),
                         )
                     }
                 val sortedItems = items.sortedByDescending { it.characterId in onlineCharacters }
@@ -209,6 +222,11 @@ class CharactersViewModel(
 
     fun onEnableCharacterClick(characterId: Int) {
         settings.hiddenCharacterIds -= characterId
+    }
+
+    fun onIsShowingCharactersClonesChange(enabled: Boolean) {
+        settings.isShowingCharactersClones = enabled
+        _state.update { it.copy(isShowingClones = enabled) }
     }
 
     private fun observeOnlineCharacters() = viewModelScope.launch {

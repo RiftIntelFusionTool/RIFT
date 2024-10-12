@@ -41,6 +41,16 @@ sealed class FormQuestion(
         val allowEmpty: Boolean,
     ) : FormQuestion(title)
 
+    data class CombatTargetQuestion(
+        override val title: String,
+        val placeholder: String,
+        val allowEmpty: Boolean,
+    ) : FormQuestion(title)
+
+    data class PlanetaryIndustryColoniesQuestion(
+        override val title: String,
+    ) : FormQuestion(title)
+
     data class FreeformTextQuestion(
         override val title: String,
         val placeholder: String,
@@ -94,6 +104,10 @@ sealed interface FormAnswer {
 
     data class SpecificCharactersAnswer(
         val characters: List<String>,
+    ) : FormAnswer
+
+    data class PlanetaryIndustryColoniesAnswer(
+        val colonies: List<String>,
     ) : FormAnswer
 
     data class FreeformTextAnswer(

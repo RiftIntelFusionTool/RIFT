@@ -431,6 +431,21 @@ class ChooseChatMessageTokenizationUseCaseTest : FreeSpec({
             "J5A-IX gate".token(TokenType.Gate("J5A-IX")),
         )
     }
+
+    "ambiguous navy ships" {
+        every { mockShipTypesRepository.getShip("exequror") } returns "Exequror"
+        every { mockShipTypesRepository.getShip("exequror navy") } returns "Exequror Navy Issue"
+        every { mockShipTypesRepository.getShip("navy caracal") } returns "Caracal Navy Issue"
+        every { mockShipTypesRepository.getShip("caracal") } returns "Caracal"
+        val tokenizations = parser.parse("exequror navy caracal", "Delve")
+
+        val actual = target(tokenizations)
+
+        actual shouldBe listOf(
+            "exequror navy".token(Ship("Exequror Navy Issue")),
+            "caracal".token(Ship("Caracal")),
+        )
+    }
 })
 
 private fun String.token(vararg types: TokenType): Token {

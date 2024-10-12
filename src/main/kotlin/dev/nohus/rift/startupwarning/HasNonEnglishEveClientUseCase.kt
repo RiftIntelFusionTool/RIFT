@@ -1,7 +1,9 @@
-package dev.nohus.rift.gamelogs
+package dev.nohus.rift.startupwarning
 
 import dev.nohus.rift.settings.persistence.Settings
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.koin.core.annotation.Single
 import java.io.IOException
 import java.nio.file.FileSystemException
@@ -15,11 +17,17 @@ import kotlin.io.path.readText
 private val logger = KotlinLogging.logger {}
 
 @Single
-class ShouldShowNonEnglishEveClientWarningUseCase(
+class HasNonEnglishEveClientUseCase(
     private val settings: Settings,
 ) {
 
-    operator fun invoke(): Boolean {
+    suspend operator fun invoke(): Boolean {
+        return withContext(Dispatchers.IO) {
+            hasNonEnglishEveClient()
+        }
+    }
+
+    private fun hasNonEnglishEveClient(): Boolean {
         if (!settings.isSetupWizardFinished) return false
         val dir = settings.eveSettingsDirectory ?: return false
         return try {

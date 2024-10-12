@@ -9,7 +9,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,6 +24,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Text
@@ -42,17 +42,20 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.nohus.rift.characters.CharactersViewModel.CharacterItem
 import dev.nohus.rift.characters.CharactersViewModel.CopyingState
 import dev.nohus.rift.characters.CharactersViewModel.UiState
+import dev.nohus.rift.clones.Clone
 import dev.nohus.rift.compose.AsyncAllianceLogo
 import dev.nohus.rift.compose.AsyncCorporationLogo
 import dev.nohus.rift.compose.AsyncPlayerPortrait
 import dev.nohus.rift.compose.AsyncTypeIcon
 import dev.nohus.rift.compose.ButtonType
 import dev.nohus.rift.compose.ClickableLocation
+import dev.nohus.rift.compose.ContextMenuItem
 import dev.nohus.rift.compose.PointerInteractionStateHolder
 import dev.nohus.rift.compose.RequirementIcon
 import dev.nohus.rift.compose.RiftButton
@@ -62,7 +65,6 @@ import dev.nohus.rift.compose.RiftMessageDialog
 import dev.nohus.rift.compose.RiftTooltipArea
 import dev.nohus.rift.compose.RiftWindow
 import dev.nohus.rift.compose.ScrollbarLazyColumn
-import dev.nohus.rift.compose.TooltipAnchor
 import dev.nohus.rift.compose.hoverBackground
 import dev.nohus.rift.compose.pointerInteraction
 import dev.nohus.rift.compose.theme.Cursors
@@ -72,6 +74,7 @@ import dev.nohus.rift.di.koin
 import dev.nohus.rift.generated.resources.Res
 import dev.nohus.rift.generated.resources.buttoniconminus
 import dev.nohus.rift.generated.resources.buttoniconplus
+import dev.nohus.rift.generated.resources.clone
 import dev.nohus.rift.generated.resources.copy_16px
 import dev.nohus.rift.generated.resources.editplanicon
 import dev.nohus.rift.generated.resources.recall_drones_16px
@@ -79,6 +82,8 @@ import dev.nohus.rift.generated.resources.sso
 import dev.nohus.rift.generated.resources.sso_dark
 import dev.nohus.rift.generated.resources.window_characters
 import dev.nohus.rift.location.CharacterLocationRepository.Location
+import dev.nohus.rift.location.LocationRepository.Station
+import dev.nohus.rift.location.LocationRepository.Structure
 import dev.nohus.rift.network.AsyncResource
 import dev.nohus.rift.repositories.SolarSystemsRepository
 import dev.nohus.rift.sso.SsoAuthority
@@ -99,6 +104,13 @@ fun CharactersWindow(
         title = "Characters",
         icon = Res.drawable.window_characters,
         state = windowState,
+        tuneContextMenuItems = listOf(
+            ContextMenuItem.CheckboxItem(
+                text = "Show clones",
+                isSelected = state.isShowingClones,
+                onClick = { viewModel.onIsShowingCharactersClonesChange(!state.isShowingClones) },
+            ),
+        ),
         onCloseClick = onCloseRequest,
     ) {
         CharactersWindowContent(
@@ -132,7 +144,6 @@ fun CharactersWindow(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun CharactersWindowContent(
     state: UiState,
@@ -168,6 +179,7 @@ private fun CharactersWindowContent(
                             location = state.locations[character.characterId],
                             copyingState = state.copying,
                             isChoosingDisabledCharacters = state.isChoosingDisabledCharacters,
+                            isShowingClones = state.isShowingClones,
                             onCopySourceClick = { onCopySourceClick(character.characterId) },
                             onCopyDestinationClick = { onCopyDestinationClick(character.characterId) },
                             onDisableCharacterClick = onDisableCharacterClick,
@@ -177,8 +189,7 @@ private fun CharactersWindowContent(
                 item(key = "disabled characters") {
                     Box(modifier = Modifier.animateItem()) {
                         RiftTooltipArea(
-                            tooltip = "Disabled characters will not be used in RIFT.",
-                            anchor = TooltipAnchor.BottomStart,
+                            text = "Disabled characters will not be used in RIFT.",
                             modifier = Modifier.padding(vertical = Spacing.medium),
                         ) {
                             Row(
@@ -262,9 +273,7 @@ private fun TopRow(
                             } else {
                                 SsoButton(onClick = onSsoClick)
                                 RiftTooltipArea(
-                                    tooltip = "Copy Eve settings\n(window positions, overview, etc.)\nbetween selected characters.",
-                                    anchor = TooltipAnchor.TopEnd,
-                                    contentAnchor = Alignment.BottomCenter,
+                                    text = "Copy Eve settings\n(window positions, overview, etc.)\nbetween selected characters.",
                                 ) {
                                     RiftButton(
                                         text = "Copy settings",
@@ -361,193 +370,255 @@ private fun CharacterRow(
     location: Location?,
     copyingState: CopyingState,
     isChoosingDisabledCharacters: Boolean,
+    isShowingClones: Boolean,
     onCopySourceClick: () -> Unit,
     onCopyDestinationClick: () -> Unit,
     onDisableCharacterClick: (characterId: Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+    Column(
         modifier = modifier
-            .fillMaxWidth()
             .hoverBackground()
             .padding(Spacing.verySmall),
     ) {
-        OnlineIndicatorBar(isOnline)
-        AsyncPlayerPortrait(
-            characterId = character.characterId,
-            size = 64,
-            modifier = Modifier.size(64.dp),
-        )
-        when (character.info) {
-            is AsyncResource.Ready -> {
-                Column(
-                    modifier = Modifier.padding(start = Spacing.medium),
-                ) {
-                    AsyncCorporationLogo(
-                        corporationId = character.info.value.corporationId,
-                        size = 32,
-                        modifier = Modifier.size(32.dp),
-                    )
-                    if (character.info.value.allianceId != null) {
-                        AsyncAllianceLogo(
-                            allianceId = character.info.value.allianceId,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            OnlineIndicatorBar(isOnline)
+            AsyncPlayerPortrait(
+                characterId = character.characterId,
+                size = 64,
+                modifier = Modifier.size(64.dp),
+            )
+            when (character.info) {
+                is AsyncResource.Ready -> {
+                    Column(
+                        modifier = Modifier.padding(start = Spacing.medium),
+                    ) {
+                        AsyncCorporationLogo(
+                            corporationId = character.info.value.corporationId,
                             size = 32,
                             modifier = Modifier.size(32.dp),
                         )
+                        if (character.info.value.allianceId != null) {
+                            AsyncAllianceLogo(
+                                allianceId = character.info.value.allianceId,
+                                size = 32,
+                                modifier = Modifier.size(32.dp),
+                            )
+                        }
                     }
-                }
 
-                Column(
-                    modifier = Modifier
-                        .padding(horizontal = Spacing.medium)
-                        .weight(1f),
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
+                    Column(
+                        modifier = Modifier
+                            .padding(horizontal = Spacing.medium)
+                            .weight(1f),
                     ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = character.info.value.name,
+                                style = RiftTheme.typography.titleHighlighted,
+                            )
+                            OnlineIndicatorDot(
+                                isOnline = isOnline,
+                                modifier = Modifier.padding(horizontal = Spacing.medium),
+                            )
+                        }
                         Text(
-                            text = character.info.value.name,
-                            style = RiftTheme.typography.titleHighlighted,
-                        )
-                        OnlineIndicatorDot(
-                            isOnline = isOnline,
-                            modifier = Modifier.padding(horizontal = Spacing.medium),
-                        )
-                    }
-                    Text(
-                        text = character.info.value.corporationName,
-                        style = RiftTheme.typography.bodySecondary,
-                    )
-                    if (character.info.value.allianceName != null) {
-                        Text(
-                            text = character.info.value.allianceName,
+                            text = character.info.value.corporationName,
                             style = RiftTheme.typography.bodySecondary,
                         )
+                        if (character.info.value.allianceName != null) {
+                            Text(
+                                text = character.info.value.allianceName,
+                                style = RiftTheme.typography.bodySecondary,
+                            )
+                        }
+                        if (character.walletBalance != null) {
+                            Text(
+                                text = formatIsk(character.walletBalance),
+                                style = RiftTheme.typography.bodyPrimary,
+                            )
+                        }
                     }
-                    if (character.walletBalance != null) {
-                        Text(
-                            text = formatIsk(character.walletBalance),
-                            style = RiftTheme.typography.bodyPrimary,
+
+                    AnimatedVisibility(copyingState is CopyingState.NotCopying && !isChoosingDisabledCharacters) {
+                        Location(location)
+                    }
+
+                    AnimatedContent(
+                        copyingState,
+                        contentKey = {
+                            when (it) {
+                                CopyingState.NotCopying -> 0
+                                CopyingState.SelectingSource -> 1
+                                is CopyingState.SelectingDestination -> 2
+                                is CopyingState.DestinationSelected -> 2
+                            }
+                        },
+                    ) { copyingState ->
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.size(32.dp),
+                        ) {
+                            when (copyingState) {
+                                CopyingState.NotCopying -> {
+                                    RequirementIcon(
+                                        isFulfilled = character.isAuthenticated,
+                                        fulfilledTooltip = "Authenticated with ESI",
+                                        notFulfilledTooltip = "Not authenticated with ESI.\nClick the log in button above.",
+                                        modifier = Modifier.padding(start = Spacing.small),
+                                    )
+                                }
+
+                                is CopyingState.SelectingSource -> {
+                                    if (character.settingsFile != null) {
+                                        RiftIconButton(
+                                            icon = Res.drawable.copy_16px,
+                                            onClick = onCopySourceClick,
+                                        )
+                                    } else {
+                                        NoSettingsFileIcon()
+                                    }
+                                }
+
+                                is CopyingState.SelectingDestination -> {
+                                    if (character.settingsFile != null) {
+                                        if (copyingState.sourceId == character.characterId) {
+                                            Image(
+                                                painter = painterResource(Res.drawable.copy_16px),
+                                                contentDescription = null,
+                                                colorFilter = ColorFilter.tint(RiftTheme.colors.textPrimary),
+                                                modifier = Modifier.size(16.dp),
+                                            )
+                                        } else {
+                                            RiftIconButton(
+                                                icon = Res.drawable.recall_drones_16px,
+                                                onClick = onCopyDestinationClick,
+                                            )
+                                        }
+                                    } else {
+                                        NoSettingsFileIcon()
+                                    }
+                                }
+
+                                is CopyingState.DestinationSelected -> {
+                                    if (character.settingsFile != null) {
+                                        if (copyingState.source.id == character.characterId) {
+                                            Image(
+                                                painter = painterResource(Res.drawable.copy_16px),
+                                                contentDescription = null,
+                                                colorFilter = ColorFilter.tint(RiftTheme.colors.textPrimary),
+                                                modifier = Modifier.size(16.dp),
+                                            )
+                                        } else if (copyingState.destination.any { it.id == character.characterId }) {
+                                            Image(
+                                                painter = painterResource(Res.drawable.recall_drones_16px),
+                                                contentDescription = null,
+                                                colorFilter = ColorFilter.tint(RiftTheme.colors.textPrimary),
+                                                modifier = Modifier.size(16.dp),
+                                            )
+                                        } else {
+                                            RiftIconButton(
+                                                icon = Res.drawable.recall_drones_16px,
+                                                onClick = onCopyDestinationClick,
+                                            )
+                                        }
+                                    } else {
+                                        NoSettingsFileIcon()
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    AnimatedVisibility(isChoosingDisabledCharacters) {
+                        RiftIconButton(
+                            icon = Res.drawable.buttoniconminus,
+                            onClick = { onDisableCharacterClick(character.characterId) },
+                            modifier = Modifier.padding(start = Spacing.small),
                         )
                     }
                 }
 
-                AnimatedVisibility(copyingState is CopyingState.NotCopying && !isChoosingDisabledCharacters) {
-                    Location(location)
+                is AsyncResource.Error -> {
+                    Text(
+                        text = "Could not load",
+                        style = RiftTheme.typography.bodySecondary.copy(color = RiftTheme.colors.borderError),
+                        modifier = Modifier.padding(horizontal = Spacing.medium),
+                    )
                 }
 
-                AnimatedContent(
-                    copyingState,
-                    contentKey = {
-                        when (it) {
-                            CopyingState.NotCopying -> 0
-                            CopyingState.SelectingSource -> 1
-                            is CopyingState.SelectingDestination -> 2
-                            is CopyingState.DestinationSelected -> 2
-                        }
-                    },
-                ) { copyingState ->
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.size(32.dp),
-                    ) {
-                        when (copyingState) {
-                            CopyingState.NotCopying -> {
-                                RequirementIcon(
-                                    isFulfilled = character.isAuthenticated,
-                                    fulfilledTooltip = "Authenticated with ESI",
-                                    notFulfilledTooltip = "Not authenticated with ESI.\nClick the log in button above.",
-                                    tooltipAnchor = TooltipAnchor.BottomEnd,
-                                    modifier = Modifier.padding(start = Spacing.small),
-                                )
-                            }
-
-                            is CopyingState.SelectingSource -> {
-                                if (character.settingsFile != null) {
-                                    RiftIconButton(
-                                        icon = Res.drawable.copy_16px,
-                                        onClick = onCopySourceClick,
-                                    )
-                                } else {
-                                    NoSettingsFileIcon()
-                                }
-                            }
-
-                            is CopyingState.SelectingDestination -> {
-                                if (character.settingsFile != null) {
-                                    if (copyingState.sourceId == character.characterId) {
-                                        Image(
-                                            painter = painterResource(Res.drawable.copy_16px),
-                                            contentDescription = null,
-                                            colorFilter = ColorFilter.tint(RiftTheme.colors.textPrimary),
-                                            modifier = Modifier.size(16.dp),
-                                        )
-                                    } else {
-                                        RiftIconButton(
-                                            icon = Res.drawable.recall_drones_16px,
-                                            onClick = onCopyDestinationClick,
-                                        )
-                                    }
-                                } else {
-                                    NoSettingsFileIcon()
-                                }
-                            }
-
-                            is CopyingState.DestinationSelected -> {
-                                if (character.settingsFile != null) {
-                                    if (copyingState.source.id == character.characterId) {
-                                        Image(
-                                            painter = painterResource(Res.drawable.copy_16px),
-                                            contentDescription = null,
-                                            colorFilter = ColorFilter.tint(RiftTheme.colors.textPrimary),
-                                            modifier = Modifier.size(16.dp),
-                                        )
-                                    } else if (copyingState.destination.any { it.id == character.characterId }) {
-                                        Image(
-                                            painter = painterResource(Res.drawable.recall_drones_16px),
-                                            contentDescription = null,
-                                            colorFilter = ColorFilter.tint(RiftTheme.colors.textPrimary),
-                                            modifier = Modifier.size(16.dp),
-                                        )
-                                    } else {
-                                        RiftIconButton(
-                                            icon = Res.drawable.recall_drones_16px,
-                                            onClick = onCopyDestinationClick,
-                                        )
-                                    }
-                                } else {
-                                    NoSettingsFileIcon()
-                                }
-                            }
-                        }
-                    }
-                }
-
-                AnimatedVisibility(isChoosingDisabledCharacters) {
-                    RiftIconButton(
-                        icon = Res.drawable.buttoniconminus,
-                        onClick = { onDisableCharacterClick(character.characterId) },
-                        modifier = Modifier.padding(start = Spacing.small),
+                AsyncResource.Loading -> {
+                    Text(
+                        text = "Loading…",
+                        style = RiftTheme.typography.bodySecondary,
+                        modifier = Modifier.padding(horizontal = Spacing.medium),
                     )
                 }
             }
+        }
 
-            is AsyncResource.Error -> {
-                Text(
-                    text = "Could not load",
-                    style = RiftTheme.typography.bodySecondary.copy(color = RiftTheme.colors.borderError),
-                    modifier = Modifier.padding(horizontal = Spacing.medium),
+        AnimatedVisibility(copyingState is CopyingState.NotCopying && !isChoosingDisabledCharacters && isShowingClones) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(Spacing.verySmall),
+            ) {
+                for (clone in character.clones.sortedWith(
+                    compareBy(
+                        { !it.isActive },
+                        { it.station?.solarSystemId ?: it.structure?.solarSystemId },
+                        { -it.id },
+                    ),
+                )) {
+                    if (clone.isActive && clone.implants.isEmpty()) continue
+                    Clone(clone)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun Clone(clone: Clone) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Image(
+            painter = painterResource(Res.drawable.clone),
+            contentDescription = null,
+            modifier = Modifier.size(32.dp),
+        )
+
+        for (implant in clone.implants) {
+            RiftTooltipArea(
+                text = implant.name,
+            ) {
+                AsyncTypeIcon(
+                    type = implant,
+                    modifier = Modifier.size(32.dp),
                 )
             }
+        }
+        if (clone.implants.isEmpty()) {
+            Text(
+                text = "No implants",
+                style = RiftTheme.typography.bodySecondary,
+                modifier = Modifier.padding(start = Spacing.medium),
+            )
+        }
 
-            AsyncResource.Loading -> {
-                Text(
-                    text = "Loading…",
-                    style = RiftTheme.typography.bodySecondary,
-                    modifier = Modifier.padding(horizontal = Spacing.medium),
-                )
-            }
+        Spacer(Modifier.weight(1f))
+        if (clone.isActive) {
+            Text(
+                text = "Active clone",
+                style = RiftTheme.typography.bodyPrimary.copy(fontWeight = FontWeight.Bold),
+            )
+        } else {
+            CloneLocation(clone.station, clone.structure)
         }
     }
 }
@@ -625,7 +696,6 @@ private fun NoSettingsFileIcon() {
         isFulfilled = false,
         fulfilledTooltip = "",
         notFulfilledTooltip = "EVE settings file for this character is missing.\nMake sure you have logged in to the game\nat least once.",
-        tooltipAnchor = TooltipAnchor.BottomEnd,
         modifier = Modifier.padding(start = Spacing.small),
     )
 }
@@ -694,8 +764,7 @@ private fun Location(location: Location?) {
                 ?: location.structure?.name?.replace(" - ", "\n")
                 ?: "In space"
             RiftTooltipArea(
-                tooltip = tooltip,
-                anchor = TooltipAnchor.BottomEnd,
+                text = tooltip,
             ) {
                 AsyncTypeIcon(
                     typeId = typeId,
@@ -708,6 +777,39 @@ private fun Location(location: Location?) {
                 textAlign = TextAlign.Center,
                 modifier = Modifier.width(50.dp),
             )
+        }
+    }
+}
+
+@Composable
+private fun CloneLocation(station: Station?, structure: Structure?) {
+    val solarSystemId = station?.solarSystemId ?: structure?.solarSystemId ?: return
+    val repository: SolarSystemsRepository by koin.inject()
+    val systemName = repository.getSystemName(solarSystemId) ?: return
+    val locationId = station?.stationId?.toLong() ?: structure?.structureId
+
+    ClickableLocation(solarSystemId, locationId) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.small),
+        ) {
+            val typeId = station?.typeId ?: structure?.typeId ?: return@ClickableLocation
+            val tooltip = station?.name?.replace(" - ", "\n")
+                ?: structure?.name?.replace(" - ", "\n")
+                ?: return@ClickableLocation
+            Text(
+                text = systemName,
+                style = RiftTheme.typography.bodyLink,
+                modifier = Modifier.widthIn(max = 50.dp),
+            )
+            RiftTooltipArea(
+                text = tooltip,
+            ) {
+                AsyncTypeIcon(
+                    typeId = typeId,
+                    modifier = Modifier.size(32.dp).border(1.dp, RiftTheme.colors.borderGreyLight),
+                )
+            }
         }
     }
 }

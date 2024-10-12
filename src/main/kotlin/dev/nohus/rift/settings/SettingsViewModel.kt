@@ -14,6 +14,8 @@ import dev.nohus.rift.settings.persistence.ConfigurationPack
 import dev.nohus.rift.settings.persistence.IntelChannel
 import dev.nohus.rift.settings.persistence.Settings
 import dev.nohus.rift.utils.Pos
+import dev.nohus.rift.windowing.WindowManager
+import dev.nohus.rift.windowing.WindowManager.RiftWindow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -34,6 +36,7 @@ class SettingsViewModel(
     private val getEveCharactersSettingsUseCase: GetEveCharactersSettingsUseCase,
     private val configurationPackRepository: ConfigurationPackRepository,
     solarSystemsRepository: SolarSystemsRepository,
+    private val windowManager: WindowManager,
 ) : ViewModel() {
 
     data class UiState(
@@ -223,6 +226,10 @@ class SettingsViewModel(
 
     fun onEditNotificationClick() {
         _state.update { it.copy(isEditNotificationWindowOpen = true) }
+    }
+
+    fun onConfigurePushoverClick() {
+        windowManager.onWindowOpen(RiftWindow.Pushover)
     }
 
     fun onEditNotificationDone(editPos: Pos?, pos: Pos?) {

@@ -1,10 +1,11 @@
 package dev.nohus.rift.repositories
 
-import dev.nohus.rift.configurationpack.ConfigurationPackRepository
 import dev.nohus.rift.network.Result
 import dev.nohus.rift.network.esi.AlliancesIdAlliance
 import dev.nohus.rift.network.esi.CorporationsIdCorporation
 import dev.nohus.rift.network.esi.EsiApi
+import dev.nohus.rift.standings.Standing
+import dev.nohus.rift.standings.StandingsRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import org.koin.core.annotation.Single
@@ -12,7 +13,7 @@ import org.koin.core.annotation.Single
 @Single
 class CharacterDetailsRepository(
     private val esiApi: EsiApi,
-    private val configurationPackRepository: ConfigurationPackRepository,
+    private val standingsRepository: StandingsRepository,
 ) {
 
     data class CharacterDetails(
@@ -24,7 +25,7 @@ class CharacterDetailsRepository(
         val allianceId: Int?,
         val allianceName: String?,
         val allianceTicker: String?,
-        val isFriendly: Boolean,
+        val standing: Standing,
         val title: String?,
     )
 
@@ -34,6 +35,7 @@ class CharacterDetailsRepository(
         val deferredAlliance = async { character.allianceId?.let { esiApi.getAlliancesId(it).success } }
         val corporation = deferredCorporation.await()
         val alliance = deferredAlliance.await()
+        val standing = standingsRepository.getStanding(character.allianceId, character.corporationId, characterId)
         CharacterDetails(
             characterId = characterId,
             name = character.name,
@@ -43,7 +45,7 @@ class CharacterDetailsRepository(
             allianceId = character.allianceId,
             allianceName = alliance?.name,
             allianceTicker = alliance?.ticker,
-            isFriendly = character.allianceId?.let { configurationPackRepository.isFriendlyAlliance(it) } == true,
+            standing = standing,
             title = character.title,
         )
     }

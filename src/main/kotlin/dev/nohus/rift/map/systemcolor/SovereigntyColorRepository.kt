@@ -1,13 +1,16 @@
 package dev.nohus.rift.map.systemcolor
 
+import androidx.collection.MutableIntLongMap
 import androidx.compose.ui.graphics.Color
 import dev.nohus.rift.network.imageserver.ImageServerApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.apache.commons.math3.ml.clustering.DoublePoint
 import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer
+import org.jetbrains.skiko.MainUIDispatcher
 import org.koin.core.annotation.Single
 import java.awt.image.BufferedImage
 
@@ -25,18 +28,18 @@ class SovereigntyColorRepository(
         500004 to Color(0xFF6DB09E), // Gallente Federation
         500005 to Color(0xFF063C26), // Jove Empire
     )
-    private val colorsByIds = mutableMapOf<Int, Color>()
+    private val colorsByIds = MutableIntLongMap()
     private val processedIds = mutableSetOf<Int>()
 
     fun getFactionColor(factionId: Int): Color {
         factionColors[factionId]?.let { return it }
-        colorsByIds[factionId]?.let { return it }
+        if (colorsByIds.containsKey(factionId)) return Color(colorsByIds[factionId].toULong())
         getColorFromLogo(factionId, imageServerApi::getCorporationLogo)
         return Color.Unspecified
     }
 
     fun getAllianceColor(allianceId: Int): Color {
-        colorsByIds[allianceId]?.let { return it }
+        if (colorsByIds.containsKey(allianceId)) return Color(colorsByIds[allianceId].toULong())
         getColorFromLogo(allianceId, imageServerApi::getAllianceLogo)
         return Color.Unspecified
     }
@@ -50,7 +53,10 @@ class SovereigntyColorRepository(
                 processedIds -= id
                 return@launch
             }
-            colorsByIds[id] = getDominantColor(logo)
+            val color = getDominantColor(logo).value.toLong()
+            withContext(MainUIDispatcher) {
+                colorsByIds[id] = color
+            }
         }
     }
 

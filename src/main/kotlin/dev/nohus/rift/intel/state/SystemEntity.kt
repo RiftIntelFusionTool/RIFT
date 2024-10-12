@@ -1,6 +1,7 @@
 package dev.nohus.rift.intel.state
 
 import dev.nohus.rift.repositories.CharacterDetailsRepository.CharacterDetails
+import dev.nohus.rift.standings.Standing
 
 /**
  * An entity or event present in a system
@@ -19,7 +20,7 @@ sealed interface SystemEntity {
     data class Ship(
         val name: String,
         val count: Int,
-        val isFriendly: Boolean? = null,
+        val standing: Standing? = null,
     ) : SystemEntity, CharacterBound
 
     data class Gate(
@@ -43,7 +44,7 @@ sealed interface SystemEntity {
         val allianceId: Int?,
         val allianceName: String?,
         val allianceTicker: String?,
-        val isFriendly: Boolean?,
+        val standing: Standing?,
     )
 
     data object Wormhole : SystemEntity

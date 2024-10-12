@@ -10,6 +10,8 @@ import dev.nohus.rift.alerts.create.CreateAlertInputModel
 import dev.nohus.rift.alerts.creategroup.CreateGroupInputModel
 import dev.nohus.rift.characters.repositories.LocalCharactersRepository
 import dev.nohus.rift.characters.repositories.LocalCharactersRepository.LocalCharacter
+import dev.nohus.rift.planetaryindustry.PlanetaryIndustryRepository
+import dev.nohus.rift.planetaryindustry.PlanetaryIndustryRepository.ColonyItem
 import dev.nohus.rift.settings.persistence.Settings
 import dev.nohus.rift.utils.sound.Sound
 import dev.nohus.rift.utils.sound.SoundPlayer
@@ -27,6 +29,7 @@ class AlertsViewModel(
     private val localCharactersRepository: LocalCharactersRepository,
     private val soundsRepository: SoundsRepository,
     private val soundPlayer: SoundPlayer,
+    private val planetaryIndustryRepository: PlanetaryIndustryRepository,
 ) : ViewModel() {
 
     data class UiState(
@@ -37,6 +40,7 @@ class AlertsViewModel(
         val isCreateAlertDialogOpen: CreateAlertInputModel? = null,
         val isCreateGroupDialogOpen: CreateGroupInputModel? = null,
         val groups: Set<String> = emptySet(),
+        val colonies: List<ColonyItem> = emptyList(),
     )
 
     private val _state = MutableStateFlow(
@@ -66,6 +70,13 @@ class AlertsViewModel(
         viewModelScope.launch {
             localCharactersRepository.characters.collect { items ->
                 _state.update { it.copy(characters = items) }
+            }
+        }
+        viewModelScope.launch {
+            planetaryIndustryRepository.colonies.collect { resource ->
+                resource.success?.values?.let { colonies ->
+                    _state.update { it.copy(colonies = colonies.toList()) }
+                }
             }
         }
     }

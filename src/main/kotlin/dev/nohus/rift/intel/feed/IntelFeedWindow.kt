@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -45,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import dev.nohus.rift.compose.ContextMenuItem
 import dev.nohus.rift.compose.IntelSystem
 import dev.nohus.rift.compose.IntelTimer
+import dev.nohus.rift.compose.LocalNow
 import dev.nohus.rift.compose.PointerInteractionState
 import dev.nohus.rift.compose.PointerInteractionStateHolder
 import dev.nohus.rift.compose.RiftButton
@@ -54,13 +56,17 @@ import dev.nohus.rift.compose.RiftWindow
 import dev.nohus.rift.compose.ScrollbarLazyColumn
 import dev.nohus.rift.compose.SystemEntities
 import dev.nohus.rift.compose.TitleBarStyle
+import dev.nohus.rift.compose.getNow
 import dev.nohus.rift.compose.getStandardTransitionSpec
 import dev.nohus.rift.compose.pointerInteraction
 import dev.nohus.rift.compose.theme.RiftTheme
 import dev.nohus.rift.compose.theme.Spacing
 import dev.nohus.rift.generated.resources.Res
+import dev.nohus.rift.generated.resources.bars_sort_ascending_16px
 import dev.nohus.rift.generated.resources.window_satellite
 import dev.nohus.rift.intel.feed.IntelFeedViewModel.UiState
+import dev.nohus.rift.intel.state.IntelStateController
+import dev.nohus.rift.intel.state.SystemEntity
 import dev.nohus.rift.map.groupIntelByTime
 import dev.nohus.rift.settings.persistence.DistanceFilter
 import dev.nohus.rift.settings.persistence.EntityFilter
@@ -97,7 +103,6 @@ fun IntelFeedWindow(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun IntelFeedWindowContent(
     state: UiState,
@@ -132,95 +137,120 @@ private fun IntelFeedWindowContent(
         }
 
         if (items.isNotEmpty()) {
-            var expandedSystem: String? by remember { mutableStateOf(null) }
-            ScrollbarLazyColumn(
-                listState = listState,
-                modifier = Modifier.padding(start = outerPadding, bottom = outerPadding),
-                scrollbarModifier = Modifier.padding(end = outerPadding / 2),
-            ) {
-                items(items, key = { it.first }) { (system, intel) ->
-                    AnimatedContent(
-                        targetState = system == expandedSystem,
-                        transitionSpec = {
-                            (
-                                fadeIn(animationSpec = tween(110, delayMillis = 90)) +
-                                    scaleIn(initialScale = 0.92f, animationSpec = tween(110, delayMillis = 90))
-                                )
-                                .togetherWith(fadeOut(animationSpec = tween(90)))
-                        },
-                    ) { isExpanded ->
-                        ItemBox(
-                            isExpanded = isExpanded,
-                            isCompact = state.settings.isUsingCompactMode,
-                            onClick = { expandedSystem = if (isExpanded) null else system },
-                            modifier = Modifier.animateItem(),
-                        ) {
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(Spacing.small),
-                                modifier = Modifier.fillMaxWidth(),
-                            ) {
-                                if (isExpanded) {
-                                    IntelSystem(
-                                        system = system,
-                                        rowHeight = state.settings.rowHeight,
-                                        isShowingSystemDistance = state.settings.isShowingSystemDistance,
-                                        isUsingJumpBridges = state.settings.isUsingJumpBridgesForDistance,
-                                        background = RiftTheme.colors.windowBackgroundSecondary,
+            CompositionLocalProvider(LocalNow provides getNow()) {
+                var expandedSystem: String? by remember { mutableStateOf(null) }
+                ScrollbarLazyColumn(
+                    listState = listState,
+                    modifier = Modifier.padding(start = outerPadding, bottom = outerPadding),
+                    scrollbarModifier = Modifier.padding(end = outerPadding / 2),
+                ) {
+                    items(items, key = { it.first }) { (system, intel) ->
+                        AnimatedContent(
+                            targetState = system == expandedSystem,
+                            transitionSpec = {
+                                (
+                                    fadeIn(animationSpec = tween(110, delayMillis = 90)) +
+                                        scaleIn(initialScale = 0.92f, animationSpec = tween(110, delayMillis = 90))
                                     )
-                                }
-                                val groups = groupIntelByTime(intel)
-                                for ((index, group) in groups.entries.sortedByDescending { it.key }.withIndex()) {
-                                    FlowRow(
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                                    ) {
-                                        if (index == 0 && !isExpanded) {
-                                            IntelSystem(
-                                                system = system,
-                                                rowHeight = state.settings.rowHeight,
-                                                isShowingSystemDistance = state.settings.isShowingSystemDistance,
-                                                isUsingJumpBridges = state.settings.isUsingJumpBridgesForDistance,
-                                                background = RiftTheme.colors.windowBackgroundSecondary,
-                                            )
-                                        }
-                                        IntelTimer(
-                                            timestamp = group.key,
-                                            style = RiftTheme.typography.captionBoldPrimary,
-                                            rowHeight = state.settings.rowHeight,
-                                            modifier = Modifier.padding(Spacing.small),
-                                        )
-                                        SystemEntities(
-                                            entities = group.value,
-                                            system = system,
-                                            rowHeight = state.settings.rowHeight,
-                                            isHorizontal = true,
-                                            isGroupingCharacters = !isExpanded,
-                                        )
-                                    }
-                                }
-                            }
+                                    .togetherWith(fadeOut(animationSpec = tween(90)))
+                            },
+                            modifier = Modifier.animateItem(),
+                        ) { isExpanded ->
+                            IntelFeedItem(
+                                isExpanded = isExpanded,
+                                state = state,
+                                system = system,
+                                intel = intel,
+                                onClick = { expandedSystem = if (isExpanded) null else system },
+                            )
                         }
                     }
                 }
             }
         } else {
-            val text = if (state.settings.locationFilters.isEmpty()) {
-                "All locations have been filtered out.\nUpdate your locations filter."
-            } else if (state.settings.entityFilters.isEmpty()) {
-                "All types have been filtered out.\nUpdate your types filter."
-            } else if (state.totalIntelSystems > 0) {
-                "All intel has been filtered out.\nUpdate your filters."
-            } else {
-                "No intel available.\nWaiting for reports."
+            EmptyState(state)
+        }
+    }
+}
+
+@Composable
+private fun EmptyState(state: UiState) {
+    val text = if (state.settings.locationFilters.isEmpty()) {
+        "All locations have been filtered out.\nUpdate your locations filter."
+    } else if (state.settings.entityFilters.isEmpty()) {
+        "All types have been filtered out.\nUpdate your types filter."
+    } else if (state.totalIntelSystems > 0) {
+        "All intel has been filtered out.\nUpdate your filters."
+    } else {
+        "No intel available.\nWaiting for reports."
+    }
+    Text(
+        text = text,
+        style = RiftTheme.typography.titlePrimary,
+        textAlign = TextAlign.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(Spacing.large),
+    )
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun IntelFeedItem(
+    isExpanded: Boolean,
+    state: UiState,
+    system: String,
+    intel: List<IntelStateController.Dated<SystemEntity>>,
+    onClick: () -> Unit,
+) {
+    ItemBox(
+        isExpanded = isExpanded,
+        isCompact = state.settings.isUsingCompactMode,
+        onClick = onClick,
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(Spacing.small),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            if (isExpanded) {
+                IntelSystem(
+                    system = system,
+                    rowHeight = state.settings.rowHeight,
+                    isShowingSystemDistance = state.settings.isShowingSystemDistance,
+                    isUsingJumpBridges = state.settings.isUsingJumpBridgesForDistance,
+                    background = RiftTheme.colors.windowBackgroundSecondary,
+                )
             }
-            Text(
-                text = text,
-                style = RiftTheme.typography.titlePrimary,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(Spacing.large),
-            )
+            val groups = groupIntelByTime(intel)
+            for ((index, group) in groups.entries.sortedByDescending { it.key }.withIndex()) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    if (index == 0 && !isExpanded) {
+                        IntelSystem(
+                            system = system,
+                            rowHeight = state.settings.rowHeight,
+                            isShowingSystemDistance = state.settings.isShowingSystemDistance,
+                            isUsingJumpBridges = state.settings.isUsingJumpBridgesForDistance,
+                            background = RiftTheme.colors.windowBackgroundSecondary,
+                        )
+                    }
+                    IntelTimer(
+                        timestamp = group.key,
+                        style = RiftTheme.typography.captionBoldPrimary,
+                        rowHeight = state.settings.rowHeight,
+                        modifier = Modifier.padding(Spacing.small),
+                    )
+                    SystemEntities(
+                        entities = group.value,
+                        system = system,
+                        rowHeight = state.settings.rowHeight,
+                        isHorizontal = true,
+                        isGroupingCharacters = !isExpanded,
+                    )
+                }
+            }
         }
     }
 }
@@ -340,8 +370,8 @@ private fun FiltersRow(
             var isShown by remember { mutableStateOf(false) }
             RiftButton(
                 text = "Location",
+                isCompact = settings.isUsingCompactMode,
                 onClick = { isShown = true },
-                modifier = Modifier.height(height),
             )
             if (isShown) {
                 val offset = with(LocalDensity.current) {
@@ -391,8 +421,8 @@ private fun FiltersRow(
             var isShown by remember { mutableStateOf(false) }
             RiftButton(
                 text = "Distance",
+                isCompact = settings.isUsingCompactMode,
                 onClick = { isShown = true },
-                modifier = Modifier.height(height),
             )
             if (isShown) {
                 val offset = with(LocalDensity.current) {
@@ -427,8 +457,8 @@ private fun FiltersRow(
             var isShown by remember { mutableStateOf(false) }
             RiftButton(
                 text = "Types",
+                isCompact = settings.isUsingCompactMode,
                 onClick = { isShown = true },
-                modifier = Modifier.height(height),
             )
             if (isShown) {
                 val offset = with(LocalDensity.current) {
@@ -458,8 +488,9 @@ private fun FiltersRow(
             var isShown by remember { mutableStateOf(false) }
             RiftButton(
                 text = "Sorting",
+                icon = Res.drawable.bars_sort_ascending_16px,
+                isCompact = settings.isUsingCompactMode,
                 onClick = { isShown = true },
-                modifier = Modifier.height(height),
             )
             if (isShown) {
                 val offset = with(LocalDensity.current) {

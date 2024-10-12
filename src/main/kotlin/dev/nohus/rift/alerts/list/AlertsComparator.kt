@@ -28,24 +28,25 @@ val AlertsComparator = compareBy<Alert>(
                 it.trigger.actionTypes.filterIsInstance<GameActionType.Decloaked>().isNotEmpty() -> 7
                 else -> 8
             }
+            is AlertTrigger.PlanetaryIndustry -> 9
             is AlertTrigger.ChatMessage -> when (it.trigger.channel) {
-                is ChatMessageChannel.Any -> 9
-                else -> 10
+                is ChatMessageChannel.Any -> 10
+                else -> 11
             }
             is AlertTrigger.JabberPing -> when (it.trigger.pingType) {
-                is JabberPingType.Fleet -> 11
-                JabberPingType.Message -> 12
-                is JabberPingType.Message2 -> 12
+                is JabberPingType.Fleet -> 12
+                JabberPingType.Message -> 13
+                is JabberPingType.Message2 -> 14
             }
             is AlertTrigger.JabberMessage -> when (it.trigger.channel) {
-                JabberMessageChannel.Any -> 13
-                is JabberMessageChannel.Channel -> 14
-                JabberMessageChannel.DirectMessage -> 15
+                JabberMessageChannel.Any -> 15
+                is JabberMessageChannel.Channel -> 16
+                JabberMessageChannel.DirectMessage -> 17
             }
             is AlertTrigger.NoChannelActivity -> when (it.trigger.channel) {
-                IntelChannel.All -> 16
-                IntelChannel.Any -> 17
-                is IntelChannel.Channel -> 18
+                IntelChannel.All -> 18
+                IntelChannel.Any -> 19
+                is IntelChannel.Channel -> 20
             }
         }
     },

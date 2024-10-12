@@ -8,17 +8,17 @@ object SecurityColors {
     operator fun get(security: Double): Color {
         val value = security.roundSecurity()
         return when {
-            value >= 1.0 -> Color(0xFF2E74DF)
-            value >= 0.9 -> Color(0xFF379CF6)
-            value >= 0.8 -> Color(0xFF4ACFF3)
-            value >= 0.7 -> Color(0xFF5CDCA6)
-            value >= 0.6 -> Color(0xFF70E552)
-            value >= 0.5 -> Color(0xFFEEFF83)
-            value >= 0.4 -> Color(0xFFDC6C08)
-            value >= 0.3 -> Color(0xFFCE4611)
-            value >= 0.2 -> Color(0xFFBC1113)
-            value >= 0.1 -> Color(0xFF6D231A)
-            else -> Color(0xFF8F3068)
+            value >= 1.0 -> Color(0xFF2C75E1)
+            value >= 0.9 -> Color(0xFF399AEB)
+            value >= 0.8 -> Color(0xFF4ECEF8)
+            value >= 0.7 -> Color(0xFF60DBA3)
+            value >= 0.6 -> Color(0xFF71E754)
+            value >= 0.5 -> Color(0xFFF5FF83)
+            value >= 0.4 -> Color(0xFFDC6C06)
+            value >= 0.3 -> Color(0xFFCE440F)
+            value >= 0.2 -> Color(0xFFBB1116)
+            value >= 0.1 -> Color(0xFF731F1F)
+            else -> Color(0xFF8D3163)
         }
     }
 }

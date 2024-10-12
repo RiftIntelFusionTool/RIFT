@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.nohus.rift.generated.resources.Res
@@ -17,12 +16,10 @@ fun RequirementIcon(
     isFulfilled: Boolean,
     fulfilledTooltip: String,
     notFulfilledTooltip: String,
-    tooltipAnchor: TooltipAnchor,
-    contentAnchor: Alignment = Alignment.TopCenter,
     modifier: Modifier = Modifier,
 ) {
     val tooltip = if (isFulfilled) fulfilledTooltip else notFulfilledTooltip
-    RiftTooltipArea(tooltip, tooltipAnchor, modifier, contentAnchor) {
+    RiftTooltipArea(tooltip, modifier) {
         val icon = if (isFulfilled) Res.drawable.status_ok else Res.drawable.status_warning
         AnimatedContent(icon) {
             Image(

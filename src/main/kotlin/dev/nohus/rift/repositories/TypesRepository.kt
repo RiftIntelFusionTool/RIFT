@@ -50,11 +50,25 @@ class TypesRepository(
         return getType(id)?.name ?: resolvedTypeNames[id]
     }
 
+    fun getType(name: String): Type? {
+        return getTypeId(name)?.let { getType(it) }
+    }
+
     fun getType(id: Int): Type? {
         return types[id]
     }
 
+    fun getTypeOrPlaceholder(id: Int): Type {
+        return getType(id) ?: Type(
+            id = id,
+            name = "Unknown",
+            volume = 0f,
+            iconId = -1,
+        )
+    }
+
     suspend fun resolveNamesFromEsi(ids: List<Int>) {
+        @Suppress("ConvertCallChainIntoSequence")
         resolvedTypeNames += ids
             .distinct()
             .filter { getTypeName(it) == null }

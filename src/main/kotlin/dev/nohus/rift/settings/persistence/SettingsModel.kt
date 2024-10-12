@@ -2,9 +2,12 @@ package dev.nohus.rift.settings.persistence
 
 import dev.nohus.rift.alerts.Alert
 import dev.nohus.rift.settings.persistence.MapSystemInfoType.Assets
+import dev.nohus.rift.settings.persistence.MapSystemInfoType.Clones
+import dev.nohus.rift.settings.persistence.MapSystemInfoType.Colonies
 import dev.nohus.rift.settings.persistence.MapSystemInfoType.Incursions
 import dev.nohus.rift.settings.persistence.MapSystemInfoType.MetaliminalStorms
 import dev.nohus.rift.settings.persistence.MapSystemInfoType.Security
+import dev.nohus.rift.standings.StandingsRepository.Standings
 import dev.nohus.rift.utils.Pos
 import dev.nohus.rift.utils.Size
 import dev.nohus.rift.windowing.WindowManager.RiftWindow
@@ -54,6 +57,13 @@ data class SettingsModel(
     val isShowingSystemDistance: Boolean = true,
     val isUsingJumpBridgesForDistance: Boolean = false,
     val intelExpireSeconds: Int = 300,
+    val standings: Standings = Standings(),
+    val planetaryIndustry: PlanetaryIndustry = PlanetaryIndustry(),
+    val isShowingCharactersClones: Boolean = true,
+    val planetaryIndustryTriggeredAlerts: Map<String, Map<String, Long>> = emptyMap(),
+    val pushover: Pushover = Pushover(),
+    val skipSplashScreen: Boolean = false,
+    val dismissedWarnings: List<String> = emptyList(),
 )
 
 @Serializable
@@ -63,8 +73,8 @@ enum class MapType {
 
 @Serializable
 enum class MapSystemInfoType {
-    StarColor, Security, IntelHostiles, Jumps, Kills, NpcKills, Assets, Incursions, Stations, FactionWarfare,
-    Sovereignty, MetaliminalStorms, JumpRange, Planets, JoveObservatories
+    StarColor, Security, NullSecurity, IntelHostiles, Jumps, Kills, NpcKills, Assets, Clones, Incursions, Stations,
+    FactionWarfare, Sovereignty, MetaliminalStorms, JumpRange, Planets, JoveObservatories, Colonies
 }
 
 @Serializable
@@ -73,12 +83,12 @@ data class IntelMap(
     val mapTypeStarInfoTypes: Map<MapType, MapSystemInfoType> = emptyMap(),
     val mapTypeCellInfoTypes: Map<MapType, MapSystemInfoType?> = emptyMap(),
     val mapTypeIndicatorInfoTypes: Map<MapType, List<MapSystemInfoType>> = mapOf(
-        MapType.NewEden to listOf(Assets, Incursions, MetaliminalStorms),
-        MapType.Region to listOf(Assets, Incursions, MetaliminalStorms),
+        MapType.NewEden to listOf(Assets, Clones, Incursions, MetaliminalStorms, Colonies),
+        MapType.Region to listOf(Assets, Clones, Incursions, MetaliminalStorms, Colonies),
     ),
     val mapTypeInfoBoxInfoTypes: Map<MapType, List<MapSystemInfoType>> = mapOf(
-        MapType.NewEden to listOf(Security, Assets, Incursions, MetaliminalStorms),
-        MapType.Region to listOf(Security, Assets, Incursions, MetaliminalStorms),
+        MapType.NewEden to listOf(Security, Assets, Clones, Incursions, MetaliminalStorms, Colonies),
+        MapType.Region to listOf(Security, Assets, Clones, Incursions, MetaliminalStorms, Colonies),
     ),
     val intelPopupTimeoutSeconds: Int = 60,
     val isCharacterFollowing: Boolean = true,
@@ -130,6 +140,12 @@ data class IntelFeed(
         EntityFilter.Other,
     ),
     val sortingFilter: SortingFilter = SortingFilter.Time,
+)
+
+@Serializable
+data class PlanetaryIndustry(
+    val view: ColonyView = ColonyView.List,
+    val sortingFilter: ColonySortingFilter = ColonySortingFilter.Character,
 )
 
 @Serializable
@@ -193,6 +209,36 @@ sealed interface SortingFilter {
 }
 
 @Serializable
+sealed interface ColonyView {
+    @Serializable
+    @SerialName("List")
+    data object List : ColonyView
+
+    @Serializable
+    @SerialName("Grid")
+    data object Grid : ColonyView
+
+    @Serializable
+    @SerialName("Rows")
+    data object Rows : ColonyView
+}
+
+@Serializable
+sealed interface ColonySortingFilter {
+    @Serializable
+    @SerialName("Status")
+    data object Status : ColonySortingFilter
+
+    @Serializable
+    @SerialName("Character")
+    data object Character : ColonySortingFilter
+
+    @Serializable
+    @SerialName("ExpiryTime")
+    data object ExpiryTime : ColonySortingFilter
+}
+
+@Serializable
 enum class ConfigurationPack {
     Imperium,
     TheInitiative,
@@ -202,4 +248,10 @@ enum class ConfigurationPack {
 data class JumpRange(
     val fromId: Int,
     val distanceLy: Double,
+)
+
+@Serializable
+data class Pushover(
+    val apiToken: String? = null,
+    val userKey: String? = null,
 )

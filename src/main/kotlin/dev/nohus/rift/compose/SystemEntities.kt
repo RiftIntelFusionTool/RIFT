@@ -7,7 +7,6 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -19,22 +18,12 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -58,15 +47,13 @@ import dev.nohus.rift.intel.state.SystemEntity
 import dev.nohus.rift.repositories.CharacterDetailsRepository.CharacterDetails
 import dev.nohus.rift.repositories.ShipTypesRepository
 import dev.nohus.rift.repositories.TypesRepository
+import dev.nohus.rift.standings.getColor
+import dev.nohus.rift.standings.isFriendly
 import dev.nohus.rift.utils.openBrowser
 import dev.nohus.rift.utils.plural
 import dev.nohus.rift.utils.toURIOrNull
-import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
-import java.time.Duration
-import java.time.Instant
-import kotlin.math.roundToLong
 
 @Composable
 fun SystemEntities(
@@ -92,8 +79,7 @@ fun SystemEntities(
                 val shipTypeId = repository.getShipTypeId(killmail.ship)
                 ClickableShip(killmail.ship, shipTypeId) {
                     RiftTooltipArea(
-                        tooltip = killmail.ship,
-                        anchor = TooltipAnchor.BottomCenter,
+                        text = killmail.ship,
                     ) {
                         AsyncTypeIcon(
                             typeId = shipTypeId,
@@ -103,13 +89,12 @@ fun SystemEntities(
                 }
             } else if (killmail.typeName != null) {
                 val typedRepository: TypesRepository by koin.inject()
-                val typeId = typedRepository.getTypeId(killmail.typeName)
+                val type = typedRepository.getType(killmail.typeName)
                 RiftTooltipArea(
-                    tooltip = killmail.typeName,
-                    anchor = TooltipAnchor.BottomCenter,
+                    text = killmail.typeName,
                 ) {
                     AsyncTypeIcon(
-                        typeId = typeId,
+                        type = type,
                         modifier = Modifier.size(rowHeight),
                     )
                 }
@@ -128,18 +113,19 @@ fun SystemEntities(
             }
 
             var style = RiftTheme.typography.bodyHighlighted.copy(fontWeight = FontWeight.Bold)
-            if (killmail.victim.isFriendly == true) style = style.copy(color = RiftTheme.colors.standingBlue)
+            killmail.victim.standing?.getColor()?.let { style = style.copy(color = it) }
+            val ticket = killmail.victim.allianceTicker ?: if (killmail.victim.corporationId?.isNpcCorp() == true) "NPC Corp" else killmail.victim.corporationTicker ?: ""
             if (rowHeight < 32.dp) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.small),
                     modifier = Modifier.padding(horizontal = Spacing.small),
                 ) {
                     Text(
-                        text = killmail.victim.allianceTicker ?: killmail.victim.corporationTicker ?: "NPC Corp",
+                        text = ticket,
                         style = RiftTheme.typography.bodySecondary,
                     )
                     Text(
-                        text = if (killmail.victim.isFriendly == true) "Loss" else "Kill",
+                        text = if (killmail.victim.standing?.isFriendly == true) "Loss" else "Kill",
                         style = style,
                     )
                 }
@@ -148,11 +134,11 @@ fun SystemEntities(
                     modifier = Modifier.padding(horizontal = Spacing.small),
                 ) {
                     Text(
-                        text = if (killmail.victim.isFriendly == true) "Loss" else "Kill",
+                        text = if (killmail.victim.standing?.isFriendly == true) "Loss" else "Kill",
                         style = style,
                     )
                     Text(
-                        text = killmail.victim.allianceTicker ?: killmail.victim.corporationTicker ?: "NPC Corp",
+                        text = ticket,
                         style = RiftTheme.typography.bodySecondary,
                     )
                 }
@@ -170,9 +156,7 @@ fun SystemEntities(
                 )
 
                 var nameStyle = RiftTheme.typography.bodyHighlighted.copy(fontWeight = FontWeight.Bold)
-                if (ship.isFriendly == true) {
-                    nameStyle = nameStyle.copy(color = RiftTheme.colors.standingBlue)
-                }
+                ship.standing?.getColor()?.let { nameStyle = nameStyle.copy(color = it) }
 
                 val text = if (ship.count > 1) {
                     "${ship.count}x ${ship.name}"
@@ -189,22 +173,25 @@ fun SystemEntities(
     }
     if (isGroupingCharacters) {
         entities.filterIsInstance<SystemEntity.Character>()
-            .groupBy { it.details.allianceId ?: it.details.corporationId } // TODO: Group NPC corps together
+            .groupBy {
+                it.details.allianceId ?: if (it.details.corporationId.isNpcCorp()) 1 else it.details.corporationId
+            }
             .forEach { (_, characters) ->
                 SystemEntityInfoRow(rowHeight, isHorizontal) {
                     CharactersPortraits(characters.map { it.details }, rowHeight)
 
                     val representative = characters.first().details
-                    val characterWord = if (representative.isFriendly) "friendly" else "hostile${characters.size.plural}"
+                    val characterWord = if (representative.standing.isFriendly) "friendly" else "hostile${characters.size.plural}"
                     var style = RiftTheme.typography.bodyHighlighted.copy(fontWeight = FontWeight.Bold)
-                    if (representative.isFriendly) style = style.copy(color = RiftTheme.colors.standingBlue)
+                    representative.standing.getColor()?.let { style = style.copy(color = it) }
+                    val ticker = representative.allianceTicker ?: if (representative.corporationId.isNpcCorp()) "NPC Corp" else representative.corporationTicker ?: ""
                     if (rowHeight < 32.dp) {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(Spacing.small),
                             modifier = Modifier.padding(horizontal = Spacing.small),
                         ) {
                             Text(
-                                text = representative.allianceTicker ?: representative.corporationTicker ?: "NPC Corp",
+                                text = ticker,
                                 style = RiftTheme.typography.bodySecondary,
                             )
                             Text(
@@ -221,7 +208,7 @@ fun SystemEntities(
                                 style = style,
                             )
                             Text(
-                                text = representative.allianceTicker ?: representative.corporationTicker ?: "NPC Corp",
+                                text = ticker,
                                 style = RiftTheme.typography.bodySecondary,
                             )
                         }
@@ -240,8 +227,7 @@ fun SystemEntities(
                             modifier = Modifier.size(rowHeight),
                         )
                         RiftTooltipArea(
-                            tooltip = character.details.corporationName ?: "",
-                            anchor = TooltipAnchor.BottomCenter,
+                            text = character.details.corporationName ?: "",
                         ) {
                             AsyncCorporationLogo(
                                 corporationId = character.details.corporationId,
@@ -251,8 +237,7 @@ fun SystemEntities(
                         }
                         if (character.details.allianceId != null) {
                             RiftTooltipArea(
-                                tooltip = character.details.allianceName ?: "",
-                                anchor = TooltipAnchor.BottomCenter,
+                                text = character.details.allianceName ?: "",
                             ) {
                                 AsyncAllianceLogo(
                                     allianceId = character.details.allianceId,
@@ -267,9 +252,7 @@ fun SystemEntities(
                             character.details.allianceTicker?.let { append(it) }
                         }
                         var nameStyle = RiftTheme.typography.bodyHighlighted.copy(fontWeight = FontWeight.Bold)
-                        if (character.details.isFriendly) {
-                            nameStyle = nameStyle.copy(color = RiftTheme.colors.standingBlue)
-                        }
+                        character.details.standing.getColor()?.let { nameStyle = nameStyle.copy(color = it) }
                         if (rowHeight < 32.dp) {
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(Spacing.small),
@@ -342,35 +325,6 @@ fun SystemEntities(
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
-@Composable
-private fun <T> InfiniteScrollingCarousel(
-    items: List<T>,
-    modifier: Modifier = Modifier,
-    content: @Composable (index: Int) -> Unit,
-) {
-    val listState = rememberLazyListState()
-    val delay = (75 / LocalDensity.current.density).roundToLong()
-    var isScrolling by remember { mutableStateOf(true) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            if (isScrolling) listState.scrollBy(1f)
-            delay(delay)
-        }
-    }
-    LazyRow(
-        state = listState,
-        userScrollEnabled = false,
-        modifier = modifier
-            .onPointerEvent(PointerEventType.Enter) { isScrolling = false }
-            .onPointerEvent(PointerEventType.Exit) { isScrolling = true },
-    ) {
-        items(Int.MAX_VALUE) { index ->
-            content(index % items.size)
-        }
-    }
-}
-
 @Composable
 private fun CharactersPortraits(
     characters: List<CharacterDetails>,
@@ -381,16 +335,15 @@ private fun CharactersPortraits(
             InfiniteScrollingCarousel(
                 items = characters,
                 modifier = Modifier.height(rowHeight).width(rowHeight * 3),
-            ) { index ->
-                val character = characters[index]
+            ) { character ->
                 ClickablePlayer(character.characterId) {
                     RiftTooltipArea(
-                        tooltip = character.name,
-                        anchor = TooltipAnchor.BottomCenter,
+                        text = character.name,
                     ) {
                         AsyncPlayerPortrait(
                             characterId = character.characterId,
                             size = 32,
+                            withAnimatedLoading = false,
                             modifier = Modifier.size(rowHeight),
                         )
                     }
@@ -401,8 +354,7 @@ private fun CharactersPortraits(
                 characters.forEach { character ->
                     ClickablePlayer(character.characterId) {
                         RiftTooltipArea(
-                            tooltip = character.name,
-                            anchor = TooltipAnchor.BottomCenter,
+                            text = character.name,
                         ) {
                             AsyncPlayerPortrait(
                                 characterId = character.characterId,
@@ -439,8 +391,7 @@ private fun CharacterMembership(
     if (allianceId != null) {
         ClickableAlliance(allianceId) {
             RiftTooltipArea(
-                tooltip = allianceName ?: "",
-                anchor = TooltipAnchor.BottomCenter,
+                text = allianceName ?: "",
             ) {
                 AsyncAllianceLogo(
                     allianceId = allianceId,
@@ -452,8 +403,7 @@ private fun CharacterMembership(
     } else if (corporationId != null) {
         ClickableCorporation(corporationId) {
             RiftTooltipArea(
-                tooltip = corporationName ?: "",
-                anchor = TooltipAnchor.BottomCenter,
+                text = corporationName ?: "",
             ) {
                 AsyncCorporationLogo(
                     corporationId = corporationId,
@@ -575,3 +525,5 @@ private fun NoVisualRow(
         }
     }
 }
+
+private fun Int.isNpcCorp(): Boolean = this in 1000001..1000441

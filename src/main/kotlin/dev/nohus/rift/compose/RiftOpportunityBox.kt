@@ -102,7 +102,7 @@ sealed class RiftOpportunityBoxCategory(
 }
 
 data class SolarSystemPillState(
-    val distance: String?,
+    val distance: Int?,
     val name: String,
     val security: Double?,
 )
@@ -224,7 +224,7 @@ fun RiftOpportunityBox(
                             .fillMaxWidth()
                             .background(Color.White.copy(alpha = 0.05f)),
                     ) {
-                        val now = LocalNow.current
+                        val now = getNow()
                         val age = key(now) { getRelativeTime(timestamp, displayTimezone) }
                         val text = buildAnnotatedString {
                             if (title != null) {
@@ -247,9 +247,7 @@ fun RiftOpportunityBox(
                         if (buttons.isNotEmpty()) {
                             buttons.forEach { button ->
                                 RiftTooltipArea(
-                                    tooltip = button.tooltip,
-                                    anchor = TooltipAnchor.BottomEnd,
-                                    contentAnchor = Alignment.TopCenter,
+                                    text = button.tooltip,
                                 ) {
                                     RiftImageButton(
                                         resource = button.resource,
@@ -277,9 +275,7 @@ private fun CharacterPortrait(character: RiftOpportunityBoxCharacter) {
             .padding(4.dp),
     ) {
         RiftTooltipArea(
-            tooltip = character.name,
-            anchor = TooltipAnchor.TopEnd,
-            contentAnchor = Alignment.BottomCenter,
+            text = character.name,
         ) {
             ClickablePlayer(character.id) {
                 AsyncPlayerPortrait(
@@ -295,7 +291,7 @@ private fun CharacterPortrait(character: RiftOpportunityBoxCharacter) {
 }
 
 @Composable
-private fun SolarSystemPill(state: SolarSystemPillState) {
+fun SolarSystemPill(state: SolarSystemPillState) {
     ClickableSystem(state.name) {
         Surface(
             color = Color.Black.copy(alpha = 0.5f),
@@ -306,8 +302,14 @@ private fun SolarSystemPill(state: SolarSystemPillState) {
                 modifier = Modifier.padding(horizontal = Spacing.small, vertical = Spacing.verySmall),
             ) {
                 if (state.distance != null) {
+                    val text = when (state.distance) {
+                        0 -> "Current System"
+                        1 -> "1 jump"
+                        in 2..9 -> "${state.distance} jumps"
+                        else -> "10+ jumps"
+                    }
                     Text(
-                        text = state.distance,
+                        text = text,
                         style = RiftTheme.typography.bodySecondary,
                         modifier = Modifier.padding(start = Spacing.small, end = Spacing.medium),
                     )

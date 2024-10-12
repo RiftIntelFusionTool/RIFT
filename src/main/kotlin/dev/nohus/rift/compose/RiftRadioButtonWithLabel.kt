@@ -40,9 +40,8 @@ fun RiftRadioButtonWithLabel(
     }
     if (tooltip != null) {
         RiftTooltipArea(
-            tooltip = tooltip,
-            anchor = TooltipAnchor.BottomStart,
-            contentAnchor = Alignment.TopStart,
+            text = tooltip,
+            contentAnchor = Anchor.Left,
             horizontalOffset = 10.dp,
         ) {
             row()

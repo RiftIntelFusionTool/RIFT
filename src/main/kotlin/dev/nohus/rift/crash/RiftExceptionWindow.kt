@@ -1,5 +1,7 @@
 package dev.nohus.rift.crash
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -23,6 +26,9 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.rememberWindowState
 import dev.nohus.rift.BuildConfig
+import dev.nohus.rift.about.UpdateController
+import dev.nohus.rift.about.UpdateController.UpdateAvailability.UPDATE_AUTOMATIC
+import dev.nohus.rift.about.UpdateController.UpdateAvailability.UPDATE_MANUAL
 import dev.nohus.rift.compose.ButtonCornerCut
 import dev.nohus.rift.compose.ButtonType
 import dev.nohus.rift.compose.RiftButton
@@ -43,6 +49,13 @@ fun RiftExceptionWindow(
     onCloseRequest: () -> Unit,
 ) {
     val windowState = rememberWindowState(width = 400.dp, height = 150.dp)
+    var isUpdateAvailable: Boolean by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        try {
+            val updateAvailability = UpdateController().isUpdateAvailable()
+            isUpdateAvailable = updateAvailability == UPDATE_MANUAL || updateAvailability == UPDATE_AUTOMATIC
+        } catch (ignored: Exception) {}
+    }
     RiftWindow(
         title = "Fatal Error",
         icon = Res.drawable.window_log,
@@ -55,22 +68,31 @@ fun RiftExceptionWindow(
                 modifier = Modifier.fillMaxWidth().weight(1f),
             ) {
                 SelectionContainer {
-                    Text(
-                        text = buildAnnotatedString {
-                            appendLine("RIFT has encountered a problem and has to close.")
-                            append("Error code: ")
-                            withStyle(
-                                SpanStyle(
-                                    color = RiftTheme.typography.bodySpecialHighlighted.color,
-                                    fontWeight = FontWeight.Bold,
-                                ),
-                            ) {
-                                appendLine(errorId)
-                            }
-                            appendLine()
-                            append("Please report this issue and copy the code into a Discord ticket.")
-                        },
+                    val highlightStyle = SpanStyle(
+                        color = RiftTheme.typography.bodySpecialHighlighted.color,
+                        fontWeight = FontWeight.Bold,
                     )
+                    AnimatedContent(isUpdateAvailable) { isUpdateAvailable ->
+                        Text(
+                            text = buildAnnotatedString {
+                                appendLine("RIFT has encountered a problem and has to close.")
+                                if (isUpdateAvailable) {
+                                    appendLine()
+                                    withStyle(highlightStyle) {
+                                        appendLine("You are using an older version of RIFT.")
+                                    }
+                                    appendLine("The problem may already be fixed in the latest version.")
+                                } else {
+                                    append("Error code: ")
+                                    withStyle(highlightStyle) {
+                                        appendLine(errorId)
+                                    }
+                                    appendLine()
+                                    append("Please report this issue and copy the code into a Discord ticket.")
+                                }
+                            },
+                        )
+                    }
                 }
                 if (areDetailsVisible) {
                     ScrollbarColumn(
@@ -121,13 +143,15 @@ fun RiftExceptionWindow(
                     cornerCut = ButtonCornerCut.None,
                     onClick = onCloseRequest,
                 )
-                RiftButton(
-                    text = "Report error",
-                    type = ButtonType.Primary,
-                    onClick = {
-                        "https://discord.com/channels/1185575651575607458/1185579273583599676".toURIOrNull()?.openBrowser()
-                    },
-                )
+                AnimatedVisibility(!isUpdateAvailable) {
+                    RiftButton(
+                        text = "Report error",
+                        type = ButtonType.Primary,
+                        onClick = {
+                            "https://discord.com/channels/1185575651575607458/1185579273583599676".toURIOrNull()?.openBrowser()
+                        },
+                    )
+                }
             }
         }
     }

@@ -103,9 +103,9 @@ private fun ThemePreviewWindow(onCloseRequest: () -> Unit) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
             ) {
-                RiftButton("Jump", ButtonType.Primary, ButtonCornerCut.BottomLeft, Modifier.width(100.dp)) {}
-                RiftButton("Rename", ButtonType.Secondary, ButtonCornerCut.None, Modifier.width(100.dp)) {}
-                RiftButton("Destroy", ButtonType.Negative, ButtonCornerCut.BottomRight, Modifier.width(100.dp)) {}
+                RiftButton("Jump", null, ButtonType.Primary, ButtonCornerCut.BottomLeft, false, Modifier.width(100.dp)) {}
+                RiftButton("Rename", null, ButtonType.Secondary, ButtonCornerCut.None, false, Modifier.width(100.dp)) {}
+                RiftButton("Destroy", null, ButtonType.Negative, ButtonCornerCut.BottomRight, false, Modifier.width(100.dp)) {}
             }
 
             var selectedTab by remember { mutableStateOf(2) }

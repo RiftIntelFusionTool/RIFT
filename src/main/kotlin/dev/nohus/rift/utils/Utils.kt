@@ -2,6 +2,10 @@ package dev.nohus.rift.utils
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.withStyle
 import dev.nohus.rift.ViewModel
 import dev.nohus.rift.di.koin
 import org.koin.core.parameter.parametersOf
@@ -10,7 +14,6 @@ import java.io.IOException
 import java.net.URI
 import java.net.URISyntaxException
 import java.nio.file.Path
-import java.text.NumberFormat
 import kotlin.io.path.createFile
 
 fun URI.openBrowser() {
@@ -57,13 +60,12 @@ inline fun <reified VM : ViewModel, I> viewModel(inputModel: I): VM {
     return remember { koin.get { parametersOf(inputModel) } }
 }
 
-fun formatIsk(number: Double): String {
-    val format = NumberFormat.getCompactNumberInstance()
-    format.minimumFractionDigits = 1
-    val formatted = format.format(number)
-    return "$formatted ISK"
+fun AnnotatedString.Builder.withColor(color: Color, block: AnnotatedString.Builder.() -> Unit) {
+    withStyle(style = SpanStyle(color = color)) {
+        block()
+    }
 }
 
-val Int.plural: String get() {
-    return if (this != 1) "s" else ""
+fun <T> List<T>.toggle(element: T): List<T> {
+    return if (element in this) this - element else this + element
 }

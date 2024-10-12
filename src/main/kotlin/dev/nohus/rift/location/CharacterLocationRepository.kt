@@ -2,6 +2,8 @@ package dev.nohus.rift.location
 
 import dev.nohus.rift.characters.repositories.LocalCharactersRepository
 import dev.nohus.rift.characters.repositories.OnlineCharactersRepository
+import dev.nohus.rift.location.LocationRepository.Station
+import dev.nohus.rift.location.LocationRepository.Structure
 import dev.nohus.rift.network.Result.Failure
 import dev.nohus.rift.network.Result.Success
 import dev.nohus.rift.network.esi.EsiApi
@@ -26,6 +28,7 @@ class CharacterLocationRepository(
     private val esiApi: EsiApi,
     private val localSystemChangeController: LocalSystemChangeController,
     private val solarSystemsRepository: SolarSystemsRepository,
+    private val locationRepository: LocationRepository,
 ) {
 
     private val _locations = MutableStateFlow<Map<Int, Location>>(emptyMap())
@@ -42,18 +45,6 @@ class CharacterLocationRepository(
         val timestamp: Instant,
     )
 
-    data class Station(
-        val stationId: Int,
-        val name: String,
-        val typeId: Int,
-    )
-
-    data class Structure(
-        val structureId: Long,
-        val name: String,
-        val typeId: Int?,
-    )
-
     suspend fun start() = coroutineScope {
         launch {
             localCharactersRepository.characters.collect {
@@ -68,14 +59,17 @@ class CharacterLocationRepository(
         }
         launch {
             localSystemChangeController.characterSystemChanges.collect { change ->
-                _locations.value += change.characterId to Location(
-                    solarSystemId = change.systemId,
-                    regionId = solarSystemsRepository.getRegionIdBySystemId(change.systemId),
-                    station = null,
-                    structure = null,
-                    timestamp = change.timestamp,
-                )
-                logger.debug { "Location updated from logs for character ${change.characterId}" }
+                val currentSystem = _locations.value[change.characterId]?.solarSystemId
+                if (change.systemId != currentSystem) {
+                    _locations.value += change.characterId to Location(
+                        solarSystemId = change.systemId,
+                        regionId = solarSystemsRepository.getRegionIdBySystemId(change.systemId),
+                        station = null,
+                        structure = null,
+                        timestamp = change.timestamp,
+                    )
+                    logger.debug { "Location updated from logs for character ${change.characterId}" }
+                }
             }
         }
     }
@@ -106,10 +100,8 @@ class CharacterLocationRepository(
     private suspend fun loadLocation(characterId: Int) {
         when (val result = esiApi.getCharacterIdLocation(characterId)) {
             is Success -> {
-                val station = result.data.stationId?.let { esiApi.getUniverseStationsId(it) }?.success
-                    ?.let { Station(result.data.stationId, it.name, it.typeId) }
-                val structure = result.data.structureId?.let { esiApi.getUniverseStructuresId(it, characterId) }?.success
-                    ?.let { Structure(result.data.structureId, it.name, it.typeId) }
+                val station = locationRepository.getStation(result.data.stationId)
+                val structure = locationRepository.getStructure(result.data.structureId, characterId)
                 _locations.value +=
                     characterId to Location(
                         solarSystemId = result.data.solarSystemId,

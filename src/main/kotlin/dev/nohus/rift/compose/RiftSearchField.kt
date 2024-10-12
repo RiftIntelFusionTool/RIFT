@@ -12,6 +12,8 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
+import dev.nohus.rift.generated.resources.Res
+import dev.nohus.rift.generated.resources.search_16px
 
 @Composable
 fun RiftSearchField(
@@ -24,6 +26,7 @@ fun RiftSearchField(
     val focusManager = LocalFocusManager.current
     RiftTextField(
         text = search,
+        icon = Res.drawable.search_16px,
         placeholder = "Search",
         onTextChanged = {
             search = it

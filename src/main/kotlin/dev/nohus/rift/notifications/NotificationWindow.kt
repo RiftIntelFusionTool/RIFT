@@ -64,6 +64,7 @@ import dev.nohus.rift.notifications.NotificationsController.Notification
 import dev.nohus.rift.repositories.SolarSystemsRepository
 import dev.nohus.rift.utils.Pos
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.exposed.sql.not
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -135,9 +136,9 @@ fun NotificationWindow(
 }
 
 @Composable
-private fun NotificationContent(
+fun NotificationContent(
     notification: Notification,
-    onCloseClick: () -> Unit,
+    onCloseClick: (() -> Unit)?,
 ) {
     when (notification) {
         is Notification.TextNotification -> {
@@ -161,9 +162,9 @@ private fun NotificationContent(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.small),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    if (notification.typeId != null) {
+                    if (notification.type != null) {
                         AsyncTypeIcon(
-                            typeId = notification.typeId,
+                            type = notification.type,
                             modifier = Modifier.size(32.dp),
                         )
                     }
@@ -207,39 +208,45 @@ private fun NotificationContent(
                 verticalArrangement = Arrangement.spacedBy(Spacing.medium),
                 modifier = Modifier.padding(horizontal = Spacing.medium),
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    if (notification.senderCharacterId != null) {
-                        ClickablePlayer(notification.senderCharacterId) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(Spacing.small),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                AsyncPlayerPortrait(
-                                    characterId = notification.senderCharacterId,
-                                    size = 32,
-                                    modifier = Modifier.size(32.dp),
-                                )
-                                Text(
-                                    text = notification.sender,
-                                    style = RiftTheme.typography.titlePrimary,
-                                )
+                for (message in notification.messages) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        if (message.senderCharacterId != null) {
+                            ClickablePlayer(message.senderCharacterId) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.small),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    AsyncPlayerPortrait(
+                                        characterId = message.senderCharacterId,
+                                        size = 32,
+                                        modifier = Modifier.size(32.dp),
+                                    )
+                                    Text(
+                                        text = message.sender,
+                                        style = RiftTheme.typography.titlePrimary,
+                                    )
+                                    Text(
+                                        text = " >",
+                                        style = RiftTheme.typography.titlePrimary,
+                                    )
+                                }
                             }
                         }
+                        Text(
+                            text = buildAnnotatedString {
+                                if (message.senderCharacterId == null) {
+                                    append(message.sender)
+                                    append(" > ")
+                                }
+                                append(message.message)
+                            },
+                            style = RiftTheme.typography.titlePrimary,
+                        )
                     }
-                    Text(
-                        text = buildAnnotatedString {
-                            if (notification.senderCharacterId == null) {
-                                append(notification.sender)
-                                append(" > ")
-                            }
-                            append(notification.message)
-                        },
-                        style = RiftTheme.typography.titlePrimary,
-                    )
                 }
             }
         }
@@ -335,7 +342,7 @@ private fun NotificationContent(
 @Composable
 private fun NotificationTitle(
     title: AnnotatedString,
-    onCloseClick: () -> Unit,
+    onCloseClick: (() -> Unit)?,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -349,7 +356,9 @@ private fun NotificationTitle(
                 .padding(start = 16.dp)
                 .padding(horizontal = Spacing.medium),
         )
-        RiftImageButton(Res.drawable.window_titlebar_close, 16.dp, onCloseClick)
+        if (onCloseClick != null) {
+            RiftImageButton(Res.drawable.window_titlebar_close, 16.dp, onCloseClick)
+        }
     }
 }
 

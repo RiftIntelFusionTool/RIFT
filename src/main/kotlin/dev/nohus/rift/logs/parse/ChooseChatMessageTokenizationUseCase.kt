@@ -42,6 +42,12 @@ class ChooseChatMessageTokenizationUseCase {
         }
         remaining = groupBySumOfShipNamesLength[groupBySumOfShipNamesLength.keys.max()]!!
 
+        // Prefer for navy ships to end with "navy" rather than start
+        val groupByNavyAtEnd = remaining.groupBy { tokens ->
+            tokens.filter { it.types.any { it is TokenType.Ship } }.sumOf { it.words.indexOf("navy") }
+        }
+        remaining = groupByNavyAtEnd[groupByNavyAtEnd.keys.max()]!!
+
         // Prefer last token bo the recognized as something
         if (remaining.any { tokens -> tokens.last().types.isNotEmpty() }) {
             remaining = remaining.filter { tokens -> tokens.last().types.isNotEmpty() }

@@ -10,10 +10,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.onClick
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -39,6 +42,7 @@ import dev.nohus.rift.alerts.create.FormAnswer.FreeformTextAnswer
 import dev.nohus.rift.alerts.create.FormAnswer.IntelChannelAnswer
 import dev.nohus.rift.alerts.create.FormAnswer.JumpsRangeAnswer
 import dev.nohus.rift.alerts.create.FormAnswer.MultipleChoiceAnswer
+import dev.nohus.rift.alerts.create.FormAnswer.PlanetaryIndustryColoniesAnswer
 import dev.nohus.rift.alerts.create.FormAnswer.SingleChoiceAnswer
 import dev.nohus.rift.alerts.create.FormAnswer.SoundAnswer
 import dev.nohus.rift.alerts.create.FormAnswer.SpecificCharactersAnswer
@@ -59,7 +63,6 @@ import dev.nohus.rift.compose.RiftTabBar
 import dev.nohus.rift.compose.RiftTextField
 import dev.nohus.rift.compose.ScrollbarColumn
 import dev.nohus.rift.compose.Tab
-import dev.nohus.rift.compose.TooltipAnchor
 import dev.nohus.rift.compose.hoverBackground
 import dev.nohus.rift.compose.theme.RiftTheme
 import dev.nohus.rift.compose.theme.Spacing
@@ -68,6 +71,7 @@ import dev.nohus.rift.generated.resources.Res
 import dev.nohus.rift.generated.resources.play
 import dev.nohus.rift.generated.resources.window_loudspeaker_icon
 import dev.nohus.rift.get
+import dev.nohus.rift.planetaryindustry.PlanetaryIndustryRepository.ColonyItem
 import dev.nohus.rift.utils.sound.Sound
 import dev.nohus.rift.utils.sound.SoundPlayer
 import dev.nohus.rift.utils.viewModel
@@ -156,6 +160,8 @@ private fun CreateAlertDialogContent(
                             characters = state.characters,
                             intelChannels = state.intelChannels,
                             sounds = state.sounds,
+                            recentTargets = state.recentTargets,
+                            colonies = state.colonies,
                             onFormAnswer = onFormPendingAnswer,
                         )
                     }
@@ -191,6 +197,8 @@ private fun FormQuestion(
     characters: List<LocalCharacter>,
     intelChannels: List<String>,
     sounds: List<Sound>,
+    recentTargets: Set<String>,
+    colonies: List<ColonyItem>,
     onFormAnswer: (FormAnswer) -> Unit,
 ) {
     Column {
@@ -273,7 +281,6 @@ private fun FormQuestion(
                             isFulfilled = isPendingAnswerValid,
                             fulfilledTooltip = "System valid",
                             notFulfilledTooltip = "System does not exist",
-                            tooltipAnchor = TooltipAnchor.BottomEnd,
                             modifier = Modifier.padding(start = Spacing.medium),
                         )
                     }
@@ -435,7 +442,6 @@ private fun FormQuestion(
                                     isFulfilled = isPendingAnswerValid ?: false,
                                     fulfilledTooltip = "Sound file path valid",
                                     notFulfilledTooltip = pendingAnswerInvalidReason ?: "Invalid",
-                                    tooltipAnchor = TooltipAnchor.BottomEnd,
                                 )
                             }
                             RiftFileChooserButton(
@@ -498,9 +504,95 @@ private fun FormQuestion(
                             isFulfilled = isPendingAnswerValid,
                             fulfilledTooltip = "Character names valid",
                             notFulfilledTooltip = pendingAnswerInvalidReason ?: "Invalid character names",
-                            tooltipAnchor = TooltipAnchor.BottomEnd,
                             modifier = Modifier.padding(start = Spacing.medium),
                         )
+                    }
+                }
+            }
+
+            is FormQuestion.CombatTargetQuestion -> {
+                Column {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        var text: String by remember { mutableStateOf("") }
+                        LaunchedEffect(Unit) {
+                            onFormAnswer(FreeformTextAnswer(""))
+                        }
+                        RiftTextField(
+                            text = text,
+                            placeholder = formQuestion.placeholder,
+                            onTextChanged = {
+                                text = it
+                                onFormAnswer(FreeformTextAnswer(it.trim()))
+                            },
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (recentTargets.isNotEmpty()) {
+                            Spacer(Modifier.width(Spacing.medium))
+                            RiftDropdown(
+                                items = recentTargets.toList(),
+                                selectedItem = "Recent targets",
+                                onItemSelected = {
+                                    text = it
+                                    onFormAnswer(FreeformTextAnswer(it.trim()))
+                                },
+                                getItemName = {
+                                    if (it.length > 20) it.take(20) + "…" else it
+                                },
+                            )
+                        }
+                    }
+                    val helpText = if (recentTargets.isNotEmpty()) {
+                        "You can choose from your recent targets above."
+                    } else {
+                        "Attack some targets in-game to get suggestions to what you can type above."
+                    }
+                    Text(
+                        text = helpText,
+                        style = RiftTheme.typography.bodyPrimary,
+                        modifier = Modifier.padding(top = Spacing.medium),
+                    )
+                }
+            }
+
+            is FormQuestion.PlanetaryIndustryColoniesQuestion -> {
+                AnimatedContent(colonies.isNotEmpty()) { isNotEmpty ->
+                    Column {
+                        if (isNotEmpty) {
+                            Text(
+                                text = "Leave empty for any.",
+                                style = RiftTheme.typography.bodySecondary,
+                                modifier = Modifier.padding(bottom = Spacing.small),
+                            )
+                            LaunchedEffect(Unit) {
+                                onFormAnswer(PlanetaryIndustryColoniesAnswer(emptyList()))
+                            }
+                            ScrollbarColumn(
+                                modifier = Modifier.heightIn(max = 200.dp),
+                            ) {
+                                var selected: List<String> by remember { mutableStateOf(emptyList()) }
+                                for (item in colonies) {
+                                    val id = item.colony.id
+                                    ListSelectorRow(
+                                        text = item.colony.planet.name,
+                                        description = item.characterName,
+                                        isMultipleChoice = true,
+                                        isSelected = id in selected,
+                                        onSelect = {
+                                            if (item.colony.id in selected) selected -= id else selected += id
+                                            onFormAnswer(PlanetaryIndustryColoniesAnswer(selected))
+                                        },
+                                    )
+                                }
+                            }
+                        } else {
+                            Text(
+                                text = "No colonies available.\nCheck the Planetary Industry window.",
+                                style = RiftTheme.typography.titlePrimary,
+                            )
+                        }
                     }
                 }
             }
@@ -508,8 +600,7 @@ private fun FormQuestion(
             is FormQuestion.FreeformTextQuestion -> {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     var text: String by remember { mutableStateOf("") }
                     LaunchedEffect(Unit) {
@@ -641,6 +732,19 @@ private fun Pair<FormQuestion, FormAnswer>.toAnswerString(
                 specificCharacters.isEmpty() -> null
                 specificCharacters.size == 1 -> specificCharacters.single()
                 else -> "${specificCharacters.size} specific characters"
+            }
+        }
+
+        is FormQuestion.CombatTargetQuestion -> {
+            (answer as FreeformTextAnswer).text.takeIf { it.isNotBlank() }
+        }
+
+        is FormQuestion.PlanetaryIndustryColoniesQuestion -> {
+            val colonies = (answer as PlanetaryIndustryColoniesAnswer).colonies
+            when {
+                colonies.isEmpty() -> "Any colony"
+                colonies.size == 1 -> "A specific colony"
+                else -> "${colonies.size} Specific colonies"
             }
         }
 

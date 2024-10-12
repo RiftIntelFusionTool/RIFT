@@ -1,5 +1,6 @@
 package dev.nohus.rift.logs
 
+import dev.nohus.rift.utils.GetWindowsDocumentsFolderUseCase
 import dev.nohus.rift.utils.OperatingSystem
 import dev.nohus.rift.utils.directories.GetLinuxSteamLibrariesUseCase
 import org.apache.commons.lang3.SystemUtils
@@ -33,7 +34,13 @@ class GetLogsDirectoriesUseCase(
     }
 
     private fun getWindowsLogsDirectories(): List<Path> {
-        return listOf(getLogsInDocuments(), getLogsInOneDrive())
+        val getWindowsDocumentsFolder = GetWindowsDocumentsFolderUseCase()
+        val homeDirectory = SystemUtils.getUserHome().toPath()
+        return listOf(
+            Path.of(getWindowsDocumentsFolder(), "EVE/logs"),
+            homeDirectory.resolve("Documents/EVE/logs"),
+            homeDirectory.resolve("OneDrive/Documents/EVE/logs"),
+        )
     }
 
     private fun getMacLogsDirectories(): List<Path> {
@@ -45,10 +52,5 @@ class GetLogsDirectoriesUseCase(
     private fun getLogsInDocuments(): Path {
         val homeDirectory = SystemUtils.getUserHome().toPath()
         return homeDirectory.resolve("Documents/EVE/logs")
-    }
-
-    private fun getLogsInOneDrive(): Path {
-        val homeDirectory = SystemUtils.getUserHome().toPath()
-        return homeDirectory.resolve("OneDrive/Documents/EVE/logs")
     }
 }

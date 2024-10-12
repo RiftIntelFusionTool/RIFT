@@ -1,10 +1,12 @@
 package dev.nohus.rift.alerts.create
 
+import dev.nohus.rift.alerts.create.FormQuestion.CombatTargetQuestion
 import dev.nohus.rift.alerts.create.FormQuestion.FreeformTextQuestion
 import dev.nohus.rift.alerts.create.FormQuestion.IntelChannelQuestion
 import dev.nohus.rift.alerts.create.FormQuestion.JumpsRangeQuestion
 import dev.nohus.rift.alerts.create.FormQuestion.MultipleChoiceQuestion
 import dev.nohus.rift.alerts.create.FormQuestion.OwnedCharacterQuestion
+import dev.nohus.rift.alerts.create.FormQuestion.PlanetaryIndustryColoniesQuestion
 import dev.nohus.rift.alerts.create.FormQuestion.SingleChoiceQuestion
 import dev.nohus.rift.alerts.create.FormQuestion.SoundQuestion
 import dev.nohus.rift.alerts.create.FormQuestion.SpecificCharactersQuestion
@@ -22,6 +24,7 @@ class CreateAlertQuestions(
     // Alert trigger
     val ALERT_TRIGGER_INTEL_REPORTED = FormChoiceItem(id = id++, text = "Intel is reported")
     val ALERT_TRIGGER_GAME_ACTION = FormChoiceItem(id = id++, text = "Something happens in-game")
+    val ALERT_TRIGGER_PLANETARY_INDUSTRY = FormChoiceItem(id = id++, text = "PI colony needs attention")
     val ALERT_TRIGGER_CHAT_MESSAGE = FormChoiceItem(id = id++, text = "Chat message is received")
     val ALERT_TRIGGER_JABBER_PING = FormChoiceItem(id = id++, text = "Jabber ping is received")
     val ALERT_TRIGGER_JABBER_MESSAGE = FormChoiceItem(id = id++, text = "Jabber message is received")
@@ -31,6 +34,7 @@ class CreateAlertQuestions(
         items = buildList {
             add(ALERT_TRIGGER_INTEL_REPORTED)
             add(ALERT_TRIGGER_GAME_ACTION)
+            add(ALERT_TRIGGER_PLANETARY_INDUSTRY)
             add(ALERT_TRIGGER_CHAT_MESSAGE)
             if (configurationPackRepository.isJabberEnabled()) {
                 add(ALERT_TRIGGER_JABBER_PING)
@@ -147,7 +151,7 @@ class CreateAlertQuestions(
     )
 
     // Game action type, combat target
-    val GAME_ACTION_TYPE_COMBAT_TARGET_QUESTION = FreeformTextQuestion(
+    val GAME_ACTION_TYPE_COMBAT_TARGET_QUESTION = CombatTargetQuestion(
         title = "And the combat target name contains:",
         placeholder = "Dark Blood",
         allowEmpty = true,
@@ -176,6 +180,69 @@ class CreateAlertQuestions(
             GAME_ACTION_TYPE_COMBAT_STOPPED_DURATION_1_MINUTE,
             GAME_ACTION_TYPE_COMBAT_STOPPED_DURATION_2_MINUTES,
             GAME_ACTION_TYPE_COMBAT_STOPPED_DURATION_5_MINUTES,
+        ),
+    )
+
+    // Planetary Industry event type
+    val PLANETARY_INDUSTRY_EVENT_TYPE_NOT_SETUP = FormChoiceItem(
+        id = id++,
+        text = "Colony is not setup",
+        description = "Routes not created, schematics not selected, etc.",
+    )
+    val PLANETARY_INDUSTRY_EVENT_TYPE_EXTRACTOR_INACTIVE = FormChoiceItem(
+        id = id++,
+        text = "Extractor has expired",
+        description = "Extraction program finished",
+    )
+    val PLANETARY_INDUSTRY_EVENT_TYPE_STORAGE_FULL = FormChoiceItem(
+        id = id++,
+        text = "Storage is full",
+        description = "Storage or Launchpad receiving outputs became full",
+    )
+    val PLANETARY_INDUSTRY_EVENT_TYPE_IDLE = FormChoiceItem(
+        id = id++,
+        text = "Colony is idle",
+        description = "Production has stopped (e.g. due lack of materials)",
+    )
+    val PLANETARY_INDUSTRY_EVENT_TYPE_QUESTION = MultipleChoiceQuestion(
+        title = "If any of the following happens:",
+        items = listOf(
+            PLANETARY_INDUSTRY_EVENT_TYPE_EXTRACTOR_INACTIVE,
+            PLANETARY_INDUSTRY_EVENT_TYPE_STORAGE_FULL,
+            PLANETARY_INDUSTRY_EVENT_TYPE_IDLE,
+            PLANETARY_INDUSTRY_EVENT_TYPE_NOT_SETUP,
+        ),
+    )
+
+    // Planetary Industry colony filter
+    val PLANETARY_INDUSTRY_COLONIES_QUESTION = PlanetaryIndustryColoniesQuestion(
+        title = "In these colonies:",
+    )
+
+    // Planetary Industry alert before
+    val PLANETARY_INDUSTRY_ALERT_BEFORE_NONE = FormChoiceItem(id = id++, text = "When it happens")
+    val PLANETARY_INDUSTRY_ALERT_BEFORE_5_MINUTES = FormChoiceItem(id = id++, text = "5 minutes before")
+    val PLANETARY_INDUSTRY_ALERT_BEFORE_15_MINUTES = FormChoiceItem(id = id++, text = "15 minutes before")
+    val PLANETARY_INDUSTRY_ALERT_BEFORE_30_MINUTES = FormChoiceItem(id = id++, text = "30 minutes before")
+    val PLANETARY_INDUSTRY_ALERT_BEFORE_1_HOUR = FormChoiceItem(id = id++, text = "1 hour before")
+    val PLANETARY_INDUSTRY_ALERT_BEFORE_2_HOURS = FormChoiceItem(id = id++, text = "2 hours before")
+    val PLANETARY_INDUSTRY_ALERT_BEFORE_4_HOURS = FormChoiceItem(id = id++, text = "4 hours before")
+    val PLANETARY_INDUSTRY_ALERT_BEFORE_8_HOURS = FormChoiceItem(id = id++, text = "8 hours before")
+    val PLANETARY_INDUSTRY_ALERT_BEFORE_12_HOURS = FormChoiceItem(id = id++, text = "12 hours before")
+    val PLANETARY_INDUSTRY_ALERT_BEFORE_24_HOURS = FormChoiceItem(id = id++, text = "24 hours before")
+    val PLANETARY_INDUSTRY_ALERT_BEFORE_QUESTION = SingleChoiceQuestion(
+        title = "Trigger:",
+        items = listOf(
+            PLANETARY_INDUSTRY_ALERT_BEFORE_NONE,
+            PLANETARY_INDUSTRY_ALERT_BEFORE_5_MINUTES,
+            PLANETARY_INDUSTRY_ALERT_BEFORE_15_MINUTES,
+            PLANETARY_INDUSTRY_ALERT_BEFORE_30_MINUTES,
+            PLANETARY_INDUSTRY_ALERT_BEFORE_1_HOUR,
+            PLANETARY_INDUSTRY_ALERT_BEFORE_2_HOURS,
+            PLANETARY_INDUSTRY_ALERT_BEFORE_4_HOURS,
+            PLANETARY_INDUSTRY_ALERT_BEFORE_8_HOURS,
+            PLANETARY_INDUSTRY_ALERT_BEFORE_12_HOURS,
+            PLANETARY_INDUSTRY_ALERT_BEFORE_24_HOURS,
         ),
     )
 
@@ -331,15 +398,30 @@ class CreateAlertQuestions(
     )
 
     // Alert action
-    val ALERT_ACTION_RIFT_NOTIFICATION = FormChoiceItem(id = id++, text = "Send RIFT notification")
-    val ALERT_ACTION_SYSTEM_NOTIFICATION = FormChoiceItem(id = id++, text = "Send system notification")
+    val ALERT_ACTION_RIFT_NOTIFICATION = FormChoiceItem(id = id++, text = "Send RIFT notification", description = "Detailed notification popup")
+    val ALERT_ACTION_SYSTEM_NOTIFICATION = FormChoiceItem(id = id++, text = "Send system notification", description = "Simple text notification")
+    val ALERT_ACTION_PUSH_NOTIFICATION = FormChoiceItem(id = id++, text = "Send mobile push notification", description = "Setup in RIFT settings")
     val ALERT_ACTION_PLAY_SOUND = FormChoiceItem(id = id++, text = "Play sound")
-    val ALERT_ACTION_SHOW_PING = FormChoiceItem(id = id++, text = "Show the ping")
+    val ALERT_ACTION_SHOW_COLONIES = FormChoiceItem(id = id++, text = "Show colonies", description = "Open the Planetary Industry window")
+    val ALERT_ACTION_SHOW_PING = FormChoiceItem(id = id++, text = "Show the ping", description = "Open the Pings window")
     val ALERT_ACTION_QUESTION = MultipleChoiceQuestion(
         title = "When this alert is triggered:",
         items = listOf(
             ALERT_ACTION_RIFT_NOTIFICATION,
             ALERT_ACTION_SYSTEM_NOTIFICATION,
+            ALERT_ACTION_PUSH_NOTIFICATION,
+            ALERT_ACTION_PLAY_SOUND,
+        ),
+    )
+
+    // Alert action (Planetary Industry ping version)
+    val ALERT_ACTION_PLANETARY_INDUSTRY_QUESTION = MultipleChoiceQuestion(
+        title = "When this alert is triggered:",
+        items = listOf(
+            ALERT_ACTION_SHOW_COLONIES,
+            ALERT_ACTION_RIFT_NOTIFICATION,
+            ALERT_ACTION_SYSTEM_NOTIFICATION,
+            ALERT_ACTION_PUSH_NOTIFICATION,
             ALERT_ACTION_PLAY_SOUND,
         ),
     )
@@ -349,6 +431,7 @@ class CreateAlertQuestions(
         title = "When this alert is triggered:",
         items = listOf(
             ALERT_ACTION_SHOW_PING,
+            ALERT_ACTION_PUSH_NOTIFICATION,
             ALERT_ACTION_PLAY_SOUND,
         ),
     )

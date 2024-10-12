@@ -15,6 +15,7 @@ import dev.nohus.rift.autopilot.AutopilotController
 import dev.nohus.rift.compose.theme.Cursors
 import dev.nohus.rift.di.koin
 import dev.nohus.rift.generated.resources.Res
+import dev.nohus.rift.generated.resources.menu_anoikis
 import dev.nohus.rift.generated.resources.menu_dotlan
 import dev.nohus.rift.generated.resources.menu_everef
 import dev.nohus.rift.generated.resources.menu_evewho
@@ -36,14 +37,16 @@ fun ClickableLocation(
     content: @Composable () -> Unit,
 ) {
     val repository: SolarSystemsRepository = remember { koin.get() }
-    val system = repository.getSystemName(systemId) ?: return
-    val dotlanUrl = "https://evemaps.dotlan.net/system/$system"
+    val isKnownSpace = repository.isKnownSpace(systemId)
     RiftContextMenuArea(
         items = GetSystemContextMenuItems(systemId, locationId),
     ) {
+        val mapExternalControl: MapExternalControl = remember { koin.get() }
         ClickableEntity(
             onClick = {
-                dotlanUrl.toURIOrNull()?.openBrowser()
+                if (isKnownSpace) {
+                    mapExternalControl.showSystemOnRegionMap(systemId, fromMap = false)
+                }
             },
             content = content,
         )
@@ -90,8 +93,10 @@ fun GetSystemContextMenuItems(
     val settings: Settings = remember { koin.get() }
     val system = solarSystemsRepository.getSystemName(systemId) ?: return emptyList()
     val isKnownSpace = solarSystemsRepository.isKnownSpace(systemId)
+    val isWormholeSpace = !isKnownSpace && solarSystemsRepository.isWormholeSpace(systemId)
     val dotlanUrl = "https://evemaps.dotlan.net/system/$system"
     val zkillboardUrl = "https://zkillboard.com/system/$systemId/"
+    val anoikisUrl = "http://anoik.is/systems/$system"
     var isSettingAutopilotToAll by remember { mutableStateOf(settings.isSettingAutopilotToAll) }
     return buildList {
         add(
@@ -159,6 +164,15 @@ fun GetSystemContextMenuItems(
             )
         }
         add(ContextMenuItem.DividerItem)
+        if (isWormholeSpace) {
+            add(
+                ContextMenuItem.TextItem(
+                    text = "Anoikis",
+                    iconResource = Res.drawable.menu_anoikis,
+                    onClick = { anoikisUrl.toURIOrNull()?.openBrowser() },
+                ),
+            )
+        }
         add(
             ContextMenuItem.TextItem(
                 text = "Dotlan",

@@ -16,7 +16,6 @@ import dev.nohus.rift.compose.theme.Spacing
 fun RiftCheckboxWithLabel(
     label: String,
     tooltip: String? = null,
-    isTooltipBelow: Boolean = false,
     isChecked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
@@ -41,13 +40,11 @@ fun RiftCheckboxWithLabel(
     }
     if (tooltip != null) {
         RiftTooltipArea(
-            tooltip = tooltip,
-            anchor = if (isTooltipBelow) TooltipAnchor.TopStart else TooltipAnchor.BottomStart,
-            contentAnchor = if (isTooltipBelow) Alignment.BottomStart else Alignment.TopStart,
+            text = tooltip,
+            contentAnchor = Anchor.Left,
             horizontalOffset = 10.dp,
-        ) {
-            row()
-        }
+            content = row,
+        )
     } else {
         row()
     }

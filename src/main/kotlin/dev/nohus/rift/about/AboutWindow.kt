@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -31,22 +30,23 @@ import dev.nohus.rift.about.UpdateController.UpdateAvailability.UPDATE_AUTOMATIC
 import dev.nohus.rift.about.UpdateController.UpdateAvailability.UPDATE_MANUAL
 import dev.nohus.rift.compose.ButtonCornerCut
 import dev.nohus.rift.compose.ButtonType
+import dev.nohus.rift.compose.CreatorCode
 import dev.nohus.rift.compose.LinkText
+import dev.nohus.rift.compose.Patrons
+import dev.nohus.rift.compose.RiftAppName
 import dev.nohus.rift.compose.RiftButton
 import dev.nohus.rift.compose.RiftDialog
 import dev.nohus.rift.compose.RiftTooltipArea
 import dev.nohus.rift.compose.RiftWindow
 import dev.nohus.rift.compose.ScrollbarColumn
-import dev.nohus.rift.compose.TooltipAnchor
 import dev.nohus.rift.compose.theme.RiftTheme
 import dev.nohus.rift.compose.theme.Spacing
 import dev.nohus.rift.generated.resources.Res
-import dev.nohus.rift.generated.resources.partner_384
+import dev.nohus.rift.generated.resources.partner_400
 import dev.nohus.rift.generated.resources.window_achievements
 import dev.nohus.rift.generated.resources.window_concord
-import dev.nohus.rift.generated.resources.window_evemailtag
 import dev.nohus.rift.generated.resources.window_info
-import dev.nohus.rift.generated.resources.window_rift_128
+import dev.nohus.rift.generated.resources.window_rift_64
 import dev.nohus.rift.network.AsyncResource
 import dev.nohus.rift.utils.OperatingSystem
 import dev.nohus.rift.utils.OperatingSystem.Linux
@@ -67,7 +67,7 @@ fun AboutWindow(
     val state by viewModel.state.collectAsState()
     RiftWindow(
         title = "About RIFT",
-        icon = Res.drawable.window_evemailtag,
+        icon = Res.drawable.window_rift_64,
         state = windowState,
         onCloseClick = onCloseRequest,
         isResizable = false,
@@ -166,55 +166,25 @@ private fun AboutWindowContent(
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(Spacing.small),
-                modifier = Modifier
-                    .padding(Spacing.small),
+                modifier = Modifier.width(200.dp).padding(bottom = Spacing.large),
             ) {
                 Image(
-                    painter = painterResource(Res.drawable.window_rift_128),
+                    painter = painterResource(Res.drawable.partner_400),
                     contentDescription = null,
                     modifier = Modifier
-                        .size(128.dp),
+                        .width(200.dp),
                 )
-                Image(
-                    painter = painterResource(Res.drawable.partner_384),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .width(192.dp),
-                )
+                CreatorCode()
+                Patrons(state.patrons)
             }
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.padding(bottom = Spacing.large).weight(1f),
             ) {
                 Column {
-                    val highlight = SpanStyle(color = RiftTheme.colors.textSpecialHighlighted)
-                    val riftText = buildAnnotatedString {
-                        withStyle(style = highlight) {
-                            append("R")
-                        }
-                        append("IFT ")
-                        withStyle(style = highlight) {
-                            append("I")
-                        }
-                        append("ntel ")
-                        withStyle(style = highlight) {
-                            append("F")
-                        }
-                        append("usion ")
-                        withStyle(style = highlight) {
-                            append("T")
-                        }
-                        append("ool")
-                    }
-                    Text(
-                        text = riftText,
-                        style = RiftTheme.typography.headlineHighlighted,
-                    )
-
+                    RiftAppName(RiftTheme.typography.headlineHighlighted)
                     RiftTooltipArea(
-                        tooltip = state.buildTime,
-                        anchor = TooltipAnchor.TopStart,
-                        contentAnchor = Alignment.BottomStart,
+                        text = state.buildTime,
                         modifier = Modifier.padding(top = Spacing.medium),
                     ) {
                         Text(
@@ -240,19 +210,32 @@ private fun AboutWindowContent(
 
                             is AsyncResource.Ready -> {
                                 when (isUpdateAvailable.value) {
-                                    NOT_PACKAGED -> {}
+                                    NOT_PACKAGED -> {
+                                        val text = if (state.version.endsWith("dev")) {
+                                            "Development version"
+                                        } else {
+                                            "Portable version"
+                                        }
+                                        Text(
+                                            text = text,
+                                            style = RiftTheme.typography.bodySecondary,
+                                        )
+                                    }
+
                                     UNKNOWN -> {
                                         Text(
                                             text = "Couldn't check for updates",
                                             style = RiftTheme.typography.bodySecondary,
                                         )
                                     }
+
                                     NO_UPDATE -> {
                                         Text(
                                             text = "Up to date",
                                             style = RiftTheme.typography.bodySecondary,
                                         )
                                     }
+
                                     UPDATE_MANUAL, UPDATE_AUTOMATIC -> {
                                         LinkText(
                                             text = "Update available",
@@ -289,6 +272,10 @@ private fun AboutWindowContent(
                         style = RiftTheme.typography.bodySecondary,
                         modifier = Modifier.padding(top = Spacing.medium),
                     )
+                    LinkText(
+                        text = "Legal & info",
+                        onClick = onLegalClick,
+                    )
                 }
             }
         }
@@ -307,12 +294,6 @@ private fun AboutWindowContent(
                 type = ButtonType.Secondary,
                 cornerCut = ButtonCornerCut.None,
                 onClick = onAppDataClick,
-            )
-            RiftButton(
-                text = "Legal & info",
-                type = ButtonType.Secondary,
-                cornerCut = ButtonCornerCut.None,
-                onClick = onLegalClick,
             )
             RiftButton(
                 text = "Credits",
@@ -354,6 +335,7 @@ private fun getUpdateDialogText(
                 append(" package, then you have to redownload it manually.")
             }
         }
+
         Windows -> {
             buildAnnotatedString {
                 append(
@@ -364,6 +346,7 @@ private fun getUpdateDialogText(
                 )
             }
         }
+
         MacOs -> {
             buildAnnotatedString {
                 if ("/AppTranslocation/" in executablePath) {

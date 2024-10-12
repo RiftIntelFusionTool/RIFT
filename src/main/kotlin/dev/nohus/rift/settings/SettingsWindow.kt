@@ -43,7 +43,6 @@ import dev.nohus.rift.compose.RiftTextField
 import dev.nohus.rift.compose.RiftWindow
 import dev.nohus.rift.compose.ScrollbarColumn
 import dev.nohus.rift.compose.SectionTitle
-import dev.nohus.rift.compose.TooltipAnchor
 import dev.nohus.rift.compose.hoverBackground
 import dev.nohus.rift.compose.modifyIf
 import dev.nohus.rift.compose.theme.RiftTheme
@@ -174,6 +173,7 @@ private fun SettingsWindowContent(
                     soundsVolume = state.soundsVolume,
                     onSoundsVolumeChange = viewModel::onSoundsVolumeChange,
                     onEditNotificationClick = viewModel::onEditNotificationClick,
+                    onConfigurePushoverClick = viewModel::onConfigurePushoverClick,
                 )
             }
 
@@ -243,7 +243,6 @@ private fun UserInterfaceSection(
     RiftCheckboxWithLabel(
         label = "Remember open windows",
         tooltip = "Enable to remember open windows\nacross app restarts",
-        isTooltipBelow = true,
         isChecked = isRememberOpenWindowsEnabled,
         onCheckedChange = onRememberOpenWindowsChanged,
         modifier = Modifier.padding(bottom = Spacing.small),
@@ -251,7 +250,6 @@ private fun UserInterfaceSection(
     RiftCheckboxWithLabel(
         label = "Remember window placement",
         tooltip = "Enable to remember window positions and\nsizes across app restarts",
-        isTooltipBelow = true,
         isChecked = isRememberWindowPlacementEnabled,
         onCheckedChange = onRememberWindowPlacementChanged,
         modifier = Modifier.padding(bottom = Spacing.small),
@@ -276,6 +274,7 @@ private fun AlertsSection(
     soundsVolume: Int,
     onSoundsVolumeChange: (Int) -> Unit,
     onEditNotificationClick: () -> Unit,
+    onConfigurePushoverClick: () -> Unit,
 ) {
     SectionTitle("Alerts", Modifier.padding(bottom = Spacing.medium))
     Row(
@@ -298,6 +297,19 @@ private fun AlertsSection(
         onItemSelected = onSoundsVolumeChange,
         getItemName = { "$it%" },
     )
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "Mobile push notifications:",
+            style = RiftTheme.typography.bodyPrimary,
+            modifier = Modifier.weight(1f),
+        )
+        RiftButton(
+            text = "Configure",
+            onClick = onConfigurePushoverClick,
+        )
+    }
 }
 
 @Composable
@@ -361,7 +373,6 @@ private fun EveInstallationSection(
             isFulfilled = isLogsDirectoryValid,
             fulfilledTooltip = "Logs directory valid",
             notFulfilledTooltip = if (logsDirectory.isBlank()) "No logs directory" else "Invalid logs directory",
-            tooltipAnchor = TooltipAnchor.BottomCenter,
         )
     }
     Row(
@@ -406,7 +417,6 @@ private fun EveInstallationSection(
             isFulfilled = isSettingsDirectoryValid,
             fulfilledTooltip = "Settings directory valid",
             notFulfilledTooltip = if (settingsDirectory.isBlank()) "No settings directory" else "Invalid settings directory",
-            tooltipAnchor = TooltipAnchor.BottomCenter,
         )
     }
     Row(
@@ -569,7 +579,6 @@ private fun IntelSection(
     RiftCheckboxWithLabel(
         label = "Show distance on systems",
         tooltip = "Enable to show the number of jumps to\nthe closest character next to system names.\nOnly shows for up to 9 jumps away.",
-        isTooltipBelow = true,
         isChecked = isShowingSystemDistance,
         onCheckedChange = onIsShowingSystemDistanceChange,
         modifier = Modifier.padding(bottom = Spacing.small),
@@ -577,7 +586,6 @@ private fun IntelSection(
     RiftCheckboxWithLabel(
         label = "Use jump bridges for distance",
         tooltip = "Enable to include jump bridges in system distances",
-        isTooltipBelow = true,
         isChecked = isUsingJumpBridgesForDistance,
         onCheckedChange = onIsUsingJumpBridgesForDistance,
         modifier = Modifier.padding(bottom = Spacing.small),

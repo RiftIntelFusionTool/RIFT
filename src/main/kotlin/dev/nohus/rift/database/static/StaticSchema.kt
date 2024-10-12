@@ -80,6 +80,20 @@ object Planets : Table() {
     val id = integer("id")
     val typeId = integer("typeId")
     val systemId = integer("systemId")
-    val name = varchar("name", 100).nullable()
+    val name = varchar("name", 100)
+    val radius = float("radius")
     override val primaryKey = PrimaryKey(id)
+}
+
+object PlanetaryIndustrySchematics : Table() {
+    val id = integer("id")
+    val cycleTime = long("cycleTime")
+    override val primaryKey = PrimaryKey(id)
+}
+
+object PlanetaryIndustrySchematicsTypes : Table() {
+    val id = integer("id")
+    val typeId = integer("typeId")
+    val quantity = integer("quantity")
+    val isInput = bool("isInput")
 }

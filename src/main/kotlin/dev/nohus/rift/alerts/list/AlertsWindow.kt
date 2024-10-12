@@ -43,6 +43,7 @@ import dev.nohus.rift.alerts.JabberMessageChannel
 import dev.nohus.rift.alerts.JabberPingType
 import dev.nohus.rift.alerts.JumpRange
 import dev.nohus.rift.alerts.PapType
+import dev.nohus.rift.alerts.PiEventType
 import dev.nohus.rift.alerts.create.CreateAlertDialog
 import dev.nohus.rift.alerts.creategroup.CreateGroupDialog
 import dev.nohus.rift.alerts.list.AlertsViewModel.UiState
@@ -57,7 +58,6 @@ import dev.nohus.rift.compose.RiftImageButton
 import dev.nohus.rift.compose.RiftTooltipArea
 import dev.nohus.rift.compose.RiftWindow
 import dev.nohus.rift.compose.ScrollbarLazyColumn
-import dev.nohus.rift.compose.TooltipAnchor
 import dev.nohus.rift.compose.hoverBackground
 import dev.nohus.rift.compose.pointerInteraction
 import dev.nohus.rift.compose.theme.Cursors
@@ -69,10 +69,13 @@ import dev.nohus.rift.generated.resources.editplanicon
 import dev.nohus.rift.generated.resources.toggle_off_18
 import dev.nohus.rift.generated.resources.toggle_on_18
 import dev.nohus.rift.generated.resources.window_loudspeaker_icon
+import dev.nohus.rift.planetaryindustry.PlanetaryIndustryRepository.ColonyItem
+import dev.nohus.rift.utils.plural
 import dev.nohus.rift.utils.sound.Sound
 import dev.nohus.rift.utils.viewModel
 import dev.nohus.rift.windowing.WindowManager.RiftWindowState
 import java.nio.file.Path
+import java.time.Duration
 import kotlin.io.path.nameWithoutExtension
 
 @Composable
@@ -250,8 +253,7 @@ private fun LazyItemScope.AlertGroupHeader(
         val buttonsAlpha by animateFloatAsState(if (pointerState.isHovered) 1f else 0f)
         if (!isEmpty) {
             RiftTooltipArea(
-                tooltip = if (hasEnabledAlerts) "Disable all alerts" else "Enable all alerts",
-                anchor = TooltipAnchor.BottomEnd,
+                text = if (hasEnabledAlerts) "Disable all alerts" else "Enable all alerts",
             ) {
                 RiftImageButton(
                     resource = if (hasEnabledAlerts) Res.drawable.toggle_on_18 else Res.drawable.toggle_off_18,
@@ -263,8 +265,7 @@ private fun LazyItemScope.AlertGroupHeader(
         }
         if (name != null) { // Don't show actions for the default group
             RiftTooltipArea(
-                tooltip = "Rename group",
-                anchor = TooltipAnchor.BottomEnd,
+                text = "Rename group",
             ) {
                 RiftImageButton(
                     resource = Res.drawable.editplanicon,
@@ -274,8 +275,7 @@ private fun LazyItemScope.AlertGroupHeader(
                 )
             }
             RiftTooltipArea(
-                tooltip = if (isEmpty) "Delete group" else "Delete group and move alerts to default",
-                anchor = TooltipAnchor.BottomEnd,
+                text = if (isEmpty) "Delete group" else "Delete group and move alerts to default",
             ) {
                 RiftImageButton(
                     resource = Res.drawable.delete,
@@ -354,6 +354,7 @@ private fun LazyItemScope.AlertItem(
                 getSpecificShipClassesDetailText(alert),
                 getSpecificFleetCommandersDetailText(alert),
                 getDecloakIgnoredKeywordsDetailText(alert),
+                getSpecificColoniesDetailText(alert, state.colonies),
             ).forEach {
                 Row(
                     modifier = Modifier
@@ -491,6 +492,39 @@ private fun getDecloakIgnoredKeywordsDetailText(alert: Alert): AnnotatedString? 
         }
     } else {
         null
+    }
+}
+
+@Composable
+private fun getSpecificColoniesDetailText(alert: Alert, colonies: List<ColonyItem>): AnnotatedString? {
+    val colonyIds = (alert.trigger as? AlertTrigger.PlanetaryIndustry)?.coloniesFilter ?: return null
+    val secondary = SpanStyle(color = RiftTheme.colors.textSecondary)
+    val primary = SpanStyle(color = RiftTheme.colors.textPrimary)
+    return buildAnnotatedString {
+        withStyle(secondary) {
+            append("Target colonies:")
+            colonyIds
+                .mapNotNull { id ->
+                    val colony = colonies.find { it.colony.id == id } ?: return@mapNotNull null
+                    colony.colony.characterId to colony
+                }.groupBy {
+                    it.first
+                }.forEach { (_, entries) ->
+                    val items = entries.map { it.second }
+                    val characterName = items.first().characterName ?: "Loading…"
+                    append("\n")
+                    withStyle(primary) {
+                        append(characterName)
+                    }
+                    append(": ")
+                    items.forEachIndexed { index, colony ->
+                        if (index != 0) append(", ")
+                        withStyle(primary) {
+                            append(colony.colony.planet.name)
+                        }
+                    }
+                }
+        }
     }
 }
 
@@ -640,6 +674,41 @@ private fun getAlertText(
                         }
                     }
                 }
+                is AlertTrigger.PlanetaryIndustry -> {
+                    append("on ")
+                    val coloniesFilter = when {
+                        trigger.coloniesFilter == null -> "any colony"
+                        trigger.coloniesFilter.size == 1 -> "a specific colony"
+                        else -> "${trigger.coloniesFilter.size} specific colonies"
+                    }
+                    withStyle(primary) {
+                        append(coloniesFilter)
+                    }
+                    append(" ")
+                    trigger.eventTypes.forEachIndexed { index, type ->
+                        if (index != 0) append(", or ")
+                        val text = when (type) {
+                            PiEventType.ExtractorInactive -> "extractors stop"
+                            PiEventType.Idle -> "production stops"
+                            PiEventType.NotSetup -> "setup is unfinished"
+                            PiEventType.StorageFull -> "storage becomes full"
+                        }
+                        withStyle(primary) {
+                            append(text)
+                        }
+                    }
+                    if (trigger.alertBeforeSeconds > 0) {
+                        val duration = Duration.ofSeconds(trigger.alertBeforeSeconds.toLong())
+                        val text = when {
+                            duration.toHours() >= 1 -> "${duration.toHours()} hour${duration.toHours().plural}"
+                            else -> "${duration.toMinutes()} minutes"
+                        }
+                        append(" in ")
+                        withStyle(primary) {
+                            append(text)
+                        }
+                    }
+                }
                 is AlertTrigger.ChatMessage -> {
                     append("a chat message")
                     if (trigger.messageContaining != null) {
@@ -781,9 +850,11 @@ private fun getAlertText(
                 when (action) {
                     AlertAction.RiftNotification -> "send a RIFT notification"
                     AlertAction.SystemNotification -> "send a system notification"
+                    AlertAction.PushNotification -> "send a push notification"
                     is AlertAction.Sound -> "play sound \"${sounds.firstOrNull { it.id == action.id }?.name ?: "?"}\""
                     is AlertAction.CustomSound -> "play sound ${Path.of(action.path).nameWithoutExtension}"
                     AlertAction.ShowPing -> "show the ping"
+                    AlertAction.ShowColonies -> "show colonies"
                 }
             }
             withStyle(primary) {

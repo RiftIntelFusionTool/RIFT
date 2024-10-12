@@ -9,8 +9,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.LocalWindowExceptionHandlerFactory
 import androidx.compose.ui.window.application
-import dev.nohus.rift.compose.LocalNow
-import dev.nohus.rift.compose.getNow
 import dev.nohus.rift.compose.kamelConfig
 import dev.nohus.rift.compose.theme.RiftTheme
 import dev.nohus.rift.crash.RiftExceptionHandlerFactory
@@ -20,6 +18,7 @@ import dev.nohus.rift.di.startKoin
 import dev.nohus.rift.logging.initializeLogging
 import dev.nohus.rift.notifications.NotificationsController
 import dev.nohus.rift.singleinstance.SingleInstanceWrapper
+import dev.nohus.rift.splash.SplashWindowWrapper
 import dev.nohus.rift.tray.RiftTray
 import dev.nohus.rift.utils.viewModel
 import dev.nohus.rift.windowing.WindowManager
@@ -45,7 +44,6 @@ private fun ApplicationScope.riftApplication() {
     CompositionLocalProvider(
         LocalKamelConfig provides kamelConfig,
         LocalWindowExceptionHandlerFactory provides RiftExceptionHandlerFactory,
-        LocalNow provides getNow(),
     ) {
         val viewModel: ApplicationViewModel = viewModel()
         val windowManager: WindowManager = remember { koin.get() }
@@ -61,6 +59,10 @@ private fun ApplicationScope.riftApplication() {
             } else {
                 RiftTray(viewModel, windowManager, state.isTrayIconShown)
                 windowManager.composeWindows()
+                SplashWindowWrapper(
+                    isVisible = state.isSplashScreenShown,
+                    onCloseRequest = {},
+                )
                 WizardWindowWrapper(
                     isVisible = state.isSetupWizardShown,
                     onCloseRequest = viewModel::onWizardCloseRequest,

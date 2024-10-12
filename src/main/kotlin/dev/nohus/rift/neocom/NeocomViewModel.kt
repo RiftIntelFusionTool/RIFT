@@ -51,6 +51,10 @@ class NeocomViewModel(
         windowManager.onWindowOpen(RiftWindow.Assets)
     }
 
+    fun onPlanetaryIndustryClick() {
+        windowManager.onWindowOpen(RiftWindow.PlanetaryIndustry)
+    }
+
     fun onPingsClick() {
         windowManager.onWindowOpen(RiftWindow.Pings)
     }

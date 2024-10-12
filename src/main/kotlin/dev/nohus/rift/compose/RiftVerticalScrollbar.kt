@@ -23,7 +23,6 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,7 +38,6 @@ import dev.nohus.rift.compose.PointerInteractionState.Normal
 import dev.nohus.rift.compose.PointerInteractionState.Press
 import dev.nohus.rift.compose.theme.RiftTheme
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.Instant
 
@@ -84,8 +82,7 @@ private fun RiftVerticalScrollbar(
         lastScrollTimestamp = Instant.now()
     }
     var isScrolling by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-    scope.launch {
+    LaunchedEffect(Unit) {
         while (true) {
             isScrolling = Duration.between(lastScrollTimestamp, Instant.now()) < Duration.ofMillis(200)
             delay(200)

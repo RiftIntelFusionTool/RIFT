@@ -1,9 +1,9 @@
 package dev.nohus.rift.pings
 
-import dev.nohus.rift.configurationpack.ConfigurationPackRepository
 import dev.nohus.rift.repositories.CharactersRepository
 import dev.nohus.rift.repositories.MapStatusRepository
 import dev.nohus.rift.repositories.SolarSystemsRepository
+import dev.nohus.rift.standings.StandingsRepository
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.equality.FieldsEqualityCheckConfig
@@ -21,23 +21,25 @@ class ParsePingUseCaseTest : FreeSpec({
     val timestamp = Instant.now()
     val mockCharactersRepository: CharactersRepository = mockk()
     val mockSolarSystemsRepository: SolarSystemsRepository = mockk()
-    val mockConfigurationPackRepository: ConfigurationPackRepository = mockk()
     val mockMapStatusRepository: MapStatusRepository = mockk()
+    val mockStandingsRepository: StandingsRepository = mockk()
     val target = ParsePingUseCase(
         charactersRepository = mockCharactersRepository,
         solarSystemsRepository = mockSolarSystemsRepository,
-        configurationPackRepository = mockConfigurationPackRepository,
         mapStatusRepository = mockMapStatusRepository,
+        standingsRepository = mockStandingsRepository,
     )
 
     coEvery { mockCharactersRepository.getCharacterId("Havish Montak") } returns 1
     coEvery { mockCharactersRepository.getCharacterId("Mrbluff343") } returns 2
     coEvery { mockCharactersRepository.getCharacterId("Mist Amatin") } returns 3
     coEvery { mockCharactersRepository.getCharacterId("Asher Elias") } returns 4
+    coEvery { mockCharactersRepository.getCharacterId("Lodena Minax") } returns 5
+    every { mockSolarSystemsRepository.getSystemName(any(), any(), any()) } returns null
     every { mockSolarSystemsRepository.getSystemName("1DQ1-A", null) } returns "1DQ1-A"
     every { mockSolarSystemsRepository.getSystemName("U-Q", null) } returns null
     every { mockSolarSystemsRepository.getSystemName("U-Q", null, listOf(30000629)) } returns "U-QMOA"
-    every { mockConfigurationPackRepository.getFriendlyAllianceIds() } returns listOf(1)
+    every { mockStandingsRepository.getFriendlyAllianceIds() } returns setOf(1)
     every { mockMapStatusRepository.status } returns mockk {
         every { value } returns mapOf(
             30000629 to mockk { // U-QMOA
@@ -209,6 +211,32 @@ class ParsePingUseCaseTest : FreeSpec({
             doctrine = null,
             broadcastSource = null,
             target = "discord",
+        ),
+        """
+            WTF 0 - Imperium Basics
+
+            Not sure what SIGs are? Still trying to get mumble to work? Lost your blingy ship in a strat op and now you’re spacebroke? Then join this fleet to find out all the essentials to function in the Imperium.
+
+            FC: Lodena Minax
+            Fleet: WTF 0
+            Formup: Theory only, join from anywhere. 
+            PAP Type: SIG/SQUAD
+            Comms: Gooniversity Discord -> The Big Classroom - https://discord.gg/gooniversity
+            Doctrine: None - This is a theory class
+
+            ~~~ This was a bigbee_pings broadcast from lodena_minax to gooniversity at 2024-09-18 20:29:54.423840 EVE ~~~
+        """.trimIndent() to PingModel.FleetPing(
+            timestamp = timestamp,
+            sourceText = "",
+            description = "WTF 0 - Imperium Basics\n\nNot sure what SIGs are? Still trying to get mumble to work? Lost your blingy ship in a strat op and now you’re spacebroke? Then join this fleet to find out all the essentials to function in the Imperium.",
+            fleetCommander = FleetCommander("Lodena Minax", 5),
+            fleet = "WTF 0",
+            formupLocations = listOf(FormupLocation.Text("Theory only, join from anywhere.")),
+            papType = PapType.Text("SIG/SQUAD"),
+            comms = Comms.Text("Gooniversity Discord -> The Big Classroom - https://discord.gg/gooniversity"),
+            doctrine = Doctrine("None - This is a theory class", null),
+            broadcastSource = "bigbee_pings",
+            target = "gooniversity",
         ),
     ).forEachIndexed { index, (text, expected) ->
         "ping $index is parsed correctly" {

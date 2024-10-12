@@ -70,6 +70,7 @@ dependencies {
     implementation("org.locationtech.jts:jts-core:1.19.0")
     implementation("dev.chrisbanes.haze:haze:0.7.2")
     implementation("dev.hydraulic.conveyor:conveyor-control:1.1")
+    implementation("androidx.collection:collection:1.4.3")
 
     // OpenAL Audio
     implementation("org.jogamp.joal:joal-main:2.5.0")

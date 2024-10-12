@@ -16,6 +16,7 @@ import dev.nohus.rift.location.CharacterLocationRepository
 import dev.nohus.rift.logs.parse.ChannelChatMessage
 import dev.nohus.rift.pings.FormupLocation
 import dev.nohus.rift.pings.PingModel
+import dev.nohus.rift.planetaryindustry.PlanetaryIndustryRepository.ColonyItem
 import dev.nohus.rift.repositories.GetSystemDistanceUseCase
 import dev.nohus.rift.repositories.ShipTypesRepository
 import dev.nohus.rift.repositories.SolarSystemsRepository
@@ -273,6 +274,12 @@ class AlertsTriggerController(
         }
     }
 
+    fun onNewPlanetaryIndustryAlert(alert: Alert, colonyItem: ColonyItem) {
+        withCooldown(alert) {
+            alertsActionController.triggerPlanetaryIndustryAlert(alert, colonyItem)
+        }
+    }
+
     private fun String.containsNonNull(needle: String?): Boolean {
         return needle == null || needle in this
     }
@@ -407,7 +414,7 @@ class AlertsTriggerController(
     private fun isCharacterWithinDistance(characterId: Int, systemId: Int, range: JumpRange): Int? {
         val characterSystemId = characterLocationRepository.locations.value[characterId]?.solarSystemId
         return if (characterSystemId != null) {
-            val distance = getSystemDistanceUseCase(characterSystemId, systemId, range.max, withJumpBridges = false) ?: Int.MAX_VALUE
+            val distance = getSystemDistanceUseCase(characterSystemId, systemId, range.max, withJumpBridges = settings.isUsingJumpBridgesForDistance) ?: Int.MAX_VALUE
             if (distance in range) distance else null
         } else {
             null

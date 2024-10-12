@@ -14,6 +14,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -30,7 +31,6 @@ import dev.nohus.rift.compose.RiftTooltipArea
 import dev.nohus.rift.compose.RiftWindow
 import dev.nohus.rift.compose.ScrollbarColumn
 import dev.nohus.rift.compose.SectionTitle
-import dev.nohus.rift.compose.TooltipAnchor
 import dev.nohus.rift.compose.theme.RiftTheme
 import dev.nohus.rift.compose.theme.Spacing
 import dev.nohus.rift.generated.resources.Res
@@ -41,6 +41,7 @@ import dev.nohus.rift.map.settings.MapSettingsViewModel.UiState
 import dev.nohus.rift.utils.openBrowser
 import dev.nohus.rift.utils.toURIOrNull
 import dev.nohus.rift.utils.viewModel
+import dev.nohus.rift.utils.withColor
 import dev.nohus.rift.windowing.WindowManager.RiftWindowState
 
 @Composable
@@ -154,6 +155,15 @@ private fun MapSettingsWindowContent(
                 isChecked = intelMap.isInvertZoom,
                 onCheckedChange = { onIsScrollZoomInvertedChange(it) },
             )
+            Text(
+                text = buildAnnotatedString {
+                    withColor(RiftTheme.colors.textPrimary) {
+                        append("Tip:")
+                    }
+                    append(" Press Space on the map to automatically resize")
+                },
+                style = RiftTheme.typography.bodySecondary,
+            )
         }
 
         SectionTitle("Autopilot", Modifier.padding(vertical = Spacing.medium))
@@ -190,9 +200,7 @@ private fun MapSettingsWindowContent(
                             modifier = Modifier.padding(top = Spacing.medium, end = Spacing.medium).fillMaxWidth(),
                         ) {
                             RiftTooltipArea(
-                                tooltip = "Import jump bridges by copying a list to clipboard",
-                                anchor = TooltipAnchor.BottomCenter,
-                                contentAnchor = Alignment.TopCenter,
+                                text = "Import jump bridges by copying a list to clipboard",
                             ) {
                                 Text("Network with ${networkState.network.connections.size} connections loaded")
                             }
@@ -236,8 +244,7 @@ private fun MapSettingsWindowContent(
                             }
                         }
                         RiftTooltipArea(
-                            tooltip = tooltip,
-                            anchor = TooltipAnchor.BottomCenter,
+                            text = tooltip,
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,

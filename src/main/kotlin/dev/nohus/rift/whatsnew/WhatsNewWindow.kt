@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -18,14 +20,22 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import dev.nohus.rift.compose.CreatorCode
+import dev.nohus.rift.compose.Patrons
 import dev.nohus.rift.compose.RiftButton
 import dev.nohus.rift.compose.RiftWindow
 import dev.nohus.rift.compose.ScrollbarLazyColumn
@@ -71,6 +81,20 @@ private fun WhatsNewWindowContent(
         ) {
             items(state.versions) {
                 VersionItem(it)
+            }
+        }
+        var size: IntSize? by remember { mutableStateOf(null) }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.small),
+            modifier = Modifier
+                .height(LocalDensity.current.run { size?.height?.toDp() ?: 200.dp })
+                .fillMaxWidth(),
+        ) {
+            Box(Modifier.weight(1f).onSizeChanged { size = it }) {
+                CreatorCode()
+            }
+            Box(Modifier.weight(1f)) {
+                Patrons(state.patrons, Modifier.fillMaxHeight())
             }
         }
         RiftButton(

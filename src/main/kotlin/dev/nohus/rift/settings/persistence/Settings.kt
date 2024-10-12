@@ -1,6 +1,7 @@
 package dev.nohus.rift.settings.persistence
 
 import dev.nohus.rift.alerts.Alert
+import dev.nohus.rift.standings.StandingsRepository.Standings
 import dev.nohus.rift.utils.Pos
 import dev.nohus.rift.windowing.WindowManager.RiftWindow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -191,4 +192,31 @@ class Settings(
     var intelExpireSeconds: Int
         get() = model.intelExpireSeconds
         set(value) = update { copy(intelExpireSeconds = value) }
+
+    var standings: Standings
+        get() = model.standings
+        set(value) = update { copy(standings = value) }
+
+    var planetaryIndustry: PlanetaryIndustry
+        get() = model.planetaryIndustry
+        set(value) = update { copy(planetaryIndustry = value) }
+
+    var isShowingCharactersClones: Boolean
+        get() = model.isShowingCharactersClones
+        set(value) = update { copy(isShowingCharactersClones = value) }
+
+    var planetaryIndustryTriggeredAlerts: Map<String, Map<String, Long>>
+        get() = model.planetaryIndustryTriggeredAlerts
+        set(value) = update { copy(planetaryIndustryTriggeredAlerts = value) }
+
+    var pushover: Pushover
+        get() = model.pushover
+        set(value) = update { copy(pushover = value) }
+
+    val skipSplashScreen: Boolean
+        get() = model.skipSplashScreen
+
+    var dismissedWarnings: List<String>
+        get() = model.dismissedWarnings
+        set(value) = update { copy(dismissedWarnings = value) }
 }

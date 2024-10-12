@@ -15,20 +15,24 @@ import dev.nohus.rift.alerts.JabberMessageChannel
 import dev.nohus.rift.alerts.JabberPingType
 import dev.nohus.rift.alerts.JumpRange
 import dev.nohus.rift.alerts.PapType
+import dev.nohus.rift.alerts.PiEventType
 import dev.nohus.rift.alerts.create.FormAnswer.CharacterAnswer
 import dev.nohus.rift.alerts.create.FormAnswer.FreeformTextAnswer
 import dev.nohus.rift.alerts.create.FormAnswer.IntelChannelAnswer
 import dev.nohus.rift.alerts.create.FormAnswer.JumpsRangeAnswer
 import dev.nohus.rift.alerts.create.FormAnswer.MultipleChoiceAnswer
+import dev.nohus.rift.alerts.create.FormAnswer.PlanetaryIndustryColoniesAnswer
 import dev.nohus.rift.alerts.create.FormAnswer.SingleChoiceAnswer
 import dev.nohus.rift.alerts.create.FormAnswer.SoundAnswer
 import dev.nohus.rift.alerts.create.FormAnswer.SpecificCharactersAnswer
 import dev.nohus.rift.alerts.create.FormAnswer.SystemAnswer
+import dev.nohus.rift.alerts.create.FormQuestion.CombatTargetQuestion
 import dev.nohus.rift.alerts.create.FormQuestion.FreeformTextQuestion
 import dev.nohus.rift.alerts.create.FormQuestion.IntelChannelQuestion
 import dev.nohus.rift.alerts.create.FormQuestion.JumpsRangeQuestion
 import dev.nohus.rift.alerts.create.FormQuestion.MultipleChoiceQuestion
 import dev.nohus.rift.alerts.create.FormQuestion.OwnedCharacterQuestion
+import dev.nohus.rift.alerts.create.FormQuestion.PlanetaryIndustryColoniesQuestion
 import dev.nohus.rift.alerts.create.FormQuestion.SingleChoiceQuestion
 import dev.nohus.rift.alerts.create.FormQuestion.SoundQuestion
 import dev.nohus.rift.alerts.create.FormQuestion.SpecificCharactersQuestion
@@ -36,7 +40,10 @@ import dev.nohus.rift.alerts.create.FormQuestion.SystemQuestion
 import dev.nohus.rift.characters.repositories.LocalCharactersRepository
 import dev.nohus.rift.characters.repositories.LocalCharactersRepository.LocalCharacter
 import dev.nohus.rift.configurationpack.ConfigurationPackRepository
+import dev.nohus.rift.gamelogs.RecentTargetsRepository
 import dev.nohus.rift.logs.parse.CharacterNameValidator
+import dev.nohus.rift.planetaryindustry.PlanetaryIndustryRepository
+import dev.nohus.rift.planetaryindustry.PlanetaryIndustryRepository.ColonyItem
 import dev.nohus.rift.repositories.ShipTypesRepository
 import dev.nohus.rift.repositories.SolarSystemsRepository
 import dev.nohus.rift.settings.persistence.Settings
@@ -44,17 +51,18 @@ import dev.nohus.rift.utils.sound.Sound
 import dev.nohus.rift.utils.sound.SoundsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.InjectedParam
+import java.nio.file.InvalidPathException
 import java.nio.file.Path
 import java.util.UUID
 import kotlin.io.path.exists
 import kotlin.io.path.extension
 import kotlin.io.path.isDirectory
 
-@Suppress("PrivatePropertyName")
 @Factory
 class CreateAlertViewModel(
     @InjectedParam private val inputModel: CreateAlertInputModel,
@@ -66,6 +74,8 @@ class CreateAlertViewModel(
     private val characterNameValidator: CharacterNameValidator,
     shipTypesRepository: ShipTypesRepository,
     configurationPackRepository: ConfigurationPackRepository,
+    private val recentTargetsRepository: RecentTargetsRepository,
+    private val planetaryIndustryRepository: PlanetaryIndustryRepository,
 ) : ViewModel() {
 
     data class UiState(
@@ -77,6 +87,8 @@ class CreateAlertViewModel(
         val characters: List<LocalCharacter> = emptyList(),
         val intelChannels: List<String> = emptyList(),
         val sounds: List<Sound> = emptyList(),
+        val recentTargets: Set<String> = emptySet(),
+        val colonies: List<ColonyItem> = emptyList(),
         val dismissEvent: Event? = null,
         val highlightQuestionEvent: Event? = null,
     )
@@ -89,13 +101,17 @@ class CreateAlertViewModel(
 
     private val _state = MutableStateFlow(
         UiState(
-            formQuestion = getNextFormQuestion(),
+            formQuestion = null,
             sounds = soundsRepository.getSounds(),
+            recentTargets = recentTargetsRepository.targets.value,
         ),
     )
     val state = _state.asStateFlow()
 
     init {
+        prefillAnswers(inputModel)
+        _state.update { it.copy(formQuestion = getNextFormQuestion()) }
+
         viewModelScope.launch {
             localCharactersRepository.characters.collect { items ->
                 _state.update { it.copy(characters = items) }
@@ -106,6 +122,36 @@ class CreateAlertViewModel(
             settings.updateFlow.collect {
                 _state.update { it.copy(intelChannels = it.intelChannels) }
             }
+        }
+        viewModelScope.launch {
+            recentTargetsRepository.targets.collect { targets ->
+                _state.update { it.copy(recentTargets = targets) }
+            }
+        }
+        viewModelScope.launch {
+            planetaryIndustryRepository.colonies.collect { resource ->
+                resource.success?.values?.let { colonies ->
+                    _state.update { it.copy(colonies = colonies.toList()) }
+                }
+            }
+        }
+    }
+
+    private fun prefillAnswers(inputModel: CreateAlertInputModel) {
+        if (inputModel is CreateAlertInputModel.EditAction) {
+            // We are editing the alert, so we need to prefill answers to questions based on the existing alert
+            with(questions) {
+                when (inputModel.alert.trigger) {
+                    is AlertTrigger.ChatMessage -> answers += ALERT_TRIGGER_QUESTION to SingleChoiceAnswer(id = ALERT_TRIGGER_CHAT_MESSAGE.id)
+                    is AlertTrigger.GameAction -> answers += ALERT_TRIGGER_QUESTION to SingleChoiceAnswer(id = ALERT_TRIGGER_GAME_ACTION.id)
+                    is AlertTrigger.IntelReported -> answers += ALERT_TRIGGER_QUESTION to SingleChoiceAnswer(id = ALERT_TRIGGER_INTEL_REPORTED.id)
+                    is AlertTrigger.JabberMessage -> answers += ALERT_TRIGGER_QUESTION to SingleChoiceAnswer(id = ALERT_TRIGGER_JABBER_MESSAGE.id)
+                    is AlertTrigger.JabberPing -> answers += ALERT_TRIGGER_QUESTION to SingleChoiceAnswer(id = ALERT_TRIGGER_JABBER_PING.id)
+                    is AlertTrigger.NoChannelActivity -> answers += ALERT_TRIGGER_QUESTION to SingleChoiceAnswer(id = ALERT_TRIGGER_NO_MESSAGE.id)
+                    is AlertTrigger.PlanetaryIndustry -> answers += ALERT_TRIGGER_QUESTION to SingleChoiceAnswer(id = ALERT_TRIGGER_PLANETARY_INDUSTRY.id)
+                }
+            }
+            _state.update { it.copy(formAnswers = answers) }
         }
     }
 
@@ -144,19 +190,23 @@ class CreateAlertViewModel(
                 is SoundAnswer.BuiltInSound -> _state.update { it.copy(isPendingAnswerValid = true) }
                 is SoundAnswer.CustomSound -> {
                     if (answer.path.isNotBlank()) {
-                        val path = Path.of(answer.path)
-                        if (path.exists()) {
-                            if (!path.isDirectory()) {
-                                if (path.extension == "wav") {
-                                    _state.update { it.copy(isPendingAnswerValid = true) }
+                        try {
+                            val path = Path.of(answer.path)
+                            if (path.exists()) {
+                                if (!path.isDirectory()) {
+                                    if (path.extension == "wav") {
+                                        _state.update { it.copy(isPendingAnswerValid = true) }
+                                    } else {
+                                        _state.update { it.copy(isPendingAnswerValid = false, pendingAnswerInvalidReason = "Must be a WAV file") }
+                                    }
                                 } else {
-                                    _state.update { it.copy(isPendingAnswerValid = false, pendingAnswerInvalidReason = "Must be a WAV file") }
+                                    _state.update { it.copy(isPendingAnswerValid = false, pendingAnswerInvalidReason = "Path is a directory") }
                                 }
                             } else {
-                                _state.update { it.copy(isPendingAnswerValid = false, pendingAnswerInvalidReason = "Path is a directory") }
+                                _state.update { it.copy(isPendingAnswerValid = false, pendingAnswerInvalidReason = "Path does not exist") }
                             }
-                        } else {
-                            _state.update { it.copy(isPendingAnswerValid = false, pendingAnswerInvalidReason = "Path does not exist") }
+                        } catch (e: InvalidPathException) {
+                            _state.update { it.copy(isPendingAnswerValid = false, pendingAnswerInvalidReason = "Path is invalid") }
                         }
                     } else {
                         _state.update { it.copy(isPendingAnswerValid = null) }
@@ -166,6 +216,8 @@ class CreateAlertViewModel(
         } else if (answer is MultipleChoiceAnswer) {
             val isValid = answer.items.isNotEmpty()
             _state.update { it.copy(isPendingAnswerValid = isValid) }
+        } else if (answer is PlanetaryIndustryColoniesAnswer) {
+            _state.update { it.copy(isPendingAnswerValid = true) }
         }
     }
 
@@ -257,6 +309,12 @@ class CreateAlertViewModel(
                     }
                 }
 
+                ALERT_TRIGGER_PLANETARY_INDUSTRY.id -> {
+                    PLANETARY_INDUSTRY_EVENT_TYPE_QUESTION.answer ?: return PLANETARY_INDUSTRY_EVENT_TYPE_QUESTION
+                    PLANETARY_INDUSTRY_COLONIES_QUESTION.answer ?: return PLANETARY_INDUSTRY_COLONIES_QUESTION
+                    PLANETARY_INDUSTRY_ALERT_BEFORE_QUESTION.answer ?: return PLANETARY_INDUSTRY_ALERT_BEFORE_QUESTION
+                }
+
                 ALERT_TRIGGER_CHAT_MESSAGE.id -> {
                     val channelType = CHAT_MESSAGE_CHANNEL_TYPE_QUESTION.answer ?: return CHAT_MESSAGE_CHANNEL_TYPE_QUESTION
                     when (channelType.id) {
@@ -313,6 +371,7 @@ class CreateAlertViewModel(
         if (inputModel == CreateAlertInputModel.New || inputModel is CreateAlertInputModel.EditAction) {
             val alertActionQuestion = when (ALERT_TRIGGER_QUESTION.answer?.id) {
                 ALERT_TRIGGER_JABBER_PING.id -> ALERT_ACTION_JABBER_PING_QUESTION
+                ALERT_TRIGGER_PLANETARY_INDUSTRY.id -> ALERT_ACTION_PLANETARY_INDUSTRY_QUESTION
                 else -> ALERT_ACTION_QUESTION
             }
             val alertActions = alertActionQuestion.answer ?: return alertActionQuestion
@@ -425,6 +484,47 @@ class CreateAlertViewModel(
                     )
                 }
 
+                ALERT_TRIGGER_PLANETARY_INDUSTRY.id -> {
+                    val eventTypes = PLANETARY_INDUSTRY_EVENT_TYPE_QUESTION.answer?.let {
+                        it.ids.map { id ->
+                            when (id) {
+                                PLANETARY_INDUSTRY_EVENT_TYPE_NOT_SETUP.id -> {
+                                    PiEventType.NotSetup
+                                }
+                                PLANETARY_INDUSTRY_EVENT_TYPE_EXTRACTOR_INACTIVE.id -> {
+                                    PiEventType.ExtractorInactive
+                                }
+                                PLANETARY_INDUSTRY_EVENT_TYPE_STORAGE_FULL.id -> {
+                                    PiEventType.StorageFull
+                                }
+                                PLANETARY_INDUSTRY_EVENT_TYPE_IDLE.id -> {
+                                    PiEventType.Idle
+                                }
+                                else -> throw IllegalStateException()
+                            }
+                        }
+                    } ?: throw IllegalStateException()
+                    val coloniesFilter = PLANETARY_INDUSTRY_COLONIES_QUESTION.answer ?: throw IllegalStateException()
+                    val alertBeforeSeconds = when (PLANETARY_INDUSTRY_ALERT_BEFORE_QUESTION.answer?.id ?: throw IllegalStateException()) {
+                        PLANETARY_INDUSTRY_ALERT_BEFORE_NONE.id -> 0
+                        PLANETARY_INDUSTRY_ALERT_BEFORE_5_MINUTES.id -> 60 * 5
+                        PLANETARY_INDUSTRY_ALERT_BEFORE_15_MINUTES.id -> 60 * 15
+                        PLANETARY_INDUSTRY_ALERT_BEFORE_30_MINUTES.id -> 60 * 30
+                        PLANETARY_INDUSTRY_ALERT_BEFORE_1_HOUR.id -> 60 * 60 * 1
+                        PLANETARY_INDUSTRY_ALERT_BEFORE_2_HOURS.id -> 60 * 60 * 2
+                        PLANETARY_INDUSTRY_ALERT_BEFORE_4_HOURS.id -> 60 * 60 * 4
+                        PLANETARY_INDUSTRY_ALERT_BEFORE_8_HOURS.id -> 60 * 60 * 8
+                        PLANETARY_INDUSTRY_ALERT_BEFORE_12_HOURS.id -> 60 * 60 * 12
+                        PLANETARY_INDUSTRY_ALERT_BEFORE_24_HOURS.id -> 60 * 60 * 24
+                        else -> throw IllegalStateException()
+                    }
+                    AlertTrigger.PlanetaryIndustry(
+                        eventTypes = eventTypes,
+                        coloniesFilter = coloniesFilter.colonies.takeIf { it.isNotEmpty() },
+                        alertBeforeSeconds = alertBeforeSeconds,
+                    )
+                }
+
                 ALERT_TRIGGER_CHAT_MESSAGE.id -> {
                     val channel = when (CHAT_MESSAGE_CHANNEL_TYPE_QUESTION.answer?.id ?: return null) {
                         CHAT_MESSAGE_CHANNEL_ANY.id -> ChatMessageChannel.Any
@@ -532,6 +632,7 @@ class CreateAlertViewModel(
             if (inputModel == CreateAlertInputModel.New || inputModel is CreateAlertInputModel.EditAction) {
                 val alertActionQuestion = when (ALERT_TRIGGER_QUESTION.answer?.id) {
                     ALERT_TRIGGER_JABBER_PING.id -> ALERT_ACTION_JABBER_PING_QUESTION
+                    ALERT_TRIGGER_PLANETARY_INDUSTRY.id -> ALERT_ACTION_PLANETARY_INDUSTRY_QUESTION
                     else -> ALERT_ACTION_QUESTION
                 }
                 alertActionQuestion.answer?.let {
@@ -539,6 +640,7 @@ class CreateAlertViewModel(
                         when (id) {
                             ALERT_ACTION_RIFT_NOTIFICATION.id -> AlertAction.RiftNotification
                             ALERT_ACTION_SYSTEM_NOTIFICATION.id -> AlertAction.SystemNotification
+                            ALERT_ACTION_PUSH_NOTIFICATION.id -> AlertAction.PushNotification
                             ALERT_ACTION_PLAY_SOUND.id -> {
                                 val answer = ALERT_ACTION_SOUND_QUESTION.answer ?: return null
                                 when (answer) {
@@ -547,6 +649,7 @@ class CreateAlertViewModel(
                                 }
                             }
                             ALERT_ACTION_SHOW_PING.id -> AlertAction.ShowPing
+                            ALERT_ACTION_SHOW_COLONIES.id -> AlertAction.ShowColonies
                             else -> throw IllegalStateException()
                         }
                     }
@@ -595,5 +698,7 @@ class CreateAlertViewModel(
     private val IntelChannelQuestion.answer: IntelChannelAnswer? get() = formAnswer as? IntelChannelAnswer
     private val SoundQuestion.answer: SoundAnswer? get() = formAnswer as? SoundAnswer
     private val SpecificCharactersQuestion.answer: SpecificCharactersAnswer? get() = formAnswer as? SpecificCharactersAnswer
+    private val CombatTargetQuestion.answer: FreeformTextAnswer? get() = formAnswer as? FreeformTextAnswer
+    private val PlanetaryIndustryColoniesQuestion.answer: PlanetaryIndustryColoniesAnswer? get() = formAnswer as? PlanetaryIndustryColoniesAnswer
     private val FreeformTextQuestion.answer: FreeformTextAnswer? get() = formAnswer as? FreeformTextAnswer
 }
